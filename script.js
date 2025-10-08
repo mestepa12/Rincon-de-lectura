@@ -176,32 +176,36 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const handleSaveDetails = () => {
-            const bookId = parseInt(bookDetailModal.dataset.bookId, 10);
+            // Obtenemos el ID de texto directamente del modal, SIN parseInt
+            const bookId = bookDetailModal.dataset.bookId; 
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
 
             const updatedData = {
                 notes: detailNotes.value,
-                cover: book.cover // Guardamos la portada por si ha cambiado
+                cover: detailCover.src // Usamos el 'src' actual de la imagen
             };
-
+        
             if (book.section === 'leyendo-ahora') {
                 const newPage = parseInt(currentPageInput.value, 10) || 0;
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
             }
-
-            userBooksCollection.doc(String(bookId)).update(updatedData).then(() => {
+        
+            // Usamos el ID de texto para actualizar
+            userBooksCollection.doc(bookId).update(updatedData).then(() => {
                 console.log("Detalles actualizados en Firebase");
                 bookDetailModal.close();
             }).catch(error => console.error("Error al guardar detalles:", error));
         };
+
 
         const handleDeleteBook = (bookId) => {
             userBooksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar libro:", error));
         };
 
         const handleMoveBook = (bookId, targetSection) => {
-            const bookRef = userBooksCollection.doc(String(bookId));
+            // Usa el bookId (que es texto) directamente para encontrar el documento
+            const bookRef = userBooksCollection.doc(bookId); 
             bookRef.update({
                 section: targetSection,
                 currentPage: 0,
@@ -220,12 +224,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const handleMainContentClick = (e) => {
             const bookElement = e.target.closest('.book');
             if (!bookElement) return;
+
+            // Si se hace clic en una estrella para valorar
             if (e.target.matches('.star')) {
-                handleRateBook(parseInt(bookElement.dataset.id, 10), parseInt(e.target.dataset.value, 10));
+                // CORRECCIÓN: Usamos el ID como texto, sin parseInt
+                handleRateBook(bookElement.dataset.id, parseInt(e.target.dataset.value, 10));
                 return;
             }
-            openDetailModal(parseInt(bookElement.dataset.id, 10));
+        
+            // Si se hace clic en cualquier otra parte del libro para abrir detalles
+            // CORRECCIÓN: Usamos el ID como texto, sin parseInt
+            openDetailModal(bookElement.dataset.id);
         };
+
 
         const handleSearch = (e) => {
             const query = e.target.value.toLowerCase();
@@ -276,13 +287,13 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelDetailModalBtn.addEventListener('click', () => bookDetailModal.close());
         
         currentPageInput.addEventListener('input', () => {
-            const bookId = parseInt(bookDetailModal.dataset.bookId, 10);
+            const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (book) updateProgressVisuals(parseInt(currentPageInput.value, 10), book.totalPages);
         });
 
         deleteBookModalBtn.addEventListener('click', () => {
-            const bookId = parseInt(bookDetailModal.dataset.bookId, 10);
+            const bookId = bookDetailModal.dataset.bookId;
             if (bookId && confirm('¿Estás seguro de que quieres eliminar este libro?')) {
                 handleDeleteBook(bookId);
                 bookDetailModal.close();
@@ -290,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         detailCoverContainer.addEventListener('click', () => {
-            const bookId = parseInt(bookDetailModal.dataset.bookId, 10);
+            const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
             const newCoverUrl = prompt('Introduce la nueva URL para la portada:', book.cover || '');
@@ -302,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         moveBookSelect.addEventListener('change', () => {
-            const bookId = parseInt(bookDetailModal.dataset.bookId, 10);
+            const bookId = bookDetailModal.dataset.bookId;
             const newSection = moveBookSelect.value;
             if (bookId && newSection) {
                 handleMoveBook(bookId, newSection);
