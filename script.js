@@ -20,7 +20,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Toda la lógica de la app ahora está dentro de esta función ---
     function runApp() {
         const db = firebase.firestore();
-        const booksCollection = db.collection('books');
+        const currentUser = firebase.auth().currentUser; // Obtenemos el usuario actual
+
+        // Si no hay usuario, no hacemos nada. La lógica de redirección ya se encarga de esto.
+        if (!currentUser) return;
+
+        // Apuntamos a la sub-colección 'books' DENTRO del documento del usuario actual.
+        const userBooksCollection = db.collection('users').doc(currentUser.uid).collection('books');
+
+
 
         const SECTIONS = {
             'leyendo-ahora': 'Leyendo Ahora',
@@ -147,18 +155,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const handleAddBook = (e) => {
             e.preventDefault();
             const formData = new FormData(addBookForm);
-            const newBookId = Date.now();
             const newBook = {
-                id: newBookId,
+                // YA NO NECESITAMOS 'id' NI 'userId' aquí
                 title: formData.get('title'),
                 author: formData.get('author'),
                 cover: formData.get('cover'),
                 section: formData.get('section'),
                 totalPages: parseInt(totalPagesInput.value, 10) || 0,
-                currentPage: 0, notes: '', rating: 0
+                currentPage: 0,
+                notes: '',
+                rating: 0
             };
-            booksCollection.doc(String(newBookId)).set(newBook).then(() => {
-                console.log("Libro añadido a Firebase");
+        
+            // ✨ Usamos la misma referencia a la colección del usuario de antes
+            userBooksCollection.add(newBook).then(() => {
+                console.log("Libro añadido a Firebase en la sub-colección del usuario");
                 addBookForm.reset();
                 addBookModal.close();
             }).catch(error => console.error("Error al añadir libro:", error));
@@ -179,18 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
             }
 
-            booksCollection.doc(String(bookId)).update(updatedData).then(() => {
+            userBooksCollection.doc(String(bookId)).update(updatedData).then(() => {
                 console.log("Detalles actualizados en Firebase");
                 bookDetailModal.close();
             }).catch(error => console.error("Error al guardar detalles:", error));
         };
 
         const handleDeleteBook = (bookId) => {
-            booksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar libro:", error));
+            userBooksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar libro:", error));
         };
 
         const handleMoveBook = (bookId, targetSection) => {
-            const bookRef = booksCollection.doc(String(bookId));
+            const bookRef = userBooksCollection.doc(String(bookId));
             bookRef.update({
                 section: targetSection,
                 currentPage: 0,
@@ -199,11 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const handleRateBook = (bookId, rating) => {
-            booksCollection.doc(String(bookId)).update({ rating: rating }).catch(error => console.error("Error al valorar el libro:", error));
+            userBooksCollection.doc(String(bookId)).update({ rating: rating }).catch(error => console.error("Error al valorar el libro:", error));
         };
         
         const handleCoverChange = (bookId, newCoverUrl) => {
-             booksCollection.doc(String(bookId)).update({ cover: newCoverUrl }).catch(error => console.error("Error al cambiar la portada:", error));
+             userBooksCollection.doc(String(bookId)).update({ cover: newCoverUrl }).catch(error => console.error("Error al cambiar la portada:", error));
         };
 
         const handleMainContentClick = (e) => {
@@ -238,10 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // --- EL CORAZÓN DE FIREBASE: ESCUCHADOR EN TIEMPO REAL ---
-        booksCollection.onSnapshot(snapshot => {
+        userBooksCollection.onSnapshot(snapshot => {
             booksData = [];
             snapshot.forEach(doc => {
-                booksData.push(doc.data());
+                // ✨ AHORA GUARDAMOS EL ID REAL DE FIRESTORE ✨
+                // Esto es crucial para poder editar/borrar el libro correcto después.
+                const book = { id: doc.id, ...doc.data() }; 
+                booksData.push(book);
             });
             booksData.sort((a, b) => a.title.localeCompare(b.title));
             renderBooks();
