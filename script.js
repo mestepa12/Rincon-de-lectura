@@ -6,29 +6,23 @@ document.addEventListener('DOMContentLoaded', () => {
             // Si hay un usuario, significa que ha iniciado sesión.
             // Ejecutamos toda la lógica de la librería.
             console.log("Usuario autenticado:", user.email);
-            runApp();
+            // ✨ CAMBIO: Le pasamos el objeto 'user' directamente a nuestra función principal.
+            runApp(user); 
         } else {
             // Si no hay usuario, lo redirigimos a la página de login.
             console.log("Usuario no autenticado. Redirigiendo a login...");
-            // Asegurarnos de no estar ya en login.html para evitar un bucle
             if (window.location.pathname.indexOf('login.html') === -1) {
                 window.location.href = 'login.html';
             }
         }
     });
 
-    // --- Toda la lógica de la app ahora está dentro de esta función ---
-    function runApp() {
+    // --- ✨ CAMBIO: La función ahora acepta el objeto 'user' como argumento ---
+    function runApp(user) {
         const db = firebase.firestore();
-        const currentUser = firebase.auth().currentUser; // Obtenemos el usuario actual
-
-        // Si no hay usuario, no hacemos nada. La lógica de redirección ya se encarga de esto.
-        if (!currentUser) return;
-
-        // Apuntamos a la sub-colección 'books' DENTRO del documento del usuario actual.
-        const userBooksCollection = db.collection('users').doc(currentUser.uid).collection('books');
-
-
+        
+        // ✨ CAMBIO: Usamos el 'user.uid' que recibimos, que es 100% seguro.
+        const userBooksCollection = db.collection('users').doc(user.uid).collection('books');
 
         const SECTIONS = {
             'leyendo-ahora': 'Leyendo Ahora',
@@ -37,9 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
             'lista-deseos': 'Lista de Deseos'
         };
         
-        let booksData = []; // El array local empieza vacío. Firebase lo llenará.
+        let booksData = []; 
 
-        // --- Selectores del DOM ---
+        // --- Selectores del DOM (sin cambios) ---
         const mainContent = document.getElementById('main-content');
         const toggleViewBtn = document.getElementById('toggle-view');
         const toggleThemeBtn = document.getElementById('toggle-theme');
@@ -64,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const moveBookSelect = document.getElementById('move-book-select');
         const deleteBookModalBtn = document.getElementById('delete-book-modal-btn');
         const cancelDetailModalBtn = document.getElementById('cancel-detail-modal');
-        const logoutBtn = document.getElementById('logout-btn'); // Selector para el botón de cerrar sesión
+        const logoutBtn = document.getElementById('logout-btn');
         
         const createExtraInfoHTML = (book) => {
             if (book.section === 'leyendo-ahora') {
@@ -156,7 +150,6 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const formData = new FormData(addBookForm);
             const newBook = {
-                // YA NO NECESITAMOS 'id' NI 'userId' aquí
                 title: formData.get('title'),
                 author: formData.get('author'),
                 cover: formData.get('cover'),
@@ -167,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 rating: 0
             };
         
-            // ✨ Usamos la misma referencia a la colección del usuario de antes
             userBooksCollection.add(newBook).then(() => {
                 console.log("Libro añadido a Firebase en la sub-colección del usuario");
                 addBookForm.reset();
@@ -176,14 +168,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const handleSaveDetails = () => {
-            // Obtenemos el ID de texto directamente del modal, SIN parseInt
             const bookId = bookDetailModal.dataset.bookId; 
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
 
             const updatedData = {
                 notes: detailNotes.value,
-                cover: detailCover.src // Usamos el 'src' actual de la imagen
+                cover: detailCover.src
             };
         
             if (book.section === 'leyendo-ahora') {
@@ -191,20 +182,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
             }
         
-            // Usamos el ID de texto para actualizar
             userBooksCollection.doc(bookId).update(updatedData).then(() => {
                 console.log("Detalles actualizados en Firebase");
                 bookDetailModal.close();
             }).catch(error => console.error("Error al guardar detalles:", error));
         };
 
-
         const handleDeleteBook = (bookId) => {
             userBooksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar libro:", error));
         };
 
         const handleMoveBook = (bookId, targetSection) => {
-            // Usa el bookId (que es texto) directamente para encontrar el documento
             const bookRef = userBooksCollection.doc(bookId); 
             bookRef.update({
                 section: targetSection,
@@ -225,18 +213,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookElement = e.target.closest('.book');
             if (!bookElement) return;
 
-            // Si se hace clic en una estrella para valorar
             if (e.target.matches('.star')) {
-                // CORRECCIÓN: Usamos el ID como texto, sin parseInt
                 handleRateBook(bookElement.dataset.id, parseInt(e.target.dataset.value, 10));
                 return;
             }
         
-            // Si se hace clic en cualquier otra parte del libro para abrir detalles
-            // CORRECCIÓN: Usamos el ID como texto, sin parseInt
             openDetailModal(bookElement.dataset.id);
         };
-
 
         const handleSearch = (e) => {
             const query = e.target.value.toLowerCase();
@@ -259,12 +242,9 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleThemeBtn.textContent = isDark ? '☀️' : '🌙';
         };
 
-        // --- EL CORAZÓN DE FIREBASE: ESCUCHADOR EN TIEMPO REAL ---
         userBooksCollection.onSnapshot(snapshot => {
             booksData = [];
             snapshot.forEach(doc => {
-                // ✨ AHORA GUARDAMOS EL ID REAL DE FIRESTORE ✨
-                // Esto es crucial para poder editar/borrar el libro correcto después.
                 const book = { id: doc.id, ...doc.data() }; 
                 booksData.push(book);
             });
@@ -306,9 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!book) return;
             const newCoverUrl = prompt('Introduce la nueva URL para la portada:', book.cover || '');
             if (newCoverUrl !== null) {
-                // Actualiza la imagen visualmente, el cambio se guarda con el botón "Guardar"
                 detailCover.src = newCoverUrl || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-                book.cover = newCoverUrl; // Actualizamos el dato local para que se guarde después
+                book.cover = newCoverUrl;
             }
         });
         
@@ -325,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
             firebase.auth().signOut();
         });
 
-        // --- INICIALIZACIÓN ---
         setupTheme();
     }
 });
