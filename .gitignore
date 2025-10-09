@@ -1,0 +1,8 @@
+# Ignorar el archivo de configuración con la API Key
+config.js
+
+# Ignorar las credenciales de administrador de Firebase
+serviceAccountKey.json
+
+# Ignorar la carpeta de dependencias de Node.js (si la usas)
+node_modules/
