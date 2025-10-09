@@ -31,18 +31,7 @@
     <script src="config.js"></script>
 
     <script>
-        // Construimos la configuración de Firebase usando los Secretos de GitHub
-        const firebaseConfig = {
-          apiKey: "${{ secrets.VITE_API_KEY }}",
-          authDomain: "${{ secrets.VITE_AUTH_DOMAIN }}",
-          projectId: "${{ secrets.VITE_PROJECT_ID }}",
-          storageBucket: "${{ secrets.VITE_STORAGE_BUCKET }}",
-          messagingSenderId: "${{ secrets.VITE_MESSAGING_SENDER_ID }}",
-          appId: "${{ secrets.VITE_APP_ID }}"
-        };
-    
-        // Inicializamos Firebase
-        firebase.initializeApp(firebaseConfig);
+      firebase.initializeApp(firebaseConfig);
     </script>
 
     <script src="auth.js"></script>
