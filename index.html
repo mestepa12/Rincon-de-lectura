@@ -121,21 +121,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
 
-    <script>
-      // Tu configuración web de la app de Firebase
-      const firebaseConfig = {
-        apiKey: "AIzaSyBHsDaHW-zC4JxDUcQxbe_t15vmWZZiYqc",
-        authDomain: "mi-rincon-de-lectura.firebaseapp.com",
-        projectId: "mi-rincon-de-lectura",
-        storageBucket: "mi-rincon-de-lectura.firebasestorage.app",
-        messagingSenderId: "333643518949",
-        appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
-      };
+   <script src="config.js"></script>
 
-      // Inicializamos Firebase y creamos la variable 'db' que tu script.js necesita
-      firebase.initializeApp(firebaseConfig);
-      const db = firebase.firestore();
-    </script>
-    <script src="script.js" defer></script>
+<script>
+  firebase.initializeApp(firebaseConfig);
+</script>
+
+<script src="script.js" defer></script>
 </body>
 </html>
