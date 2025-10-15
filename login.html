@@ -20,8 +20,19 @@
             <button type="submit" class="btn-primary">Entrar</button>
             <p id="login-error" class="error-message"></p>
         </form>
+
+        
+
+
+
         <form id="register-form">
-            <button type="submit" class="btn-primary">¿No tiene cuenta? Cree una</button>
+            <button type="button" id="google-signin-btn" class="btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+                <span>Continuar con Google</span>
+            </button>
+            <div class="form-switcher">
+                <a href="register.html">¿No tienes cuenta? Cree una</a>
+            </div>
         </form>
     </div>
 
@@ -33,7 +44,7 @@
     <script>
       firebase.initializeApp(firebaseConfig);
     </script>
-
+    
     <script src="auth.js"></script>
 </body>
 </html>

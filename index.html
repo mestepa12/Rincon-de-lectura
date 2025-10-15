@@ -120,13 +120,12 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
+    <script src="config.js"></script>
 
-   <script src="config.js"></script>
+    <script>
+      firebase.initializeApp(firebaseConfig);
+    </script>
 
-<script>
-  firebase.initializeApp(firebaseConfig);
-</script>
-
-<script src="script.js" defer></script>
+    <script src="script.js" defer></script>
 </body>
 </html>
