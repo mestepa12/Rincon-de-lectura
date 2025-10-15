@@ -10,13 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const loginError = document.getElementById('login-error');
 
             firebase.auth().signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    loginError.textContent = 'Correo o contraseña incorrectos.';
-                    console.error("Error de inicio de sesión:", error);
-                });
+                .then(() => { window.location.href = 'index.html'; })
+                .catch(() => { loginError.textContent = 'Correo o contraseña incorrectos.'; });
         });
     }
 
@@ -36,9 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = 'index.html';
-                })
+                .then(() => { window.location.href = 'index.html'; })
                 .catch((error) => {
                     if (error.code == 'auth/weak-password') {
                         registerError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
@@ -47,12 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         registerError.textContent = 'Error al crear la cuenta.';
                     }
-                    console.error("Error de registro:", error);
                 });
         });
     }
-
-    // --- MANEJO DEL INICIO DE SESIÓN CON GOOGLE (VERSIÓN ACTUALIZADA) ---
+    
+    // --- MANEJO DEL INICIO DE SESIÓN CON GOOGLE (VERSIÓN COMPLETA) ---
     const googleSignInBtn = document.getElementById('google-signin-btn');
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
@@ -60,39 +52,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const auth = firebase.auth();
             const loginError = document.getElementById('login-error');
 
+            // Forzamos que siempre pregunte qué cuenta usar
+            provider.setCustomParameters({ prompt: 'select_account' });
+
             auth.signInWithPopup(provider)
                 .then(() => {
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    // ESTA ES LA PARTE NUEVA E IMPORTANTE
+                    // Si el error es porque ya existe una cuenta con ese email
                     if (error.code === 'auth/account-exists-with-different-credential') {
                         const pendingCred = error.credential;
                         const email = error.email;
                         
                         // Preguntamos al usuario si quiere vincular las cuentas
                         if (confirm(`Ya tienes una cuenta con ${email}. ¿Quieres vincularla a tu cuenta de Google?`)) {
-                            // 1. Obtenemos el método de inicio de sesión de la cuenta existente (contraseña)
-                            auth.fetchSignInMethodsForEmail(email)
-                                .then((methods) => {
-                                    if (methods[0] === 'password') {
-                                        // 2. Pedimos al usuario su contraseña para verificar que es el dueño
-                                        const password = prompt('Por favor, introduce tu contraseña para confirmar la vinculación:');
-                                        const credential = firebase.auth.EmailAuthProvider.credential(email, password);
-                                        
-                                        // 3. Vinculamos la nueva cuenta de Google con la antigua
-                                        auth.signInWithCredential(credential)
-                                            .then((userCredential) => {
-                                                return userCredential.user.linkWithCredential(pendingCred);
-                                            })
-                                            .then(() => {
-                                                window.location.href = 'index.html';
-                                            })
-                                            .catch(() => {
-                                                loginError.textContent = 'La contraseña era incorrecta. No se pudo vincular.';
-                                            });
-                                    }
-                                });
+                            // Pedimos la contraseña para verificar que es el dueño
+                            const password = prompt('Por favor, introduce tu contraseña para confirmar la vinculación:');
+                            if (password) {
+                                const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+                                
+                                // Autenticamos al usuario con su contraseña y luego vinculamos Google
+                                auth.signInWithCredential(credential)
+                                    .then((userCredential) => userCredential.user.linkWithCredential(pendingCred))
+                                    .then(() => { window.location.href = 'index.html'; })
+                                    .catch(() => { loginError.textContent = 'La contraseña era incorrecta. No se pudo vincular.'; });
+                            }
                         }
                     } else {
                         loginError.textContent = 'No se pudo iniciar sesión con Google.';
