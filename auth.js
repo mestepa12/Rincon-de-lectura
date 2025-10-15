@@ -1,56 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a los elementos del formulario de LOGIN
+
+    // --- MANEJO DEL FORMULARIO DE LOGIN ---
     const loginForm = document.getElementById('login-form');
-    const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password');
-    const loginError = document.getElementById('login-error');
-
-    // Referencias a los elementos del formulario de REGISTRO
-    const registerForm = document.getElementById('register-form');
-    const registerEmailInput = document.getElementById('register-email');
-    const registerPasswordInput = document.getElementById('register-password');
-    const registerError = document.getElementById('register-error');
-
-
-
-
-    // --- MANEJADOR PARA EL INICIO DE SESIÓN CON GOOGLE ---
-    const googleSignInBtn = document.getElementById('google-signin-btn');
-    if (googleSignInBtn) {
-        googleSignInBtn.addEventListener('click', () => {
-            // 1. Crea una instancia del proveedor de Google.
-            const provider = new firebase.auth.GoogleAuthProvider();
-
-            // 2. Inicia el proceso de inicio de sesión con una ventana emergente.
-            firebase.auth().signInWithPopup(provider)
-                .then((result) => {
-                    // Si el inicio de sesión es exitoso, redirigimos a la página principal.
-                    console.log("Inicio de sesión con Google exitoso:", result.user.email);
-                    window.location.href = 'index.html';
-                })
-                .catch((error) => {
-                    // Manejo de errores (por ejemplo, si el usuario cierra la ventana emergente).
-                    console.error("Error al iniciar sesión con Google:", error);
-                    const loginError = document.getElementById('login-error');
-                    loginError.textContent = 'No se pudo iniciar sesión con Google.';
-                });
-        });
-    }
-    
-    // Manejador para el formulario de LOGIN
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = emailInput.value;
-            const password = passwordInput.value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginError = document.getElementById('login-error');
 
             firebase.auth().signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Si el inicio de sesión es correcto, redirigimos a la página principal
+                .then(() => {
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    // Si hay un error, lo mostramos
                     loginError.textContent = 'Correo o contraseña incorrectos.';
                     console.error("Error de inicio de sesión:", error);
                 });
@@ -58,20 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- MANEJO DEL FORMULARIO DE REGISTRO ---
+    const registerForm = document.getElementById('register-form');
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
             const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-password-confirm').value; // Obtenemos la confirmación
+            const confirmPassword = document.getElementById('register-password-confirm').value;
             const registerError = document.getElementById('register-error');
 
-            // --- VERIFICACIÓN DE CONTRASEÑAS ---
             if (password !== confirmPassword) {
                 registerError.textContent = 'Las contraseñas no coinciden.';
-                return; // Detenemos la ejecución si no coinciden
+                return;
             }
-            // --- FIN DE LA VERIFICACIÓN ---
 
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then(() => {
@@ -86,6 +48,56 @@ document.addEventListener('DOMContentLoaded', () => {
                         registerError.textContent = 'Error al crear la cuenta.';
                     }
                     console.error("Error de registro:", error);
+                });
+        });
+    }
+
+    // --- MANEJO DEL INICIO DE SESIÓN CON GOOGLE (VERSIÓN ACTUALIZADA) ---
+    const googleSignInBtn = document.getElementById('google-signin-btn');
+    if (googleSignInBtn) {
+        googleSignInBtn.addEventListener('click', () => {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const auth = firebase.auth();
+            const loginError = document.getElementById('login-error');
+
+            auth.signInWithPopup(provider)
+                .then(() => {
+                    window.location.href = 'index.html';
+                })
+                .catch((error) => {
+                    // ESTA ES LA PARTE NUEVA E IMPORTANTE
+                    if (error.code === 'auth/account-exists-with-different-credential') {
+                        const pendingCred = error.credential;
+                        const email = error.email;
+                        
+                        // Preguntamos al usuario si quiere vincular las cuentas
+                        if (confirm(`Ya tienes una cuenta con ${email}. ¿Quieres vincularla a tu cuenta de Google?`)) {
+                            // 1. Obtenemos el método de inicio de sesión de la cuenta existente (contraseña)
+                            auth.fetchSignInMethodsForEmail(email)
+                                .then((methods) => {
+                                    if (methods[0] === 'password') {
+                                        // 2. Pedimos al usuario su contraseña para verificar que es el dueño
+                                        const password = prompt('Por favor, introduce tu contraseña para confirmar la vinculación:');
+                                        const credential = firebase.auth.EmailAuthProvider.credential(email, password);
+                                        
+                                        // 3. Vinculamos la nueva cuenta de Google con la antigua
+                                        auth.signInWithCredential(credential)
+                                            .then((userCredential) => {
+                                                return userCredential.user.linkWithCredential(pendingCred);
+                                            })
+                                            .then(() => {
+                                                window.location.href = 'index.html';
+                                            })
+                                            .catch(() => {
+                                                loginError.textContent = 'La contraseña era incorrecta. No se pudo vincular.';
+                                            });
+                                    }
+                                });
+                        }
+                    } else {
+                        loginError.textContent = 'No se pudo iniciar sesión con Google.';
+                        console.error("Error al iniciar sesión con Google:", error);
+                    }
                 });
         });
     }
