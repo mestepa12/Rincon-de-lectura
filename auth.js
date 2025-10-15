@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- MANEJO DEL FORMULARIO DE LOGIN (VERSIÓN ACTUALIZADA) ---
+    // --- MANEJO DEL FORMULARIO DE LOGIN (VERSIÓN DE DIAGNÓSTICO) ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
@@ -10,15 +10,22 @@ document.addEventListener('DOMContentLoaded', () => {
             const loginError = document.getElementById('login-error');
             const auth = firebase.auth();
 
-            // 1. Comprueba si existe una cuenta con ese email
             auth.fetchSignInMethodsForEmail(email)
                 .then((signInMethods) => {
-                    // 2. Si el método de inicio de sesión es Google
-                    if (signInMethods.includes('google.com')) {
+                    
+                    // LÍNEA DE DIAGNÓSTICO: ¿QUÉ MÉTODOS DEVUELVE FIREBASE?
+                    console.log('Métodos de inicio de sesión encontrados:', signInMethods); 
+                    
+                    // Si la lista está vacía, el usuario no existe.
+                    if (signInMethods.length === 0) {
+                        loginError.textContent = 'Correo o contraseña incorrectos (usuario no encontrado).';
+                    
+                    // Si el método de inicio de sesión es Google
+                    } else if (signInMethods.includes('google.com')) {
                         loginError.textContent = 'Esa cuenta fue creada con Google. Por favor, inicia sesión con Google.';
                     
-                    // 3. Si el método es la contraseña (o no hay cuenta)
-                    } else {
+                    // Si el método es la contraseña
+                    } else if (signInMethods.includes('password')) {
                         auth.signInWithEmailAndPassword(email, password)
                             .then(() => {
                                 window.location.href = 'index.html';
@@ -28,8 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                     }
                 })
-                .catch(() => {
+                .catch((error) => {
                     loginError.textContent = 'Error al verificar el correo.';
+                    console.error('Error en fetchSignInMethodsForEmail:', error);
                 });
         });
     }
