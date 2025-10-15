@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- MANEJO DEL FORMULARIO DE LOGIN ---
+    // --- MANEJO DEL FORMULARIO DE LOGIN (VERSIÓN ACTUALIZADA) ---
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
@@ -8,14 +8,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const loginError = document.getElementById('login-error');
+            const auth = firebase.auth();
 
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = 'index.html';
+            // 1. Comprueba si existe una cuenta con ese email
+            auth.fetchSignInMethodsForEmail(email)
+                .then((signInMethods) => {
+                    // 2. Si el método de inicio de sesión es Google
+                    if (signInMethods.includes('google.com')) {
+                        loginError.textContent = 'Esa cuenta fue creada con Google. Por favor, inicia sesión con Google.';
+                    
+                    // 3. Si el método es la contraseña (o no hay cuenta)
+                    } else {
+                        auth.signInWithEmailAndPassword(email, password)
+                            .then(() => {
+                                window.location.href = 'index.html';
+                            })
+                            .catch(() => {
+                                loginError.textContent = 'Correo o contraseña incorrectos.';
+                            });
+                    }
                 })
-                .catch((error) => {
-                    loginError.textContent = 'Correo o contraseña incorrectos.';
-                    console.error("Error de inicio de sesión:", error);
+                .catch(() => {
+                    loginError.textContent = 'Error al verificar el correo.';
                 });
         });
     }
