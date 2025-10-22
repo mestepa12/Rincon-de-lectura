@@ -334,3 +334,50 @@ body:has(dialog[open]) {
         gap: 1rem;
     }
 }
+
+/* Contenedor Grid */
+.password-wrapper {
+    display: grid; /* Usamos Grid */
+    /* Creamos dos columnas: una que ocupa todo el espacio menos el botón, 
+       y otra para el botón */
+    grid-template-columns: 1fr auto; 
+    align-items: center; /* Centra verticalmente los elementos en la fila */
+    position: relative; /* Mantenemos relativo por si acaso */
+}
+
+/* El input se coloca en la primera fila y ocupa todo el ancho */
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] { 
+    grid-column: 1 / -1; /* Hace que el input ocupe todo el ancho de ambas columnas */
+    grid-row: 1;         /* Lo coloca en la primera (y única) fila */
+    padding-right: 3rem; /* Deja espacio a la derecha para el botón */
+    width: 100%;         /* Asegura que use todo el ancho disponible */
+    box-sizing: border-box; /* Incluye padding en el ancho total */
+}
+
+/* El botón se coloca en la segunda columna (auto), encima del input */
+.toggle-password {
+    grid-column: 2; /* Lo coloca en la segunda columna */
+    grid-row: 1;    /* Lo coloca en la primera fila */
+    position: center; /* Cambiamos a relativo para ajustes finos */
+    /* Ajustamos la posición horizontal para que quede dentro del padding del input */
+    right: 0.75rem; 
+    z-index: 2;     /* Asegura que el botón esté encima y sea clickeable */
+    margin-bottom: auto;
+    
+    /* Estilos del botón (sin cambios de posición absoluta) */
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: var(--accent-color);
+    padding: 0.25rem;
+    line-height: 0; /* Evita que la altura de línea afecte la posición */
+}
+
+/* Hover/Focus sin cambios */
+.toggle-password:hover,
+.toggle-password:focus {
+    color: var(--accent-color-interactive);
+    outline: none;
+}
