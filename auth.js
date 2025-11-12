@@ -1,71 +1,77 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Referencias a los elementos del formulario de LOGIN
+    // --- REFERENCIAS DE ELEMENTOS (LOGIN) ---
     const loginForm = document.getElementById('login-form');
-    const emailInput = document.getElementById('email');    
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password'); // Campo de contraseña de login
     const loginError = document.getElementById('login-error');
+    const togglePasswordBtn = document.getElementById('toggle-password'); // Botón de ojo de login
 
-    // Referencias a los elementos del formulario de REGISTRO
+    // --- REFERENCIAS DE ELEMENTOS (REGISTRO) ---
     const registerForm = document.getElementById('register-form');
-    const registerEmailInput = document.getElementById('register-email');
-    const registerPasswordInput = document.getElementById('register-password');
-    const registerError = document.getElementById('register-error');
-
-
-    // --- MANEJO DEL BOTÓN MOSTRAR/OCULTAR CONTRASEÑA ---
-    const passwordInput = document.getElementById('password');
-    const togglePasswordBtn = document.getElementById('toggle-password');
-
+    const regPasswordInput = document.getElementById('register-password'); // Campo de contraseña de registro
+    const regTogglePasswordBtn = document.getElementById('toggle-register-password'); // Botón de ojo 1 de registro
+    const regConfirmInput = document.getElementById('register-password-confirm'); // Campo de conf. de contraseña
+    const regConfirmToggleBtn = document.getElementById('toggle-register-password-confirm'); // Botón de ojo 2 de registro
+    
+    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (LOGIN) ---
     if (passwordInput && togglePasswordBtn) {
         togglePasswordBtn.addEventListener('click', () => {
-            // Cambia el tipo del input
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
-
-            // Cambia el icono del botón (opcional, puedes usar iconos diferentes)
-            togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈'; 
-            // Cambia la etiqueta aria para accesibilidad
+            togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
             togglePasswordBtn.setAttribute('aria-label', type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña');
         });
     }
 
+    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (REGISTRO - CAMPO 1) ---
+    if (regPasswordInput && regTogglePasswordBtn) {
+        regTogglePasswordBtn.addEventListener('click', () => {
+            const type = regPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            regPasswordInput.setAttribute('type', type);
+            regTogglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+    }
+
+    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (REGISTRO - CAMPO 2) ---
+    if (regConfirmInput && regConfirmToggleBtn) {
+        regConfirmToggleBtn.addEventListener('click', () => {
+            const type = regConfirmInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            regConfirmInput.setAttribute('type', type);
+            regConfirmToggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
+        });
+    }
 
     // --- MANEJADOR PARA EL INICIO DE SESIÓN CON GOOGLE ---
     const googleSignInBtn = document.getElementById('google-signin-btn');
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
-            // 1. Crea una instancia del proveedor de Google.
             const provider = new firebase.auth.GoogleAuthProvider();
-
-            // 2. Inicia el proceso de inicio de sesión con una ventana emergente.
+            // ... (resto de tu lógica de Google) ...
             firebase.auth().signInWithPopup(provider)
                 .then((result) => {
-                    // Si el inicio de sesión es exitoso, redirigimos a la página principal.
                     console.log("Inicio de sesión con Google exitoso:", result.user.email);
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    // Manejo de errores (por ejemplo, si el usuario cierra la ventana emergente).
                     console.error("Error al iniciar sesión con Google:", error);
-                    const loginError = document.getElementById('login-error');
-                    loginError.textContent = 'No se pudo iniciar sesión con Google.';
+                    const loginError = document.getElementById('login-error'); // Asegúrate de que loginError esté definido si este botón está en login.html
+                    if(loginError) loginError.textContent = 'No se pudo iniciar sesión con Google.';
                 });
         });
     }
     
-    // Manejador para el formulario de LOGIN
+    // --- MANEJADOR PARA EL FORMULARIO DE LOGIN ---
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = emailInput.value;
-            const password = passwordInput.value;
+            const password = passwordInput.value; // 'passwordInput' ya está definido arriba
 
             firebase.auth().signInWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    // Si el inicio de sesión es correcto, redirigimos a la página principal
+                .then(() => {
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
-                    // Si hay un error, lo mostramos
                     loginError.textContent = 'Correo o contraseña incorrectos.';
                     console.error("Error de inicio de sesión:", error);
                 });
@@ -77,16 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-password-confirm').value; // Obtenemos la confirmación
+            const password = regPasswordInput.value; // Usa la variable definida arriba
+            const confirmPassword = regConfirmInput.value; // Usa la variable definida arriba
             const registerError = document.getElementById('register-error');
 
-            // --- VERIFICACIÓN DE CONTRASEÑAS ---
             if (password !== confirmPassword) {
                 registerError.textContent = 'Las contraseñas no coinciden.';
-                return; // Detenemos la ejecución si no coinciden
+                return;
             }
-            // --- FIN DE LA VERIFICACIÓN ---
 
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then(() => {
