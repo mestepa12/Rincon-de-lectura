@@ -93,8 +93,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = 'index.html';
+                .then((userCredential) => {
+                    // ¡AQUÍ ESTÁ EL CAMBIO!
+                    // Envía el correo de verificación al usuario recién creado
+                    userCredential.user.sendEmailVerification().then(() => {
+                        // Opcional: Informa al usuario antes de redirigir
+                        alert('¡Cuenta creada! Revisa tu bandeja de entrada para verificar tu correo.');
+                        // Redirige al usuario a la página principal
+                        window.location.href = 'index.html';
+                    });
                 })
                 .catch((error) => {
                     if (error.code == 'auth/weak-password') {
