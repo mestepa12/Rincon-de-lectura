@@ -230,8 +230,22 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 .google-attribution img { width: 60px; height: auto; opacity: 0.8; }
 
 /* ======== RESULTADOS DE BÚSQUEDA (GOOGLE BOOKS) ======== */
-.book-search-results { max-height: 200px; overflow-y: auto; margin-top: 0.5rem; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 5px; padding: 0.5rem; background-color: var(--bg-color); }
-.result-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; cursor: pointer; border-radius: 3px; transition: background-color 0.2s; border-bottom: 1px solid var(--border-color); }
+/* 1. Estilos base (sin bordes ni fondo) */
+.book-search-results {
+    max-height: 200px;
+    overflow-y: auto;
+    transition: all 0.2s ease;
+}
+
+/* 2. Solo aplicamos estilo visual si NO está vacío */
+.book-search-results:not(:empty) {
+    margin-top: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    padding: 0.5rem;
+    background-color: var(--bg-color);
+}.result-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; cursor: pointer; border-radius: 3px; transition: background-color 0.2s; border-bottom: 1px solid var(--border-color); }
 .result-item:last-child { border-bottom: none; }
 .result-item:hover { background-color: var(--card-bg-color); }
 .result-item img { width: 40px; height: 60px; object-fit: cover; flex-shrink: 0; border-radius: 2px; background-color: var(--border-color); }
