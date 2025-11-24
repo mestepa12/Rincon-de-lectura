@@ -276,3 +276,22 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 
     .cookie-banner { flex-direction: column; padding: 1rem; gap: 1rem; }
 }
+
+
+/* Enlace de "Olvidé mi contraseña" */
+.forgot-password-container {
+    text-align: right; /* Lo alineamos a la derecha */
+    margin-top: -0.5rem; /* Lo pegamos un poco al campo de contraseña */
+    margin-bottom: 0.5rem;
+}
+
+#forgot-password-link {
+    font-size: 0.85rem;
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+#forgot-password-link:hover {
+    text-decoration: underline;
+    color: var(--accent-color-interactive);
+}

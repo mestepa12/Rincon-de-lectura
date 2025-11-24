@@ -1,19 +1,30 @@
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- AUTENTICACIÓN: El portero de nuestra aplicación ---
+// --- AUTENTICACIÓN: El portero de nuestra aplicación ---
     firebase.auth().onAuthStateChanged(user => {
         if (user) {
-            console.log("Usuario autenticado:", user.email);
-            // Pasamos el usuario a la función principal
-            runApp(user); 
+            // 1. Comprobamos si ha verificado su correo
+            if (user.emailVerified) {
+                console.log("Usuario autenticado y verificado:", user.email);
+                runApp(user); 
+            } else {
+                // 2. Si NO está verificado, le avisamos y cerramos su sesión
+                console.log("Usuario no verificado.");
+                alert("Por favor, verifica tu correo electrónico para poder entrar. Revisa tu bandeja de entrada (y SPAM).");
+                
+                firebase.auth().signOut().then(() => {
+                    window.location.href = 'login.html';
+                });
+            }
         } else {
+            // Si no hay usuario, lo redirigimos a la página de login.
             console.log("Usuario no autenticado. Redirigiendo a login...");
             if (window.location.pathname.indexOf('login.html') === -1) {
                 window.location.href = 'login.html';
             }
-        } 
+        }
     });
-
+    
     // --- FUNCIÓN PRINCIPAL DE LA APP ---
     function runApp(user) {
         const db = firebase.firestore();

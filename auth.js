@@ -92,11 +92,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            firebase.auth().createUserWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = 'index.html';
+firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    // 1. Obtenemos el usuario recién creado
+                    const user = userCredential.user;
+
+                    // 2. Enviamos el correo de verificación
+                    user.sendEmailVerification().then(() => {
+                        
+                        // 3. CAMBIO IMPORTANTE: Cerramos la sesión inmediatamente
+                        firebase.auth().signOut().then(() => {
+                            
+                            // 4. Avisamos al usuario
+                            alert(`Cuenta creada correctamente.\n\nHemos enviado un correo de verificación a ${email}.\nPor favor, revisa tu bandeja de entrada (y la carpeta de SPAM) para activarla antes de iniciar sesión.`);
+                            
+                            // 5. CAMBIO IMPORTANTE: Redirigimos al LOGIN, no al index
+                            window.location.href = 'login.html';
+                        });
+                    });
                 })
                 .catch((error) => {
+                    // ... (tu manejo de errores se queda igual)
                     if (error.code == 'auth/weak-password') {
                         registerError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                     } else if (error.code == 'auth/email-already-in-use') {
@@ -105,6 +121,53 @@ document.addEventListener('DOMContentLoaded', () => {
                         registerError.textContent = 'Error al crear la cuenta.';
                     }
                     console.error("Error de registro:", error);
+                });
+        });
+    }
+
+
+    // --- MANEJO DE RECUPERACIÓN DE CONTRASEÑA ---
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    const resetModal = document.getElementById('reset-password-modal');
+    const resetForm = document.getElementById('reset-password-form');
+    const cancelResetBtn = document.getElementById('cancel-reset-btn');
+    const loginEmailInput = document.getElementById('email'); // Para copiar el email si ya lo escribió
+    const resetEmailInput = document.getElementById('reset-email');
+
+    if (forgotPasswordLink && resetModal) {
+        // Abrir modal
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Si el usuario ya había escrito su email en el login, lo copiamos al modal
+            if (loginEmailInput.value) {
+                resetEmailInput.value = loginEmailInput.value;
+            }
+            resetModal.showModal();
+        });
+
+        // Cerrar modal
+        cancelResetBtn.addEventListener('click', () => {
+            resetModal.close();
+        });
+
+// Enviar formulario de reset
+        resetForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = resetEmailInput.value;
+
+            firebase.auth().sendPasswordResetEmail(email)
+                .then(() => {
+                    // MENSAJE ACTUALIZADO CON SALTO DE LÍNEA (\n)
+                    alert(`Hemos enviado un enlace de recuperación a ${email}.\n\n⚠️ IMPORTANTE: Por favor, revisa tu carpeta de SPAM o "Correo no deseado" si no lo ves en la bandeja de entrada.`);
+                    resetModal.close();
+                })
+                .catch((error) => {
+                    console.error("Error al enviar reset:", error);
+                    if (error.code === 'auth/user-not-found') {
+                        alert('No existe ninguna cuenta con este correo electrónico.');
+                    } else {
+                        alert('Error al enviar el correo. Inténtalo de nuevo.');
+                    }
                 });
         });
     }
