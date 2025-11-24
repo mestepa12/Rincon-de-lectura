@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Rincón de Lectura</title>
+    
     <link rel="icon" type="image/png" href="favicon.png">
     <link rel="apple-touch-icon" href="favicon.png">
+    <link rel="manifest" href="manifest.json">
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
@@ -17,14 +20,14 @@
         <div class="header-main">
             <h1 id="site-title">Mi Rincón de Lectura</h1>
             <div class="header-controls">
-    <button id="add-book-btn" type="button">Añadir Libro</button>
-    <button id="toggle-view" type="button">Cuadrícula / Lista</button>
-    <button id="toggle-theme" type="button">🌙</button>
-    <button id="logout-btn" type="button">Cerrar Sesión</button> 
-</div>
+                <button id="add-book-btn" type="button">Añadir Libro</button>
+                <button id="toggle-view" type="button">Cuadrícula / Lista</button>
+                <button id="toggle-theme" type="button">🌙</button>
+                <button id="logout-btn" type="button">Cerrar Sesión</button> 
+            </div>
         </div>
         <div class="header-search">
-            <input type="search" id="search-bar" placeholder="Buscar por título o autor...">
+            <input type="search" id="search-bar" placeholder="Buscar en mi biblioteca...">
         </div>
     </header>
 
@@ -47,17 +50,42 @@
         </section>
     </main>
 
-    <dialog id="add-book-modal">
+<dialog id="add-book-modal">
         <form id="add-book-form">
             <h2>Añadir Nuevo Libro</h2>
-            <label for="title">Título:</label>
-            <input type="text" id="title" name="title" required>
-            <label for="author">Autor:</label>
-            <input type="text" id="author" name="author" required>
-            <label for="cover">URL de la Portada:</label>
-            <input type="url" id="cover" name="cover" placeholder="https://ejemplo.com/portada.jpg">
-            <label for="total-pages">Número total de páginas:</label>
-            <input type="number" id="total-pages" name="totalPages" min="1" placeholder="Ej: 350" required>
+
+            <div class="google-books-section" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                <label for="book-search">🔍 Autocompletar con Google Books:</label>
+                <input type="search" id="book-search" placeholder="Escribe el título para buscar...">
+                
+                <div id="book-search-results" class="book-search-results">
+                    </div>
+
+                <div class="google-attribution">
+                    <img src="google-logo.png" alt="Powered by Google">
+                </div>
+            </div>
+
+            <details id="manual-data-details">
+                <summary>📝 Añadir o editar datos manualmente</summary>
+                
+                <div class="manual-inputs-container">
+                    <label for="title">Título:</label>
+                    <input type="text" id="title" name="title" required>
+                    
+                    <label for="author">Autor:</label>
+                    <input type="text" id="author" name="author" required>
+                    
+                    <label for="cover">URL de la Portada:</label>
+                    <input type="url" id="cover" name="cover" placeholder="https://ejemplo.com/portada.jpg">
+                    
+                    <label for="total-pages">Número total de páginas:</label>
+                    <input type="number" id="total-pages" name="totalPages" min="1" placeholder="Ej: 350" required>
+                </div>
+            </details>
+
+            <hr class="separator">
+            
             <label for="section">Sección:</label>
             <select id="section" name="section" required>
                 <option value="leyendo-ahora">Leyendo Ahora</option>
@@ -65,13 +93,14 @@
                 <option value="libros-terminados">Libros Terminados</option>
                 <option value="lista-deseos">Lista de Deseos</option>
             </select>
+            <input type="hidden" id="googleLink" name="googleLink">
             <div class="modal-actions">
-                <button type="submit" class="btn-primary">Añadir</button>
+                <button type="submit" class="btn-primary">Añadir a mi Biblioteca</button>
                 <button type="button" id="cancel-add-book" class="btn-cancel">Cancelar</button>
             </div>
-        </form>
+        </form> 
     </dialog>
-
+    
     <dialog id="book-detail-modal">
         <div class="detail-modal-content">
             <div id="detail-cover-container" class="detail-cover-container">
@@ -83,7 +112,7 @@
             <div class="detail-info">
                 <h2 id="detail-title">Título del Libro</h2>
                 <p id="detail-author" class="detail-author">Autor del Libro</p>
-                
+                <a id="detail-google-link" href="#" target="_blank" style="display:none; color: #4285f4; text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem;">🔗 Ver en Google Books</a>
                 <div id="detail-progress-section" class="detail-progress-section">
                     <label for="current-page">Progreso de Lectura</label>
                     <div class="progress-inputs">
@@ -118,19 +147,19 @@
             </div>
         </div>
     </dialog>
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
-    <script src="config.js"></script>
+    <script src="config-dev.js"></script>
 
     <script>
       firebase.initializeApp(firebaseConfig);
     </script>
 
-    <script src="script.js" defer></script>
     <script src="cookies.js" defer></script>
-
+    <script src="script.js" defer></script>
 
     <div id="cookie-banner" class="cookie-banner">
         <p>
@@ -140,5 +169,5 @@
         </p>
         <button id="accept-cookies-btn" class="btn-primary">Aceptar</button>
     </div>
-    </body>
+</body>
 </html>

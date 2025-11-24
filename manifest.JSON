@@ -1,0 +1,16 @@
+{
+  "name": "Mi Rincón de Lectura",
+  "short_name": "Lecturas",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F5EFE6",
+  "theme_color": "#9A3B3B",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

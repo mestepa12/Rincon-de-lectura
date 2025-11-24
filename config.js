@@ -6,3 +6,5 @@ const firebaseConfig = {
   messagingSenderId: "333643518949",
   appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
 };
+
+const googleBooksApiKey = "AIzaSyA1OYofX855ZxA7lnLqgTFyBiaf6GwDvHw";

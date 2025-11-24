@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-
+ 
     // --- MANEJO DEL FORMULARIO DE REGISTRO ---
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {

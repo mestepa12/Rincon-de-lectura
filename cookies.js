@@ -18,4 +18,4 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Ocultamos el banner con una transición
         banner.classList.add('hidden');
     });
-});
+}); 

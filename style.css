@@ -23,6 +23,7 @@ body.dark-mode {
     --border-color: #4A5568;
 }
 
+/* ======== GLOBAL & RESET ======== */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 
@@ -35,6 +36,14 @@ body {
     transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
+/* Bloquea scroll cuando hay un modal abierto */
+body:has(dialog[open]) { overflow: hidden; }
+
+main { padding: 2rem; }
+section { margin-block-end: 3rem; }
+h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-color); padding-block-end: 0.5rem; margin-block-end: 1.5rem; }
+
+/* ======== HEADER ======== */
 .site-header {
     background-color: #4E443A;
     border-bottom: 2px solid var(--accent-color);
@@ -48,6 +57,7 @@ body {
 }
 .header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 1rem; }
 #site-title { color: var(--bg-color); font-family: var(--font-title); margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
+
 .header-controls { display: flex; gap: 0.5rem; }
 .header-controls button {
     background-color: transparent; border: 2px solid #a1887f; color: white; padding: 0.5rem 1rem;
@@ -56,13 +66,12 @@ body {
 }
 .header-controls button:hover, .header-controls button:focus-visible { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); outline: none; }
 #add-book-btn { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); }
+
 .header-search { width: 100%; }
 #search-bar { width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border-radius: 5px; border: 2px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); transition: border-color var(--transition-speed); }
 #search-bar:focus { outline: none; border-color: var(--accent-color-interactive); }
 
-main { padding: 2rem; }
-section { margin-block-end: 3rem; }
-h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-color); padding-block-end: 0.5rem; margin-block-end: 1.5rem; }
+/* ======== GRID DE LIBROS ======== */
 .books-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; min-height: 150px; }
 
 .book { background-color: var(--card-bg-color); border-radius: 8px; box-shadow: 0 4px 12px var(--shadow-color); overflow: hidden; position: relative; display: flex; flex-direction: column; transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease; }
@@ -73,10 +82,18 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 .book h3 { font-family: var(--font-title); margin: 0 0 0.25rem 0; font-size: 1.1rem; }
 .book .author { margin: 0; color: var(--accent-color); font-size: 0.9rem; flex-grow: 1; margin-block-end: 0.5rem; }
 .book-extra-info { margin-block-start: auto; font-size: 0.9rem; }
+
 .rating-stars { display: flex; gap: 0.25rem; }
 .rating-stars .star { font-size: 1.5rem; color: var(--star-inactive-color); background: none; border: none; padding: 0; cursor: pointer; }
 .rating-stars .star.filled { color: var(--star-active-color); }
 
+/* ======== VISTA DE LISTA ======== */
+.list-view .books-container { display: flex; flex-direction: column; gap: 1rem; }
+.list-view .book { flex-direction: row; align-items: center; max-width: 800px; }
+.list-view .book-cover { width: 80px; height: 120px; flex-shrink: 0; }
+.list-view .book-info { padding: 0.5rem 1.5rem; }
+
+/* ======== MODALES Y FORMULARIOS (GENERAL) ======== */
 dialog {
     border: 2px solid var(--border-color);
     border-radius: 8px;
@@ -86,13 +103,14 @@ dialog {
     max-width: 500px;
     width: 90%;
 }
-
 dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+
 form { display: flex; flex-direction: column; gap: 1rem; }
 form h2 { margin: 0 0 1rem; border: none; }
 form label { font-weight: bold; }
 form input, form select { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
 form input:focus, form select:focus { outline: none; border-color: var(--accent-color-interactive); }
+
 .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; gap: 1rem; }
 .modal-actions button { flex-shrink: 0; padding: 0.75rem; border-radius: 5px; cursor: pointer; border: none; font-weight: bold; }
 .modal-actions-right { display: flex; gap: 1rem; }
@@ -101,14 +119,65 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 .btn-danger { background-color: #E53E3E; color: white; padding: 0.75rem; border-radius: 5px; font-weight: bold; cursor: pointer; }
 .btn-danger:hover { background-color: #C53030; }
 
-#book-detail-modal { padding: 0; max-width: 800px; overflow: hidden; }
-.detail-modal-content { display: flex; gap: 2rem; }
-.detail-cover-container { position: relative; cursor: pointer; width: 35%; min-width: 200px; background-color: var(--border-color); }
+/* ======== MODAL DETALLE LIBRO (CORREGIDO) ======== */
+/* 1. Estilos base del modal (sin display) */
+#book-detail-modal { 
+    padding: 0; 
+    max-width: 800px; 
+    width: 95%;       
+    max-height: 85vh; 
+    overflow: hidden; 
+    border-radius: 12px;
+    /* ELIMINADO: display: flex; y flex-direction: column; de aquí */
+}
+
+/* 2. NUEVA REGLA: Solo aplicamos Flex cuando el modal tiene el atributo [open] */
+#book-detail-modal[open] {
+    display: flex;    
+    flex-direction: column;
+}
+
+.detail-modal-content { 
+    display: flex; 
+    gap: 2rem; 
+    height: 100%; 
+    overflow: hidden; /* Evita scrolls dobles */
+    background-color: var(--card-bg-color);
+}
+
+.detail-cover-container { 
+    position: relative; 
+    cursor: pointer; 
+    width: 40%; 
+    max-width: 300px; 
+    aspect-ratio: 2 / 3; 
+    flex-shrink: 0; 
+    align-self: flex-start; 
+    margin: 2rem; 
+    margin-right: 0; 
+}
+
+.detail-cover { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    border-radius: 8px; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+}
+
 .edit-cover-overlay { position: absolute; bottom: 10px; right: 10px; background-color: rgba(0, 0, 0, 0.6); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 20px; opacity: 0; transition: opacity var(--transition-speed) ease; }
 .detail-cover-container:hover .edit-cover-overlay { opacity: 1; }
-.detail-cover { width: 100%; height: 100%; object-fit: cover; }
-.detail-info { padding: 2rem; width: 65%; display: flex; flex-direction: column; }
-#detail-title { font-family: var(--font-title); margin: 0 0 0.25rem; border: none; padding: 0; font-size: 2rem; }
+
+.detail-info { 
+    padding: 2rem; 
+    padding-left: 0; 
+    width: 60%; 
+    display: flex; 
+    flex-direction: column; 
+    overflow-y: auto; /* Scroll solo para el texto */
+}
+
+#detail-title { font-family: var(--font-title); margin: 0 0 0.25rem; border: none; padding: 0; font-size: 2rem; line-height: 1.2; }
 .detail-author { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 1.5rem; }
 .detail-progress-section, .detail-notes-section { margin-bottom: 1.5rem; }
 .detail-progress-section label, .detail-notes-section label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
@@ -117,6 +186,7 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 .detail-page-actions { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); }
 .detail-page-actions label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
 #move-book-select { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
+
 .progress-inputs { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 #current-page { width: 80px; padding: 0.5rem; text-align: center; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; }
 #total-pages-display { font-size: 1rem; color: var(--accent-color); }
@@ -124,6 +194,58 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 #progress-bar-fill { height: 100%; width: 0%; background-color: var(--accent-color-interactive); border-radius: 6px; transition: width 0.3s ease; }
 #progress-percentage { display: block; text-align: right; font-size: 0.9rem; color: var(--accent-color); }
 
+/* ======== LOGIN & REGISTRO ======== */
+.login-page { display: flex; justify-content: center; align-items: center; height: 100vh; }
+.login-container { width: 100%; max-width: 400px; padding: 1rem; background-color: var(--card-bg-color); border-radius: 8px; box-shadow: var(--shadow-color); }
+.login-container h1 { text-align: center; margin-bottom: 1.5rem; font-family: var(--font-title); }
+
+#login-form, #register-form { display: flex; flex-direction: column; gap: 1rem; }
+#login-form button, #register-form button { margin-top: 1rem; padding: 0.75rem; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; }
+.error-message { color: #E53E3E; text-align: center; margin-top: 1rem; min-height: 1.2em; }
+
+.btn-google { display: flex; align-items: center; justify-content: center; gap: 0.75rem; width: 100%; padding: 0.75rem; margin-top: 0.75rem; border-radius: 5px; border: 1px solid var(--border-color); background-color: var(--card-bg-color); color: var(--text-color); font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+.btn-google:hover { background-color: var(--bg-color); }
+.btn-google img { width: 18px; height: 18px; }
+
+.form-switcher { text-align: center; margin-top: 1.5rem; }
+.form-switcher a { color: var(--accent-color); text-decoration: none; }
+.form-switcher a:hover { text-decoration: underline; }
+
+/* Password Toggle con Grid */
+.password-wrapper { display: grid; grid-template-columns: 1fr auto; align-items: center; position: relative; }
+.password-wrapper input[type="password"], .password-wrapper input[type="text"] { grid-column: 1 / -1; grid-row: 1; padding-right: 3rem; width: 100%; }
+.toggle-password { grid-column: 2; grid-row: 1; position: relative; right: 0.75rem; z-index: 2; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--accent-color); padding: 0.25rem; line-height: 0; }
+.toggle-password:hover, .toggle-password:focus { color: var(--accent-color-interactive); outline: none; }
+
+/* ======== DESPLEGABLE DATOS MANUALES ======== */
+details#manual-data-details { background-color: var(--bg-color); border: 1px solid var(--border-color); border-radius: 5px; margin-bottom: 1rem; overflow: hidden; }
+details#manual-data-details summary { padding: 0.75rem; cursor: pointer; font-weight: bold; background-color: var(--card-bg-color); list-style: none; display: flex; align-items: center; justify-content: space-between; transition: background-color 0.2s; }
+details#manual-data-details summary::after { content: '▼'; font-size: 0.8rem; transition: transform 0.3s; }
+details#manual-data-details[open] summary::after { transform: rotate(180deg); }
+details#manual-data-details summary:hover { background-color: var(--border-color); }
+
+.manual-inputs-container { padding: 1rem; display: flex; flex-direction: column; gap: 1rem; border-top: 1px solid var(--border-color); }
+.separator { border: 0; border-top: 1px solid var(--border-color); margin: 1rem 0; }
+.google-attribution { display: flex; justify-content: flex-end; margin-top: 5px; }
+.google-attribution img { width: 60px; height: auto; opacity: 0.8; }
+
+/* ======== RESULTADOS DE BÚSQUEDA (GOOGLE BOOKS) ======== */
+.book-search-results { max-height: 200px; overflow-y: auto; margin-top: 0.5rem; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 5px; padding: 0.5rem; background-color: var(--bg-color); }
+.result-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; cursor: pointer; border-radius: 3px; transition: background-color 0.2s; border-bottom: 1px solid var(--border-color); }
+.result-item:last-child { border-bottom: none; }
+.result-item:hover { background-color: var(--card-bg-color); }
+.result-item img { width: 40px; height: 60px; object-fit: cover; flex-shrink: 0; border-radius: 2px; background-color: var(--border-color); }
+.result-item div { display: flex; flex-direction: column; justify-content: center; }
+.result-item h4 { margin: 0 0 0.2rem 0; font-size: 0.95rem; color: var(--text-color); }
+.result-item p { margin: 0; font-size: 0.85rem; color: var(--accent-color); }
+
+/* ======== BANNER COOKIES ======== */
+.cookie-banner { position: fixed; bottom: 0; left: 0; width: 100%; background-color: var(--card-bg-color); box-shadow: 0 -2px 10px var(--shadow-color); padding: 1.5rem; display: flex; justify-content: center; align-items: center; gap: 1.5rem; z-index: 2000; transition: transform 0.5s ease-in-out; }
+.cookie-banner.hidden { transform: translateY(100%); }
+.cookie-banner p { margin: 0; font-size: 0.9rem; color: var(--text-color); text-align: center; }
+.cookie-banner button { flex-shrink: 0; }
+
+/* ======== MEDIA QUERIES ======== */
 @media (max-width: 768px) {
     .site-header { padding: 1rem; } 
     .header-main { flex-direction: column; align-items: flex-start; gap: 1rem; }
@@ -131,253 +253,12 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
     main { padding: 1rem; }
     .books-container { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
-    #book-detail-modal {
-        /* Hacemos que el modal ocupe casi toda la pantalla y no tenga padding exterior */
-        height: 90vh; /* Ocupa el 90% de la altura de la pantalla */
-        width: 95vw;  /* Ocupa el 95% del ancho de la pantalla */
-        padding: 0;
-    }
+    /* Modal Detalle en Móvil */
+    #book-detail-modal { width: 95%; height: 90vh; }
+    .detail-modal-content { flex-direction: column; overflow-y: auto; } /* Solo aquí scroll general */
+    .detail-cover-container { width: 150px; margin: 1.5rem auto 0 auto; align-self: center; }
+    .detail-info { width: 100%; padding: 1.5rem; overflow-y: visible; } /* Quitamos scroll interno en móvil */
+    #detail-title { font-size: 1.5rem; }
 
-    .detail-modal-content {
-        flex-direction: column;
-        gap: 0;
-        /* Hacemos que el contenido interno sea el que tenga scroll */
-        overflow-y: auto;
-        height: 100%; /* Ocupa toda la altura de su padre (el modal) */
-    }
-    
-    .detail-cover-container {
-        width: 100%;
-        max-height: 220px;
-        flex-shrink: 0;
-        border-radius: 0; /* Quitamos el borde redondeado para que se ajuste al borde del modal */
-        overflow: hidden;
-    }
-
-    .detail-info {
-        width: 100%;
-        padding: 1rem 1.5rem 2rem 1.5rem; /* Ajustamos el padding para dar espacio */
-    }
-
-    #detail-title {
-        font-size: 1.5rem;
-    }
-    
-}
-
-/* ======== VISTA DE LISTA (VERSIÓN LIMPIA) ======== */
-
-/* 1. Cuando <main> tiene la clase .list-view, cambiamos el contenedor de libros a un layout de columna flexible. */
-.list-view .books-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-/* 2. Cambiamos cada libro para que su contenido se muestre en una fila horizontal. */
-.list-view .book {
-    flex-direction: row;
-    align-items: center;
-    max-width: 800px; /* Opcional: Un ancho máximo hace que la lista se vea mejor en pantallas grandes */
-    /* margin-inline: auto;  Opcional: Centra las filas de libros en la página */
-}
-
-/* 3. Definimos un tamaño fijo para la portada en la vista de lista. */
-.list-view .book-cover {
-    width: 80px;
-    height: 120px;
-    flex-shrink: 0; /* Evita que la imagen se encoja si el texto es muy largo */
-}
-
-/* 4. Ajustamos el espaciado de la información del libro. */
-.list-view .book-info {
-    padding: 0.5rem 1.5rem;
-}
-
-/* ======== Estilos para la Página de Login ======== */
-.login-page {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-.login-container {
-    width: 100%;
-    max-width: 400px;
-    padding: 1rem;
-    background-color: var(--card-bg-color);
-    border-radius: 8px;
-    box-shadow: var(--shadow-color);
-}
-.login-container h1 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    font-family: var(--font-title);
-}
-#login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-#login-form button {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-#register-form {
-    display: flex;
-    flex-direction: column;
-    gap: 0rem;
-}
-#register-form button {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    font-weight: bold;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-.error-message {
-    color: #E53E3E;
-    text-align: center;
-    margin-top: 1rem;
-    min-height: 1.2em;
-}
-
-/* Bloquea el scroll del fondo cuando un modal está abierto */
-body:has(dialog[open]) {
-    overflow: hidden;
-}
-
-
-.btn-google {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    width: 100%;
-    padding: 0.75rem;
-    margin-top: 0.75rem;
-    border-radius: 5px;
-    border: 1px solid var(--border-color);
-    background-color: var(--card-bg-color);
-    color: var(--text-color);
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.btn-google:hover {
-    background-color: var(--bg-color);
-}
-
-.btn-google img {
-    width: 18px;
-    height: 18px;
-}
-
-.form-switcher {
-    text-align: center;
-    margin-top: 1.5rem;
-}
-.form-switcher a {
-    color: var(--accent-color);
-    text-decoration: none;
-}
-.form-switcher a:hover {
-    text-decoration: underline;
-}
-
-
-/* ======== ESTILOS PARA EL BANNER DE COOKIES ======== */
-
-.cookie-banner {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: var(--card-bg-color);
-    box-shadow: 0 -2px 10px var(--shadow-color);
-    padding: 1.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 1.5rem;
-    z-index: 2000;
-    transition: transform 0.5s ease-in-out;
-}
-
-/* Clase para ocultar el banner */
-.cookie-banner.hidden {
-    transform: translateY(100%);
-}
-
-.cookie-banner p {
-    margin: 0;
-    font-size: 0.9rem;
-    color: var(--text-color);
-    text-align: center;
-}
-
-.cookie-banner button {
-    flex-shrink: 0; /* Evita que el botón se encoja */
-}
-
-/* Ajuste para móviles */
-@media (max-width: 768px) {
-    .cookie-banner {
-        flex-direction: column;
-        padding: 1rem;
-        gap: 1rem;
-    }
-}
-
-/* Contenedor Grid */
-.password-wrapper {
-    display: grid; /* Usamos Grid */
-    /* Creamos dos columnas: una que ocupa todo el espacio menos el botón, 
-       y otra para el botón */
-    grid-template-columns: 1fr auto; 
-    align-items: center; /* Centra verticalmente los elementos en la fila */
-    position: relative; /* Mantenemos relativo por si acaso */
-}
-
-/* El input se coloca en la primera fila y ocupa todo el ancho */
-.password-wrapper input[type="password"],
-.password-wrapper input[type="text"] { 
-    grid-column: 1 / -1; /* Hace que el input ocupe todo el ancho de ambas columnas */
-    grid-row: 1;         /* Lo coloca en la primera (y única) fila */
-    padding-right: 3rem; /* Deja espacio a la derecha para el botón */
-    width: 100%;         /* Asegura que use todo el ancho disponible */
-    box-sizing: border-box; /* Incluye padding en el ancho total */
-}
-
-/* El botón se coloca en la segunda columna (auto), encima del input */
-.toggle-password {
-    grid-column: 2; /* Lo coloca en la segunda columna */
-    grid-row: 1;    /* Lo coloca en la primera fila */
-    position: center; /* Cambiamos a relativo para ajustes finos */
-    /* Ajustamos la posición horizontal para que quede dentro del padding del input */
-    right: 0.75rem; 
-    z-index: 2;     /* Asegura que el botón esté encima y sea clickeable */
-    margin-bottom: auto;
-    
-    /* Estilos del botón (sin cambios de posición absoluta) */
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: var(--accent-color);
-    padding: 0.25rem;
-    line-height: 0; /* Evita que la altura de línea afecte la posición */
-}
-
-/* Hover/Focus sin cambios */
-.toggle-password:hover,
-.toggle-password:focus {
-    color: var(--accent-color-interactive);
-    outline: none;
+    .cookie-banner { flex-direction: column; padding: 1rem; gap: 1rem; }
 }

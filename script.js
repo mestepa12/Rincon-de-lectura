@@ -3,25 +3,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- AUTENTICACIÓN: El portero de nuestra aplicación ---
     firebase.auth().onAuthStateChanged(user => {
         if (user) {
-            // Si hay un usuario, significa que ha iniciado sesión.
-            // Ejecutamos toda la lógica de la librería.
             console.log("Usuario autenticado:", user.email);
-            // ✨ CAMBIO: Le pasamos el objeto 'user' directamente a nuestra función principal.
+            // Pasamos el usuario a la función principal
             runApp(user); 
         } else {
-            // Si no hay usuario, lo redirigimos a la página de login.
             console.log("Usuario no autenticado. Redirigiendo a login...");
             if (window.location.pathname.indexOf('login.html') === -1) {
                 window.location.href = 'login.html';
             }
-        }
+        } 
     });
 
-    // --- ✨ CAMBIO: La función ahora acepta el objeto 'user' como argumento ---
+    // --- FUNCIÓN PRINCIPAL DE LA APP ---
     function runApp(user) {
         const db = firebase.firestore();
-        
-        // ✨ CAMBIO: Usamos el 'user.uid' que recibimos, que es 100% seguro.
         const userBooksCollection = db.collection('users').doc(user.uid).collection('books');
 
         const SECTIONS = {
@@ -33,16 +28,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let booksData = []; 
 
-        // --- Selectores del DOM (sin cambios) ---
+        // --- SELECTORES DOM ---
         const mainContent = document.getElementById('main-content');
         const toggleViewBtn = document.getElementById('toggle-view');
         const toggleThemeBtn = document.getElementById('toggle-theme');
         const searchBar = document.getElementById('search-bar');
+        
+        // Modal Añadir Libro y Búsqueda Google
         const addBookModal = document.getElementById('add-book-modal');
         const addBookForm = document.getElementById('add-book-form');
         const addBookBtn = document.getElementById('add-book-btn');
         const cancelAddBookBtn = document.getElementById('cancel-add-book');
         const totalPagesInput = document.getElementById('total-pages');
+        const bookSearchInput = document.getElementById('book-search');
+        const bookSearchResultsDiv = document.getElementById('book-search-results');
+
+        // Modal Detalles
         const detailCoverContainer = document.getElementById('detail-cover-container');
         const bookDetailModal = document.getElementById('book-detail-modal');
         const detailCover = document.getElementById('detail-cover');
@@ -60,6 +61,120 @@ document.addEventListener('DOMContentLoaded', () => {
         const cancelDetailModalBtn = document.getElementById('cancel-detail-modal');
         const logoutBtn = document.getElementById('logout-btn');
         
+        // ===============================================
+        // === 1. INTEGRACIÓN API GOOGLE BOOKS ===========
+        // ===============================================
+
+        async function buscarLibroPorTitulo(titulo) {
+            // Verificamos si la clave existe en config-dev.js
+            if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) {
+                console.error("Falta la variable googleBooksApiKey en config.js");
+                return [];
+            }
+
+            const query = encodeURIComponent(titulo);
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                
+                const data = await response.json();
+
+                if (data.items && data.items.length > 0) {
+                    return data.items.map(item => {
+                        const info = item.volumeInfo;
+                        
+                        // --- CORRECCIÓN AQUÍ ---
+                        // 1. Declaramos la variable coverUrl antes de usarla
+                        let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+                        
+                        // 2. Si hay imagen, la mejoramos
+                        if (coverUrl) {
+                            coverUrl = coverUrl
+                                .replace(/^http:\/\//i, 'https://') // Forzar HTTPS
+                                .replace('&edge=curl', '')      // Quitar borde doblado
+                                .replace('&zoom=1', '&zoom=0'); // Pedir alta calidad
+                        }
+
+                        // 3. Ahora devolvemos el objeto usando la variable ya definida
+                        return {
+                            title: info.title || 'Sin título',
+                            author: info.authors ? info.authors.join(', ') : 'Autor desconocido',
+                            cover: coverUrl, // Ahora sí existe
+                            totalPages: info.pageCount || 0,
+                            link: info.infoLink || info.previewLink || ''
+                        };
+                    });
+                }
+                return [];
+            } catch (error) {
+                console.error("Error buscando en Google Books:", error);
+                return [];
+            }
+        }
+
+        function mostrarResultadosBusqueda(resultados) {
+            bookSearchResultsDiv.innerHTML = '';
+            if (resultados.length === 0) {
+                bookSearchResultsDiv.innerHTML = '<div style="padding: 0.5rem; font-size: 0.9rem; color: var(--text-color);">No se encontraron resultados.</div>';
+                return;
+            }
+
+            resultados.forEach(libro => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'result-item';
+                // Estilo inline temporal o usar clase CSS .result-item
+                itemDiv.innerHTML = `
+                    <img src="${libro.cover || 'https://placehold.co/40x60?text=No+Img'}" alt="cover" style="width:40px; height:60px; object-fit:cover; border-radius:3px;">
+                    <div style="margin-left: 10px;">
+                        <h4 style="margin:0; font-size:0.9rem;">${libro.title}</h4>
+                        <p style="margin:0; font-size:0.8rem; color:var(--accent-color);">${libro.author}</p>
+                    </div>
+                `;
+                
+                itemDiv.addEventListener('click', () => {
+                    // Rellenar formulario
+                    document.getElementById('title').value = libro.title;
+                    document.getElementById('author').value = libro.author;
+                    document.getElementById('cover').value = libro.cover;
+                    document.getElementById('total-pages').value = libro.totalPages;
+                    document.getElementById('googleLink').value = libro.link;
+                    
+                    // Limpiar búsqueda
+                    bookSearchResultsDiv.innerHTML = '';
+                    bookSearchInput.value = '';
+
+                    // --- NUEVO: ABRIR EL DESPLEGABLE AUTOMÁTICAMENTE ---
+                    // Así el usuario ve que los datos se han rellenado
+                    document.getElementById('manual-data-details').open = true;
+                });
+                
+                bookSearchResultsDiv.appendChild(itemDiv);
+            });
+        }
+
+        let searchTimeout;
+        if(bookSearchInput) {
+            bookSearchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+
+                if (query.length > 2) {
+                    bookSearchResultsDiv.innerHTML = '<div style="padding:0.5rem;">Buscando...</div>';
+                    searchTimeout = setTimeout(() => {
+                        buscarLibroPorTitulo(query).then(mostrarResultadosBusqueda);
+                    }, 500);
+                } else {
+                    bookSearchResultsDiv.innerHTML = '';
+                }
+            });
+        }
+
+        // ===============================================
+        // === 2. FUNCIONES DE RENDERIZADO ===============
+        // ===============================================
+
         const createExtraInfoHTML = (book) => {
             if (book.section === 'leyendo-ahora') {
                 const currentPage = book.currentPage || 0;
@@ -108,14 +223,30 @@ document.addEventListener('DOMContentLoaded', () => {
             progressBar.style.width = `${percentage}%`;
         };
 
+        // ===============================================
+        // === 3. GESTIÓN DE MODALES Y EVENTOS ===========
+        // ===============================================
+
         const openDetailModal = (bookId) => {
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
+            
             bookDetailModal.dataset.bookId = book.id;
             detailCover.src = book.cover || '';
             detailTitle.textContent = book.title;
             detailAuthor.textContent = book.author;
             detailNotes.value = book.notes || '';
+            detailAuthor.textContent = book.author;
+            
+            // Mostrar/Ocultar enlace de Google
+            const googleLinkBtn = document.getElementById('detail-google-link');
+            if (book.googleLink) {
+                googleLinkBtn.href = book.googleLink;
+                googleLinkBtn.style.display = 'inline-block';
+            } else {
+                googleLinkBtn.style.display = 'none';
+            }
+
             if (book.section === 'leyendo-ahora') {
                 detailProgressSection.style.display = 'block';
                 const currentPage = book.currentPage || 0;
@@ -128,12 +259,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailProgressSection.style.display = 'none';
             }
             
+            // Rellenar select de mover
             moveBookSelect.innerHTML = '';
             const defaultOption = document.createElement('option');
             defaultOption.textContent = 'Mover a otra sección...';
             defaultOption.disabled = true;
             defaultOption.selected = true;
             moveBookSelect.appendChild(defaultOption);
+            
             Object.entries(SECTIONS).forEach(([key, name]) => {
                 if (key !== book.section) {
                     const option = document.createElement('option');
@@ -146,6 +279,8 @@ document.addEventListener('DOMContentLoaded', () => {
             bookDetailModal.showModal();
         };
 
+        // --- CRUD FIREBASE ---
+
         const handleAddBook = (e) => {
             e.preventDefault();
             const formData = new FormData(addBookForm);
@@ -154,15 +289,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 author: formData.get('author'),
                 cover: formData.get('cover'),
                 section: formData.get('section'),
-                totalPages: parseInt(totalPagesInput.value, 10) || 0,
+                totalPages: parseInt(formData.get('totalPages'), 10) || 0,
                 currentPage: 0,
                 notes: '',
-                rating: 0
+                rating: 0,
+                googleLink: formData.get('googleLink') || '' // <--- ¡NUEVO! Guardamos en la BBDD
             };
         
             userBooksCollection.add(newBook).then(() => {
-                console.log("Libro añadido a Firebase en la sub-colección del usuario");
+                console.log("Libro añadido a Firebase");
                 addBookForm.reset();
+                if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = ''; // Limpiar búsqueda
                 addBookModal.close();
             }).catch(error => console.error("Error al añadir libro:", error));
         };
@@ -183,13 +320,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         
             userBooksCollection.doc(bookId).update(updatedData).then(() => {
-                console.log("Detalles actualizados en Firebase");
+                console.log("Detalles actualizados");
                 bookDetailModal.close();
-            }).catch(error => console.error("Error al guardar detalles:", error));
+            }).catch(error => console.error("Error al guardar:", error));
         };
 
         const handleDeleteBook = (bookId) => {
-            userBooksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar libro:", error));
+            userBooksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar:", error));
         };
 
         const handleMoveBook = (bookId, targetSection) => {
@@ -198,17 +335,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 section: targetSection,
                 currentPage: 0,
                 rating: firebase.firestore.FieldValue.delete()
-            }).catch(error => console.error("Error al mover el libro:", error));
+            }).catch(error => console.error("Error al mover:", error));
         };
         
         const handleRateBook = (bookId, rating) => {
-            userBooksCollection.doc(String(bookId)).update({ rating: rating }).catch(error => console.error("Error al valorar el libro:", error));
+            userBooksCollection.doc(String(bookId)).update({ rating: rating }).catch(error => console.error("Error al valorar:", error));
         };
         
-        const handleCoverChange = (bookId, newCoverUrl) => {
-             userBooksCollection.doc(String(bookId)).update({ cover: newCoverUrl }).catch(error => console.error("Error al cambiar la portada:", error));
-        };
-
         const handleMainContentClick = (e) => {
             const bookElement = e.target.closest('.book');
             if (!bookElement) return;
@@ -217,7 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 handleRateBook(bookElement.dataset.id, parseInt(e.target.dataset.value, 10));
                 return;
             }
-        
             openDetailModal(bookElement.dataset.id);
         };
 
@@ -230,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        // --- TEMA CLARO/OSCURO ---
         const setupTheme = () => {
             const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             document.body.classList.toggle('dark-mode', savedTheme === 'dark');
@@ -242,22 +375,31 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleThemeBtn.textContent = isDark ? '☀️' : '🌙';
         };
 
+        // --- LISTENER TIEMPO REAL FIREBASE ---
         userBooksCollection.onSnapshot(snapshot => {
             booksData = [];
             snapshot.forEach(doc => {
                 const book = { id: doc.id, ...doc.data() }; 
                 booksData.push(book);
             });
+            // Orden alfabético por título
             booksData.sort((a, b) => a.title.localeCompare(b.title));
             renderBooks();
         }, error => {
             console.error("Error al recibir datos de Firebase: ", error);
-            alert("No se pudo conectar a la base de datos.");
+            // Evitamos alert molesto si es por adblock, solo log
         });
 
-        // --- EVENT LISTENERS ---
+        // --- ASIGNACIÓN DE EVENTOS ---
         addBookBtn.addEventListener('click', () => addBookModal.showModal());
-        cancelAddBookBtn.addEventListener('click', () => addBookModal.close());
+        
+        cancelAddBookBtn.addEventListener('click', () => {
+            addBookForm.reset();
+            if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = '';
+            document.getElementById('manual-data-details').open = false; // <--- AÑADIR ESTO
+            addBookModal.close();
+        });
+        
         addBookForm.addEventListener('submit', handleAddBook);
         toggleViewBtn.addEventListener('click', () => mainContent.classList.toggle('list-view'));
         toggleThemeBtn.addEventListener('click', toggleTheme);
@@ -304,6 +446,22 @@ document.addEventListener('DOMContentLoaded', () => {
             firebase.auth().signOut();
         });
 
-        setupTheme();
+// --- CERRAR MODALES AL HACER CLIC FUERA ---
+        const closeOnBackdropClick = (modal) => {
+            modal.addEventListener('click', (e) => {
+                const rect = modal.getBoundingClientRect();
+                const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+                                    rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
+                if (!isInDialog) {
+                    modal.close();
+                }
+            });
+        };
+
+        // Aplicamos la lógica a ambos modales
+        if (addBookModal) closeOnBackdropClick(addBookModal);
+        if (bookDetailModal) closeOnBackdropClick(bookDetailModal);
+
+        setupTheme(); // (Esta línea ya la tenías al final)
     }
 });
