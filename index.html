@@ -22,6 +22,7 @@
             <div class="header-controls">
                 <button id="add-book-btn" type="button">Añadir Libro</button>
                 <button id="toggle-view" type="button">Cuadrícula / Lista</button>
+                <button id="toggle-friends-btn" type="button" title="Amigos">👥</button>
                 <button id="toggle-theme" type="button">🌙</button>
                 <button id="logout-btn" type="button">Cerrar Sesión</button> 
             </div>
@@ -59,7 +60,6 @@
                 <input type="search" id="book-search" placeholder="Escribe el título para buscar...">
                 
                 <div id="book-search-results" class="book-search-results"></div>
-
                 <div class="google-attribution">
                     <img src="google-logo.png" alt="Powered by Google">
                 </div>
@@ -168,5 +168,50 @@
         </p>
         <button id="accept-cookies-btn" class="btn-primary">Aceptar</button>
     </div>
+
+    <!--Desplegable para el menú de amigos-->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <aside id="friends-sidebar" class="friends-sidebar">
+        
+        <div class="sidebar-header">
+            <div class="user-profile-summary">
+                <div class="user-avatar-placeholder">👤</div>
+                <span id="current-user-display">Cargando...</span>
+            </div>
+            <button id="close-sidebar-btn" class="btn-icon">✕</button>
+        </div>
+
+        <div class="sidebar-content">
+            
+            <div class="sidebar-section">
+                <h3>🔍 Añadir Amigos</h3>
+                <div class="search-box-sidebar">
+                    <input type="text" id="friend-search-input" placeholder="Buscar usuario...">
+                    <button id="friend-search-btn">Ir</button>
+                </div>
+                <div id="friend-search-results" class="sidebar-list"></div>
+            </div>
+
+            <hr class="sidebar-divider">
+
+            <div class="sidebar-section">
+                <h3>📩 Solicitudes de amigos <span id="requests-count" class="badge">0</span></h3>
+                <div id="friend-requests-list" class="sidebar-list">
+                    <p class="empty-msg">No tienes solicitudes nuevas.</p>
+                </div>
+            </div>
+
+            <hr class="sidebar-divider">
+
+            <div class="sidebar-section full-height">
+                <h3>Mis Amigos</h3>
+                <div id="friends-list" class="sidebar-list">
+                    <p class="empty-msg">Aún no tienes amigos agregados.</p>
+                </div>
+            </div>
+
+        </div>
+    </aside>
 </body>
 </html>

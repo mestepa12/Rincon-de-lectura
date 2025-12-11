@@ -2,16 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- REFERENCIAS DE ELEMENTOS (LOGIN) ---
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
-    const passwordInput = document.getElementById('password'); // Campo de contraseña de login
+    const passwordInput = document.getElementById('password'); 
     const loginError = document.getElementById('login-error');
-    const togglePasswordBtn = document.getElementById('toggle-password'); // Botón de ojo de login
+    const togglePasswordBtn = document.getElementById('toggle-password'); 
 
     // --- REFERENCIAS DE ELEMENTOS (REGISTRO) ---
     const registerForm = document.getElementById('register-form');
-    const regPasswordInput = document.getElementById('register-password'); // Campo de contraseña de registro
-    const regTogglePasswordBtn = document.getElementById('toggle-register-password'); // Botón de ojo 1 de registro
-    const regConfirmInput = document.getElementById('register-password-confirm'); // Campo de conf. de contraseña
-    const regConfirmToggleBtn = document.getElementById('toggle-register-password-confirm'); // Botón de ojo 2 de registro
+    const regUsernameInput = document.getElementById('username'); // <--- NUEVO: Referencia al campo de usuario
+    const regPasswordInput = document.getElementById('register-password'); 
+    const regTogglePasswordBtn = document.getElementById('toggle-register-password'); 
+    const regConfirmInput = document.getElementById('register-password-confirm'); 
+    const regConfirmToggleBtn = document.getElementById('toggle-register-password-confirm'); 
     
     // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (LOGIN) ---
     if (passwordInput && togglePasswordBtn) {
@@ -46,15 +47,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
             const provider = new firebase.auth.GoogleAuthProvider();
-            // ... (resto de tu lógica de Google) ...
+            
             firebase.auth().signInWithPopup(provider)
                 .then((result) => {
+                    // OPCIONAL: Si quisieras guardar también el usuario de Google en la base de datos, iría aquí.
+                    // Por ahora lo dejamos simple para el login.
                     console.log("Inicio de sesión con Google exitoso:", result.user.email);
                     window.location.href = 'index.html';
                 })
                 .catch((error) => {
                     console.error("Error al iniciar sesión con Google:", error);
-                    const loginError = document.getElementById('login-error'); // Asegúrate de que loginError esté definido si este botón está en login.html
+                    const loginError = document.getElementById('login-error'); 
                     if(loginError) loginError.textContent = 'No se pudo iniciar sesión con Google.';
                 });
         });
@@ -65,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = emailInput.value;
-            const password = passwordInput.value; // 'passwordInput' ya está definido arriba
+            const password = passwordInput.value; 
 
             firebase.auth().signInWithEmailAndPassword(email, password)
                 .then(() => {
@@ -78,13 +81,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
  
-    // --- MANEJO DEL FORMULARIO DE REGISTRO ---
+    // --- MANEJO DEL FORMULARIO DE REGISTRO (MODIFICADO) ---
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
-            const password = regPasswordInput.value; // Usa la variable definida arriba
-            const confirmPassword = regConfirmInput.value; // Usa la variable definida arriba
+            const username = regUsernameInput.value; // <--- NUEVO: Capturamos el valor
+            const password = regPasswordInput.value; 
+            const confirmPassword = regConfirmInput.value; 
             const registerError = document.getElementById('register-error');
 
             if (password !== confirmPassword) {
@@ -92,33 +96,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-firebase.auth().createUserWithEmailAndPassword(email, password)
+            // 1. Creamos el usuario en Authentication
+            firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then((userCredential) => {
-                    // 1. Obtenemos el usuario recién creado
                     const user = userCredential.user;
+                    const db = firebase.firestore(); // <--- Inicializamos Firestore
 
-                    // 2. Enviamos el correo de verificación
-                    user.sendEmailVerification().then(() => {
-                        
-                        // 3. CAMBIO IMPORTANTE: Cerramos la sesión inmediatamente
-                        firebase.auth().signOut().then(() => {
-                            
-                            // 4. Avisamos al usuario
-                            alert(`Cuenta creada correctamente.\n\nHemos enviado un correo de verificación a ${email}.\nPor favor, revisa tu bandeja de entrada (y la carpeta de SPAM) para activarla antes de iniciar sesión.`);
-                            
-                            // 5. CAMBIO IMPORTANTE: Redirigimos al LOGIN, no al index
-                            window.location.href = 'login.html';
-                        });
+                    // 2. NUEVO: Guardamos la ficha pública en Firestore
+                    return db.collection("users").doc(user.uid).set({
+                        username: username,
+                        email: email,
+                        uid: user.uid,
+                        searchKey: username.toLowerCase() // Para buscar fácil
+                    }).then(() => {
+                        // 3. Si se guarda bien en la BD, enviamos el correo
+                        return user.sendEmailVerification();
                     });
                 })
+                .then(() => {
+                    // 4. Cerramos sesión tras enviar el correo
+                    return firebase.auth().signOut();
+                })
+                .then(() => {
+                    // 5. Avisamos al usuario y redirigimos
+                    alert(`Cuenta creada correctamente para "${username}".\n\nHemos enviado un correo de verificación a ${email}.\nPor favor, revisa tu bandeja de entrada.`);
+                    window.location.href = 'login.html';
+                })
                 .catch((error) => {
-                    // ... (tu manejo de errores se queda igual)
+                    // Manejo de errores
                     if (error.code == 'auth/weak-password') {
                         registerError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                     } else if (error.code == 'auth/email-already-in-use') {
                         registerError.textContent = 'Este correo electrónico ya está registrado.';
                     } else {
-                        registerError.textContent = 'Error al crear la cuenta.';
+                        registerError.textContent = 'Error al crear la cuenta: ' + error.message;
                     }
                     console.error("Error de registro:", error);
                 });
@@ -131,34 +142,29 @@ firebase.auth().createUserWithEmailAndPassword(email, password)
     const resetModal = document.getElementById('reset-password-modal');
     const resetForm = document.getElementById('reset-password-form');
     const cancelResetBtn = document.getElementById('cancel-reset-btn');
-    const loginEmailInput = document.getElementById('email'); // Para copiar el email si ya lo escribió
+    const loginEmailInputForReset = document.getElementById('email'); 
     const resetEmailInput = document.getElementById('reset-email');
 
     if (forgotPasswordLink && resetModal) {
-        // Abrir modal
         forgotPasswordLink.addEventListener('click', (e) => {
             e.preventDefault();
-            // Si el usuario ya había escrito su email en el login, lo copiamos al modal
-            if (loginEmailInput.value) {
-                resetEmailInput.value = loginEmailInput.value;
+            if (loginEmailInputForReset && loginEmailInputForReset.value) {
+                resetEmailInput.value = loginEmailInputForReset.value;
             }
             resetModal.showModal();
         });
 
-        // Cerrar modal
         cancelResetBtn.addEventListener('click', () => {
             resetModal.close();
         });
 
-// Enviar formulario de reset
         resetForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = resetEmailInput.value;
 
             firebase.auth().sendPasswordResetEmail(email)
                 .then(() => {
-                    // MENSAJE ACTUALIZADO CON SALTO DE LÍNEA (\n)
-                    alert(`Hemos enviado un enlace de recuperación a ${email}.\n\n⚠️ IMPORTANTE: Por favor, revisa tu carpeta de SPAM o "Correo no deseado" si no lo ves en la bandeja de entrada.`);
+                    alert(`Hemos enviado un enlace de recuperación a ${email}.\n\n⚠️ IMPORTANTE: Por favor, revisa tu carpeta de SPAM.`);
                     resetModal.close();
                 })
                 .catch((error) => {
