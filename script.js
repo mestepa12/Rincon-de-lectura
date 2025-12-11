@@ -8,9 +8,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("Usuario autenticado y verificado:", user.email);
                 
                 // --- CAMBIO AQUÍ: Migramos antes de iniciar ---
-                migrarLibrosAntiguos(user).then(() => {
+               // migrarLibrosAntiguos(user).then(() => {
                     runApp(user); 
-                });
+               // });
                 // ----------------------------------------------
 
             } else {
@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
         // --- FUNCIÓN DE MIGRACIÓN (SOLO PARA TRASPASAR DATOS) ---
-    async function migrarLibrosAntiguos(user) {
+/*    async function migrarLibrosAntiguos(user) {
         const db = firebase.firestore();
         const oldRef = db.collection('users').doc(user.uid).collection('books');
         const newRef = db.collection('books');
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Error durante la migración:", error);
         }
-    }                       
+    }                       */
     
     // --- FUNCIÓN PRINCIPAL DE LA APP ---
     function runApp(user) {
