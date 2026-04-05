@@ -1,7 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Array en memoria: Esto es lo que se borra al cerrar la pestaña
     let booksData = [
-        { id: 'demo1', title: 'Libro de Ejemplo', author: 'Autor Demo', section: 'leyendo-ahora', totalPages: 300, currentPage: 150, cover: 'https://via.placeholder.com/150x225?text=Demo', notes: 'Esto es una nota de prueba.' }
+        { id: 'demo1', title: 'Libro de Ejemplo', author: 'Autor Demo', section: 'leyendo-ahora', totalPages: 300, currentPage: 150, // Dentro de booksData en script-demo.js
+cover: 'http://googleusercontent.com/image_generation_content/1', notes: 'Esto es una nota de prueba.' }
     ];
 
     // Selectores (Mismos que tu app)
