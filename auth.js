@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // OPCIONAL: Si quisieras guardar también el usuario de Google en la base de datos, iría aquí.
                     // Por ahora lo dejamos simple para el login.
                     console.log("Inicio de sesión con Google exitoso:", result.user.email);
-                    window.location.href = 'index.html';
+                    window.location.href = 'biblioteca.html';
                 })
                 .catch((error) => {
                     console.error("Error al iniciar sesión con Google:", error);
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             firebase.auth().signInWithEmailAndPassword(email, password)
                 .then(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = 'biblioteca.html';
                 })
                 .catch((error) => {
                     loginError.textContent = 'Correo o contraseña incorrectos.';
