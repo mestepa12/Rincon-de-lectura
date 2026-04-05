@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
             totalPages: 500, 
             currentPage: 125, 
             // Usamos HTTPS para que no salga el icono de imagen rota
-            cover: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=1000&auto=format&fit=crop', 
+            cover: 'portada-demo.jfif', 
             notes: 'Este es tu libro de ejemplo. ¡Prueba el buscador de arriba!' 
         }
     ];
