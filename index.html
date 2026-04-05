@@ -3,126 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Rincón de Lectura - Organiza tu biblioteca</title>
+    <title>Demo - Mi Rincón de Lectura</title>
+    
     <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <style>
-        .landing-hero {
+        /* Banner informativo superior */
+        .demo-alert {
+            background-color: var(--accent-color-interactive);
+            color: white;
             text-align: center;
-            padding: 5rem 1rem;
-            background: linear-gradient(rgba(245, 239, 230, 0.9), rgba(245, 239, 230, 0.7)), url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000&auto=format&fit=crop');
-            background-size: cover;
-            border-bottom: 1px solid var(--border-color);
+            padding: 0.5rem;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 2000;
         }
-        .landing-hero h1 { font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1rem; }
-        .demo-section { max-width: 1000px; margin: -3rem auto 4rem; padding: 2rem; background: var(--card-bg-color); border-radius: 15px; box-shadow: 0 10px 30px var(--shadow-color); position: relative; z-index: 10; }
-        .demo-search-wrapper { display: flex; gap: 10px; margin-bottom: 2rem; }
-        .demo-search-wrapper input { flex: 1; padding: 1rem; border: 2px solid var(--border-color); border-radius: 8px; font-size: 1rem; }
-        .demo-results { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; }
-        .book-card-demo { cursor: pointer; transition: transform 0.2s; text-align: center; font-size: 0.8rem; }
-        .book-card-demo:hover { transform: translateY(-5px); }
-        .book-card-demo img { width: 100%; border-radius: 5px; box-shadow: var(--shadow-color); }
-        .cta-bar { background: var(--accent-color-interactive); color: white; padding: 1rem; text-align: center; border-radius: 8px; margin-top: 2rem; }
-        .cta-bar a { color: white; font-weight: bold; text-decoration: underline; }
+        .demo-alert a { color: white; text-decoration: underline; margin-left: 10px; }
+        .site-header { top: 35px; } /* Ajuste por el banner */
     </style>
 </head>
-<body>
+<body> 
+
+    <div class="demo-alert">
+        🚀 Modo Demo: Los cambios no se guardarán al cerrar la pestaña.
+        <a href="register.html">¡Crea tu cuenta real aquí!</a>
+    </div>
 
     <header class="site-header">
         <div class="header-main">
             <h1 id="site-title">Mi Rincón de Lectura</h1>
             <div class="header-controls">
-                <a href="login.html" class="btn-primary" style="text-decoration: none; padding: 0.5rem 1rem; border-radius: 5px;">Iniciar Sesión</a>
+                <button id="add-book-btn" type="button">Añadir Libro</button>
+                <button id="toggle-view" type="button">Cuadrícula / Lista</button>
+                <button id="toggle-theme" type="button">🌙</button>
+                <button type="button" onclick="location.href='login.html'">Entrar</button> 
             </div>
+        </div>
+        <div class="header-search">
+            <input type="search" id="search-bar" placeholder="Buscar en la demo...">
         </div>
     </header>
 
-    <section class="landing-hero">
-        <h1>Tu biblioteca, siempre contigo.</h1>
-        <p>Prueba nuestro buscador de Google Books y añade libros a tu estantería temporal.</p>
-        <a href="register.html" class="btn-primary" style="text-decoration: none; padding: 1rem 2.5rem; display: inline-block; margin-top: 1rem; font-size: 1.1rem;">Empezar Gratis</a>
-    </section>
+    <main id="main-content">
+        <section id="leyendo-ahora">
+            <h2>Leyendo Ahora</h2>
+            <div class="books-container" data-section="leyendo-ahora"></div>
+        </section>
+        <section id="proximas-lecturas">
+            <h2>Próximas Lecturas</h2>
+            <div class="books-container" data-section="proximas-lecturas"></div>
+        </section>
+        <section id="libros-terminados">
+            <h2>Libros Terminados</h2>
+            <div class="books-container" data-section="libros-terminados"></div>
+        </section>
+        <section id="lista-deseos">
+            <h2>Lista de Deseos</h2>
+            <div class="books-container" data-section="lista-deseos"></div>
+        </section>
+    </main>
 
-    <div class="demo-section">
-        <div class="demo-search-wrapper">
-            <input type="text" id="demo-input" placeholder="Busca un libro real (ej: Harry Potter)...">
-            <button id="demo-btn" class="btn-primary" style="padding: 0 1.5rem;">Buscar</button>
-        </div>
+    <dialog id="add-book-modal">
+        <form id="add-book-form">
+            <h2>Añadir Nuevo Libro (Demo)</h2>
+            <div class="google-books-section" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                <label for="book-search">🔍 Buscar en Google Books:</label>
+                <input type="search" id="book-search" placeholder="Escribe el título...">
+                <div id="book-search-results" class="book-search-results"></div>
+            </div>
 
-        <div id="demo-results" class="demo-results"></div>
-
-        <h3>Tu Estantería de Prueba</h3>
-        <div class="books-container" id="demo-library">
-            <p style="color: var(--accent-color); padding: 2rem;">Busca un libro arriba y haz clic en él para añadirlo.</p>
-        </div>
-
-        <div class="cta-bar">
-            ¿Te gusta lo que ves? <a href="register.html">Crea tu cuenta</a> para guardar tus libros y ver tu progreso real.
-        </div>
-    </div>
-
-    <!-- Scripts -->
-    <script src="config.js"></script>
-    <script>
-        const demoInput = document.getElementById('demo-input');
-        const demoBtn = document.getElementById('demo-btn');
-        const demoResults = document.getElementById('demo-results');
-        const demoLibrary = document.getElementById('demo-library');
-        let myDemoBooks = [];
-
-        async function buscarLibros() {
-            const query = demoInput.value.trim();
-            if (!query) return;
-            
-            demoBtn.disabled = true;
-            demoResults.innerHTML = '<p>Buscando en Google Books...</p>';
-
-            try {
-                const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=6&key=${googleBooksApiKey}`);
-                const data = await res.json();
-                
-                demoResults.innerHTML = '';
-                if (data.items) {
-                    data.items.forEach(item => {
-                        const info = item.volumeInfo;
-                        const cover = info.imageLinks ? info.imageLinks.thumbnail : 'https://via.placeholder.com/128x192?text=Sin+Portada';
-                        const book = { title: info.title, author: info.authors ? info.authors[0] : 'Desconocido', cover };
-                        
-                        const div = document.createElement('div');
-                        div.className = 'book-card-demo';
-                        div.innerHTML = `<img src="${cover}"><p>${book.title.substring(0,25)}...</p>`;
-                        div.onclick = () => añadirADemo(book);
-                        demoResults.appendChild(div);
-                    });
-                } else {
-                    demoResults.innerHTML = '<p>No se encontraron libros.</p>';
-                }
-            } catch (e) {
-                demoResults.innerHTML = '<p>Error al buscar.</p>';
-            } finally {
-                demoBtn.disabled = false;
-            }
-        }
-
-        function añadirADemo(book) {
-            if (myDemoBooks.length === 0) demoLibrary.innerHTML = '';
-            myDemoBooks.unshift(book);
-            
-            const art = document.createElement('article');
-            art.className = 'book';
-            art.innerHTML = `
-                <img src="${book.cover}" class="book-cover">
-                <div class="book-info">
-                    <h3>${book.title}</h3>
-                    <p class="author">${book.author}</p>
+            <details id="manual-data-details">
+                <summary>📝 Datos manuales</summary>
+                <div class="manual-inputs-container">
+                    <label for="title">Título:</label>
+                    <input type="text" id="title" name="title" required>
+                    <label for="author">Autor:</label>
+                    <input type="text" id="author" name="author" required>
+                    <label for="cover">URL Portada:</label>
+                    <input type="url" id="cover" name="cover">
+                    <label for="total-pages">Páginas:</label>
+                    <input type="number" id="total-pages" name="totalPages" min="1">
                 </div>
-            `;
-            demoLibrary.prepend(art);
-        }
+            </details>
 
-        demoBtn.onclick = buscarLibros;
-        demoInput.onkeypress = (e) => { if(e.key === 'Enter') buscarLibros(); };
-    </script>
+            <label for="section">Sección:</label>
+            <select id="section" name="section" required>
+                <option value="leyendo-ahora">Leyendo Ahora</option>
+                <option value="proximas-lecturas">Próximas Lecturas</option>
+                <option value="libros-terminados">Libros Terminados</option>
+                <option value="lista-deseos">Lista de Deseos</option>
+            </select>
+            <div class="modal-actions">
+                <button type="submit" class="btn-primary">Añadir a la Demo</button>
+                <button type="button" id="cancel-add-book" class="btn-cancel">Cancelar</button>
+            </div>
+        </form> 
+    </dialog>
+
+    <dialog id="book-detail-modal">
+        <div class="detail-modal-content">
+            <div class="detail-cover-container">
+                <img src="" id="detail-cover" class="detail-cover">
+            </div>
+            <div class="detail-info">
+                <h2 id="detail-title"></h2>
+                <p id="detail-author" class="detail-author"></p>
+                <div id="detail-progress-section" class="detail-progress-section">
+                    <label>Progreso</label>
+                    <div class="progress-inputs">
+                        <input type="number" id="current-page" min="0">
+                        <span id="total-pages-display"></span>
+                    </div>
+                    <div class="progress-bar-container"><div id="progress-bar-fill"></div></div>
+                </div>
+                <div class="detail-notes-section">
+                    <label>Notas</label>
+                    <textarea id="detail-notes" rows="6" placeholder="Escribe notas aquí..."></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
+                    <div class="modal-actions-right">
+                        <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
+                        <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <script src="config.js"></script>
+    <script src="script-demo.js" defer></script>
 </body>
 </html>
