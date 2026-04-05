@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Array de libros (Demo)
+    // 1. Datos iniciales (Demo)
     let booksData = [
         { 
             id: 'demo-1', 
@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
             section: 'leyendo-ahora', 
             totalPages: 500, 
             currentPage: 125, 
-            // CAMBIO: Usamos HTTPS para que Firebase no bloquee la imagen
+            // Usamos HTTPS para que no salga el icono de imagen rota
             cover: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?q=80&w=1000&auto=format&fit=crop', 
-            notes: 'Este es tu libro de ejemplo.' 
+            notes: 'Este es tu libro de ejemplo. ¡Prueba el buscador de arriba!' 
         }
     ];
 
-    // Selectores del DOM
+    // 2. Selectores
     const searchBar = document.getElementById('search-bar');
     const mainContent = document.getElementById('main-content');
     const addBookModal = document.getElementById('add-book-modal');
@@ -23,47 +23,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookSearchResultsDiv = document.getElementById('book-search-results');
     const bookDetailModal = document.getElementById('book-detail-modal');
 
-    // --- FUNCIÓN DE RENDERIZADO (EL MOTOR DEL BUSCADOR) ---
-    const renderBooks = () => {
-        // Leemos el texto de la barra superior
+    // 3. Función de Renderizado (Filtrado)
+    function renderBooks() {
         const filterText = (searchBar ? searchBar.value : "").toLowerCase();
         
-        // Limpiamos los contenedores antes de pintar
+        // Limpiamos todos los contenedores
         document.querySelectorAll('.books-container').forEach(c => c.innerHTML = '');
         
-        // Filtramos por título o autor
-        const filteredBooks = booksData.filter(book => 
+        // Filtramos los libros
+        const filtered = booksData.filter(book => 
             book.title.toLowerCase().includes(filterText) || 
             book.author.toLowerCase().includes(filterText)
         );
 
-        filteredBooks.forEach(book => {
+        filtered.forEach(book => {
             const container = document.querySelector(`[data-section="${book.section}"]`);
-            if (!container) return;
-
-            const art = document.createElement('article');
-            art.className = 'book';
-            art.innerHTML = `
-                <img src="${book.cover || 'https://via.placeholder.com/150x225?text=Sin+Portada'}" 
-                     class="book-cover" 
-                     onerror="this.src='https://via.placeholder.com/150x225?text=Error+Carga'">
-                <div class="book-info">
-                    <h3>${book.title}</h3>
-                    <p class="author">${book.author}</p>
-                </div>
-            `;
-            art.onclick = () => openModal(book.id);
-            container.appendChild(art);
+            if (container) {
+                const art = document.createElement('article');
+                art.className = 'book';
+                art.innerHTML = `
+                    <img src="${book.cover || 'https://via.placeholder.com/150x225?text=Sin+Portada'}" class="book-cover">
+                    <div class="book-info">
+                        <h3>${book.title}</h3>
+                        <p class="author">${book.author}</p>
+                    </div>
+                `;
+                art.onclick = () => openModal(book.id);
+                container.appendChild(art);
+            }
         });
-    };
-
-    // --- EVENTO DEL BUSCADOR SUPERIOR ---
-    if (searchBar) {
-        // Usamos 'input' para que filtre mientras escribes
-        searchBar.addEventListener('input', renderBooks);
     }
 
-    // --- BÚSQUEDA EN GOOGLE BOOKS (MODAL) ---
+    // 4. Búsqueda en Google Books (Para añadir nuevos)
     async function buscarEnGoogle(titulo) {
         if (!titulo.trim()) return [];
         const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&key=${googleBooksApiKey}`;
@@ -74,10 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) { return []; }
     }
 
+    // 5. Eventos de la Interfaz
+    if (searchBar) {
+        // 'input' detecta cada tecla, 'search' detecta cuando borras con la X del input
+        searchBar.addEventListener('input', renderBooks);
+        searchBar.addEventListener('search', renderBooks);
+        console.log("✅ Buscador detectado y vinculado.");
+    } else {
+        console.error("❌ ERROR: No se encontró el elemento con ID 'search-bar'");
+    }
+
     if (bookSearchInput) {
         bookSearchInput.addEventListener('input', async (e) => {
             const query = e.target.value;
-            if (query.length > 3) {
+            if (query.length > 2) {
                 const libros = await buscarEnGoogle(query);
                 bookSearchResultsDiv.innerHTML = libros.map(item => {
                     const info = item.volumeInfo;
@@ -88,8 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     `;
                 }).join('');
-            } else {
-                bookSearchResultsDiv.innerHTML = '';
             }
         });
     }
@@ -103,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('manual-data-details').open = true;
     };
 
-    // --- GESTIÓN DE LIBROS (AÑADIR, MODIFICAR, ELIMINAR) ---
+    // 6. Acciones de Formulario
     addBookForm.onsubmit = (e) => {
         e.preventDefault();
         const fd = new FormData(addBookForm);
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addBookForm.reset();
     };
 
-    const openModal = (id) => {
+    function openModal(id) {
         const book = booksData.find(b => b.id === id);
         if (!book) return;
         bookDetailModal.dataset.bookId = id;
@@ -142,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
             prog.style.display = 'none';
         }
         bookDetailModal.showModal();
-    };
+    }
 
     document.getElementById('save-details-btn').onclick = () => {
         const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
@@ -162,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bookDetailModal.close();
     };
 
-    // Botones de interfaz
+    // Botones Header
     document.getElementById('add-book-btn').onclick = () => addBookModal.showModal();
     document.getElementById('cancel-add-book').onclick = () => addBookModal.close();
     document.getElementById('toggle-theme').onclick = () => {
@@ -171,6 +170,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     document.getElementById('toggle-view').onclick = () => mainContent.classList.toggle('list-view');
 
-    // Inicializar la vista
+    // Lanzamos el primer render para mostrar el libro de Miguel
     renderBooks();
 });
