@@ -186,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemDiv.className = 'result-item';
                 // Estilo inline temporal o usar clase CSS .result-item
                 itemDiv.innerHTML = `
-                    <img src="${libro.cover || 'https://placehold.co/40x60?text=No+Img'}" alt="cover" style="width:40px; height:60px; object-fit:cover; border-radius:3px;">
+                    <img src="${libro.cover || 'https://placehold.co/40x60?text=No+Img'}" alt="Portada de ${libro.title}" style="width:40px; height:60px; object-fit:cover; border-radius:3px;">
                     <div style="margin-left: 10px;">
                         <h4 style="margin:0; font-size:0.9rem;">${libro.title}</h4>
                         <p style="margin:0; font-size:0.8rem; color:var(--accent-color);">${libro.author}</p>
@@ -293,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             bookDetailModal.dataset.bookId = book.id;
             detailCover.src = book.cover || '';
+            detailCover.alt = `Portada de ${book.title}`;
             detailTitle.textContent = book.title;
             detailAuthor.textContent = book.author;
             detailNotes.value = book.notes || '';
