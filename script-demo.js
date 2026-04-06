@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+
+    const SECTIONS = {
+    'leyendo-ahora': 'Leyendo Ahora',
+    'proximas-lecturas': 'Próximas Lecturas',
+    'libros-terminados': 'Libros Terminados',
+    'lista-deseos': 'Lista de Deseos'
+};
+
     // 2. Selectores
     const searchBar = document.getElementById('search-bar');
     const mainContent = document.getElementById('main-content');
@@ -140,6 +148,20 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             prog.style.display = 'none';
         }
+
+        const moveSelect = document.getElementById('move-book-select');
+        moveSelect.innerHTML = '<option value="" disabled selected>Cambiar de sección...</option>';
+        
+        Object.entries(SECTIONS).forEach(([key, name]) => {
+            if (key !== book.section) {
+                const opt = document.createElement('option');
+                opt.value = key;
+                opt.textContent = name;
+                moveSelect.appendChild(opt);
+            }
+        });
+
+
         bookDetailModal.showModal();
     }
 
@@ -147,6 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
         if (book) {
             book.notes = document.getElementById('detail-notes').value;
+
+            const newSection = document.getElementById('move-book-select').value;
+                if (newSection) {
+                    book.section = newSection;
+                }
             if (book.section === 'leyendo-ahora') {
                 book.currentPage = parseInt(document.getElementById('current-page').value) || 0;
             }
