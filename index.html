@@ -119,7 +119,7 @@
             <p id="detail-author" class="detail-author"></p>
 
             <div id="detail-progress-section" class="detail-progress-section">
-                <label>Progreso</label>
+                <label>Progreso de lectura</label>
                 <div class="progress-inputs">
                     <input type="number" id="current-page" min="0">
                     <span id="total-pages-display"></span>
@@ -127,15 +127,15 @@
                 <div class="progress-bar-container"><div id="progress-bar-fill"></div></div>
             </div>
 
-            <div class="detail-page-actions" style="margin: 1.5rem 0;">
-                <label for="move-book-select">Mover a otra sección:</label>
-                <select id="move-book-select" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-weight: bold; cursor: pointer;">
-                </select>
+            <div class="move-section-container" style="margin: 20px 0; padding: 10px; border-top: 1px solid var(--border-color);">
+                <label for="move-book-select" style="display: block; margin-bottom: 8px; font-weight: bold;">Mover a otra sección:</label>
+                <select id="move-book-select" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid var(--accent-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem;">
+                    </select>
             </div>
 
             <div class="detail-notes-section">
-                <label>Notas</label>
-                <textarea id="detail-notes" rows="6" placeholder="Escribe notas aquí..."></textarea>
+                <label>Notas personales</label>
+                <textarea id="detail-notes" rows="6" placeholder="Escribe aquí tus reflexiones..."></textarea>
             </div>
 
             <div class="modal-actions">
