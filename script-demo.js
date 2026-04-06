@@ -129,41 +129,45 @@ document.addEventListener('DOMContentLoaded', () => {
         addBookForm.reset();
     };
 
-    function openModal(id) {
-        const book = booksData.find(b => b.id === id);
-        if (!book) return;
-        bookDetailModal.dataset.bookId = id;
-        document.getElementById('detail-title').textContent = book.title;
-        document.getElementById('detail-author').textContent = book.author;
-        document.getElementById('detail-cover').src = book.cover;
-        document.getElementById('detail-notes').value = book.notes;
-        
-        const prog = document.getElementById('detail-progress-section');
-        if (book.section === 'leyendo-ahora') {
-            prog.style.display = 'block';
-            document.getElementById('current-page').value = book.currentPage;
-            document.getElementById('total-pages-display').textContent = `/ ${book.totalPages} págs`;
-            const perc = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
-            document.getElementById('progress-bar-fill').style.width = Math.min(perc, 100) + '%';
-        } else {
-            prog.style.display = 'none';
-        }
+function openModal(id) {
+    const book = booksData.find(b => b.id === id);
+    if (!book) return;
 
-        const moveSelect = document.getElementById('move-book-select');
-        moveSelect.innerHTML = '<option value="" disabled selected>Cambiar de sección...</option>';
-        
-        Object.entries(SECTIONS).forEach(([key, name]) => {
-            if (key !== book.section) {
-                const opt = document.createElement('option');
-                opt.value = key;
-                opt.textContent = name;
-                moveSelect.appendChild(opt);
-            }
-        });
-
-
-        bookDetailModal.showModal();
+    bookDetailModal.dataset.bookId = id;
+    document.getElementById('detail-title').textContent = book.title;
+    document.getElementById('detail-author').textContent = book.author;
+    document.getElementById('detail-cover').src = book.cover;
+    document.getElementById('detail-notes').value = book.notes;
+    
+    // Gestión del progreso
+    const prog = document.getElementById('detail-progress-section');
+    if (book.section === 'leyendo-ahora') {
+        prog.style.display = 'block';
+        document.getElementById('current-page').value = book.currentPage;
+        document.getElementById('total-pages-display').textContent = `/ ${book.totalPages} págs`;
+        const perc = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
+        document.getElementById('progress-bar-fill').style.width = Math.min(perc, 100) + '%';
+    } else {
+        prog.style.display = 'none';
     }
+
+    // RELLENAR EL DESPLEGABLE DE SECCIONES
+    const moveSelect = document.getElementById('move-book-select');
+    moveSelect.innerHTML = '<option value="" disabled selected>Cambiar de sección...</option>';
+    
+    console.log("Rellenando secciones para:", book.title, "Sección actual:", book.section);
+
+    Object.entries(SECTIONS).forEach(([key, name]) => {
+        if (key !== book.section) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = name;
+            moveSelect.appendChild(opt);
+        }
+    });
+
+    bookDetailModal.showModal();
+}
 
     document.getElementById('save-details-btn').onclick = () => {
         const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);

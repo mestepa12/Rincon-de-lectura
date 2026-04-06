@@ -109,44 +109,45 @@
         </form> 
     </dialog>
 
-    <dialog id="book-detail-modal">
-        <div class="detail-modal-content">
-            <div class="detail-cover-container">
-                <img src="" id="detail-cover" class="detail-cover">
-            </div>
-            <div class="detail-info">
-                <h2 id="detail-title"></h2>
-                <p id="detail-author" class="detail-author"></p>
-                <div id="detail-progress-section" class="detail-progress-section">
-                    <label>Progreso</label>
-                    <div class="progress-inputs">
-                        <input type="number" id="current-page" min="0">
-                        <span id="total-pages-display"></span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div id="progress-bar-fill"></div>
-                    </div>
-                </div>
+<dialog id="book-detail-modal">
+    <div class="detail-modal-content">
+        <div class="detail-cover-container">
+            <img src="" id="detail-cover" class="detail-cover">
+        </div>
+        <div class="detail-info">
+            <h2 id="detail-title"></h2>
+            <p id="detail-author" class="detail-author"></p>
 
-                <div class="detail-page-actions" style="margin-bottom: 1.5rem; margin-top: 1rem;">
-                    <label for="move-book-select">Mover a otra sección:</label>
-                    <select id="move-book-select" style="width: 100%; padding: 0.5rem; border-radius: 5px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color);">
-                    </select>
+            <div id="detail-progress-section" class="detail-progress-section">
+                <label>Progreso</label>
+                <div class="progress-inputs">
+                    <input type="number" id="current-page" min="0">
+                    <span id="total-pages-display"></span>
                 </div>
-                <div class="detail-notes-section">
-                    <label>Notas</label>
-                    <textarea id="detail-notes" rows="6" placeholder="Escribe notas aquí..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
-                    <div class="modal-actions-right">
-                        <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
-                        <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
-                    </div>
+                <div class="progress-bar-container"><div id="progress-bar-fill"></div></div>
+            </div>
+
+            <div class="detail-page-actions" style="margin: 1.5rem 0;">
+                <label for="move-book-select">Mover a otra sección:</label>
+                <select id="move-book-select" style="width: 100%; padding: 0.6rem; border-radius: 8px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-weight: bold; cursor: pointer;">
+                </select>
+            </div>
+
+            <div class="detail-notes-section">
+                <label>Notas</label>
+                <textarea id="detail-notes" rows="6" placeholder="Escribe notas aquí..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
+                <div class="modal-actions-right">
+                    <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
+                    <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
                 </div>
             </div>
         </div>
-    </dialog>
+    </div>
+</dialog>
 
     <script src="config.js"></script>
     <script src="script-demo.js" defer></script>
