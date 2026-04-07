@@ -453,3 +453,25 @@ details#manual-data-details summary:hover { background-color: var(--border-color
         right: -100%;
     }
 }
+
+/* Botón de volver arriba a la derecha */
+.back-to-demo {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 0.8rem; /* Más chico */
+    text-decoration: none;
+    color: #666;
+    background-color: rgba(0, 0, 0, 0.05); /* Un fondo muy suave */
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+    z-index: 1000; /* Para que siempre esté por encima */
+}
+
+.back-to-demo:hover {
+    background-color: #eee;
+    color: #333;
+    border-color: #bbb;
+}
