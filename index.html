@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo - Mi Rincón de Lectura</title>
-    
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Mi Rincón de Lectura | Gestiona y Comparte tus Libros</title>
+
+    <link rel="canonical" href="https://rinconlectura.es/">
+    <meta name="description" content="Organiza tu biblioteca personal, lleva el control de tus lecturas y descubre nuevos libros en Mi Rincón de Lectura. ¡Únete a nuestra comunidad de lectores!">
+    <meta name="keywords" content="leer, libros, biblioteca virtual, seguimiento de lectura, rincon lectura">    <link rel="icon" type="image/png" href="favicon.png">
+    <meta property="og:title" content="Mi Rincón de Lectura">
+    <meta property="og:description" content="Tu biblioteca personal en la palma de tu mano.">
+    <meta property="og:image" content="https://rinconlectura.es/favicon.png">
+    <meta property="og:url" content="https://rinconlectura.es">    
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    
     <style>
         /* Banner informativo superior */
         .demo-alert {
@@ -103,36 +109,45 @@
         </form> 
     </dialog>
 
-    <dialog id="book-detail-modal">
-        <div class="detail-modal-content">
-            <div class="detail-cover-container">
-                <img src="" id="detail-cover" class="detail-cover">
+<dialog id="book-detail-modal">
+    <div class="detail-modal-content">
+        <div class="detail-cover-container">
+            <img src="" id="detail-cover" class="detail-cover">
+        </div>
+        <div class="detail-info">
+            <h2 id="detail-title"></h2>
+            <p id="detail-author" class="detail-author"></p>
+
+            <div id="detail-progress-section" class="detail-progress-section">
+                <label>Progreso de lectura</label>
+                <div class="progress-inputs">
+                    <input type="number" id="current-page" min="0">
+                    <span id="total-pages-display"></span>
+                </div>
+                <div class="progress-bar-container"><div id="progress-bar-fill"></div></div>
             </div>
-            <div class="detail-info">
-                <h2 id="detail-title"></h2>
-                <p id="detail-author" class="detail-author"></p>
-                <div id="detail-progress-section" class="detail-progress-section">
-                    <label>Progreso</label>
-                    <div class="progress-inputs">
-                        <input type="number" id="current-page" min="0">
-                        <span id="total-pages-display"></span>
-                    </div>
-                    <div class="progress-bar-container"><div id="progress-bar-fill"></div></div>
-                </div>
-                <div class="detail-notes-section">
-                    <label>Notas</label>
-                    <textarea id="detail-notes" rows="6" placeholder="Escribe notas aquí..."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
-                    <div class="modal-actions-right">
-                        <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
-                        <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
-                    </div>
+
+            <div class="move-section-container" style="margin: 20px 0; padding: 10px; border-top: 1px solid var(--border-color);">
+                <label for="move-book-select" style="display: block; margin-bottom: 8px; font-weight: bold;">Mover a otra sección:</label>
+                <select id="move-book-select" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid var(--accent-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem;">
+                    </select>
+            </div>
+
+            <div class="detail-notes-section">
+                <label>Notas personales</label>
+                <textarea id="detail-notes" rows="6" placeholder="Escribe aquí tus reflexiones..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
+                <div class="modal-actions-right">
+                    <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
+                    <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
                 </div>
             </div>
         </div>
-    </dialog>
+    </div>
+</dialog>
 
     <script src="config.js"></script>
     <script src="script-demo.js" defer></script>

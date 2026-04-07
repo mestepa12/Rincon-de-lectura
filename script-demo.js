@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     ];
 
+
+    const SECTIONS = {
+    'leyendo-ahora': 'Leyendo Ahora',
+    'proximas-lecturas': 'Próximas Lecturas',
+    'libros-terminados': 'Libros Terminados',
+    'lista-deseos': 'Lista de Deseos'
+};
+
     // 2. Selectores
     const searchBar = document.getElementById('search-bar');
     const mainContent = document.getElementById('main-content');
@@ -121,32 +129,58 @@ document.addEventListener('DOMContentLoaded', () => {
         addBookForm.reset();
     };
 
-    function openModal(id) {
-        const book = booksData.find(b => b.id === id);
-        if (!book) return;
-        bookDetailModal.dataset.bookId = id;
-        document.getElementById('detail-title').textContent = book.title;
-        document.getElementById('detail-author').textContent = book.author;
-        document.getElementById('detail-cover').src = book.cover;
-        document.getElementById('detail-notes').value = book.notes;
-        
-        const prog = document.getElementById('detail-progress-section');
-        if (book.section === 'leyendo-ahora') {
-            prog.style.display = 'block';
-            document.getElementById('current-page').value = book.currentPage;
-            document.getElementById('total-pages-display').textContent = `/ ${book.totalPages} págs`;
-            const perc = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
-            document.getElementById('progress-bar-fill').style.width = Math.min(perc, 100) + '%';
-        } else {
-            prog.style.display = 'none';
-        }
-        bookDetailModal.showModal();
+function openModal(id) {
+    const book = booksData.find(b => b.id === id);
+    if (!book) return;
+
+    // 1. Rellenar datos básicos
+    bookDetailModal.dataset.bookId = id;
+    document.getElementById('detail-title').textContent = book.title;
+    document.getElementById('detail-author').textContent = book.author;
+    document.getElementById('detail-cover').src = book.cover;
+    document.getElementById('detail-notes').value = book.notes;
+    
+    // 2. Gestionar la caja de progreso
+    const prog = document.getElementById('detail-progress-section');
+    if (book.section === 'leyendo-ahora') {
+        prog.style.display = 'block';
+        document.getElementById('current-page').value = book.currentPage;
+        document.getElementById('total-pages-display').textContent = `/ ${book.totalPages} págs`;
+        const perc = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
+        document.getElementById('progress-bar-fill').style.width = Math.min(perc, 100) + '%';
+    } else {
+        prog.style.display = 'none';
     }
+
+    // 3. RELLENAR EL SELECT (¡Aquí está la magia!)
+    const moveSelect = document.getElementById('move-book-select');
+    
+    // Limpiamos y ponemos la opción por defecto
+    moveSelect.innerHTML = '<option value="" disabled selected>Selecciona un destino...</option>';
+    
+    // Recorremos las secciones y añadimos las que NO son la actual
+    Object.entries(SECTIONS).forEach(([key, name]) => {
+        if (key !== book.section) {
+            const opt = document.createElement('option');
+            opt.value = key;
+            opt.textContent = name;
+            moveSelect.appendChild(opt);
+        }
+    });
+
+    // 4. Abrir por fin el modal
+    bookDetailModal.showModal();
+}
 
     document.getElementById('save-details-btn').onclick = () => {
         const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
         if (book) {
             book.notes = document.getElementById('detail-notes').value;
+
+            const newSection = document.getElementById('move-book-select').value;
+                if (newSection) {
+                    book.section = newSection;
+                }
             if (book.section === 'leyendo-ahora') {
                 book.currentPage = parseInt(document.getElementById('current-page').value) || 0;
             }
