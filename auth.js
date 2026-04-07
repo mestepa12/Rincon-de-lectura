@@ -1,4 +1,8 @@
 import { 
+    initializeApp 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+
+import { 
     getAuth, 
     onAuthStateChanged, 
     sendEmailVerification, 
@@ -16,8 +20,10 @@ import {
     setDoc 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-const auth = getAuth();
-const db = getFirestore();
+// Inicialización unificada usando el objeto global de config.js
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- REFERENCIAS DE ELEMENTOS (LOGIN) ---
@@ -29,23 +35,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- REFERENCIAS DE ELEMENTOS (REGISTRO) ---
     const registerForm = document.getElementById('register-form');
-    const regUsernameInput = document.getElementById('username');
+    const regUsernameInput = document.getElementById('username'); 
     const regPasswordInput = document.getElementById('register-password'); 
     const regTogglePasswordBtn = document.getElementById('toggle-register-password'); 
     const regConfirmInput = document.getElementById('register-password-confirm'); 
     const regConfirmToggleBtn = document.getElementById('toggle-register-password-confirm'); 
     
+    // --- ELEMENTOS DE VERIFICACIÓN ---
+    const divAviso = document.getElementById('msg-verificacion');
+    const btnReenviar = document.getElementById('btn-reenviar-correo');
+    const textoEstado = document.getElementById('estado-envio');
+
     // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (LOGIN) ---
     if (passwordInput && togglePasswordBtn) {
         togglePasswordBtn.addEventListener('click', () => {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
             togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
-            togglePasswordBtn.setAttribute('aria-label', type === 'password' ? 'Mostrar contraseña' : 'Ocultar contraseña');
         });
     }
 
-    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (REGISTRO - CAMPO 1) ---
+    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (REGISTRO) ---
     if (regPasswordInput && regTogglePasswordBtn) {
         regTogglePasswordBtn.addEventListener('click', () => {
             const type = regPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -54,7 +64,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (REGISTRO - CAMPO 2) ---
     if (regConfirmInput && regConfirmToggleBtn) {
         regConfirmToggleBtn.addEventListener('click', () => {
             const type = regConfirmInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -68,14 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
             const provider = new GoogleAuthProvider();
-            
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Inicio de sesión con Google exitoso:", result.user.email);
                     window.location.href = 'biblioteca.html';
                 })
                 .catch((error) => {
-                    console.error("Error al iniciar sesión con Google:", error);
+                    console.error("Error Google:", error);
                     if(loginError) loginError.textContent = 'No se pudo iniciar sesión con Google.';
                 });
         });
@@ -85,12 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = emailInput.value;
-            const password = passwordInput.value; 
-
-            signInWithEmailAndPassword(auth, email, password)
+            signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
                 .then((userCredential) => {
-                    if (userCredential.user.emailVerified) {
+                    const user = userCredential.user;
+                    if (user.emailVerified) {
                         window.location.href = 'biblioteca.html';
                     } else {
                         loginError.textContent = 'Por favor, verifica tu correo antes de entrar.';
@@ -98,48 +104,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch((error) => {
                     loginError.textContent = 'Correo o contraseña incorrectos.';
-                    console.error("Error de inicio de sesión:", error);
+                    console.error("Error login:", error);
                 });
         });
     }
 
-    const divAviso = document.getElementById('msg-verificacion');
-    const btnReenviar = document.getElementById('btn-reenviar-correo');
-    const textoEstado = document.getElementById('estado-envio');
-
-    // 1. Detectar si el usuario está logueado pero no verificado
+    // --- DETECTOR DE ESTADO (MENSAJE DE VERIFICACIÓN) ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             if (!user.emailVerified) {
-                if(divAviso) divAviso.style.display = 'block';
+                if (divAviso) divAviso.style.display = 'block'; 
             } else {
-                if(divAviso) divAviso.style.display = 'none';
+                if (divAviso) divAviso.style.display = 'none'; 
             }
         } else {
-            if(divAviso) divAviso.style.display = 'none';
+            if (divAviso) divAviso.style.display = 'none'; 
         }
     });
 
-    // 2. Lógica para el botón de reenviar
+    // --- LÓGICA REENVIAR CORREO ---
     if (btnReenviar) {
         btnReenviar.addEventListener('click', async (e) => {
             e.preventDefault();
             const user = auth.currentUser;
-
             if (user) {
                 try {
                     await sendEmailVerification(user);
-                    textoEstado.innerText = "✅ Correo enviado. Revisa tu bandeja de SPAM.";
-                    textoEstado.style.color = "green";
-                    textoEstado.style.display = "block";
-                } catch (error) {
-                    if (error.code === 'auth/too-many-requests') {
-                        textoEstado.innerText = "❌ Demasiados intentos. Espera unos minutos.";
-                    } else {
-                        textoEstado.innerText = "❌ Error al enviar. Inténtalo más tarde.";
+                    if (textoEstado) {
+                        textoEstado.innerText = "✅ Correo enviado. Revisa tu bandeja de SPAM.";
+                        textoEstado.style.color = "green";
+                        textoEstado.style.display = "block";
                     }
-                    textoEstado.style.color = "red";
-                    textoEstado.style.display = "block";
+                } catch (error) {
+                    if (textoEstado) {
+                        textoEstado.innerText = error.code === 'auth/too-many-requests' 
+                            ? "❌ Demasiados intentos. Espera unos minutos." 
+                            : "❌ Error al enviar.";
+                        textoEstado.style.color = "red";
+                        textoEstado.style.display = "block";
+                    }
                 }
             }
         });
@@ -168,26 +171,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         email: email,
                         uid: user.uid,
                         searchKey: username.toLowerCase()
-                    }).then(() => {
-                        return sendEmailVerification(user);
-                    });
+                    }).then(() => sendEmailVerification(user));
                 })
+                .then(() => signOut(auth))
                 .then(() => {
-                    return signOut(auth);
-                })
-                .then(() => {
-                    alert(`Cuenta creada correctamente para "${username}".\n\nHemos enviado un correo de verificación a ${email}.\nPor favor, revisa tu bandeja de entrada.`);
+                    alert(`Cuenta creada para "${username}". Verifica tu correo.`);
                     window.location.href = 'login.html';
                 })
                 .catch((error) => {
                     if (error.code == 'auth/weak-password') {
-                        registerError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
+                        registerError.textContent = 'Contraseña débil (mín. 6 caracteres).';
                     } else if (error.code == 'auth/email-already-in-use') {
-                        registerError.textContent = 'Este correo electrónico ya está registrado.';
+                        registerError.textContent = 'El correo ya está registrado.';
                     } else {
-                        registerError.textContent = 'Error al crear la cuenta: ' + error.message;
+                        registerError.textContent = 'Error: ' + error.message;
                     }
-                    console.error("Error de registro:", error);
                 });
         });
     }
@@ -197,38 +195,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetModal = document.getElementById('reset-password-modal');
     const resetForm = document.getElementById('reset-password-form');
     const cancelResetBtn = document.getElementById('cancel-reset-btn');
-    const loginEmailInputForReset = document.getElementById('email'); 
     const resetEmailInput = document.getElementById('reset-email');
 
     if (forgotPasswordLink && resetModal) {
         forgotPasswordLink.addEventListener('click', (e) => {
             e.preventDefault();
-            if (loginEmailInputForReset && loginEmailInputForReset.value) {
-                resetEmailInput.value = loginEmailInputForReset.value;
-            }
+            if (emailInput && emailInput.value) resetEmailInput.value = emailInput.value;
             resetModal.showModal();
         });
 
-        cancelResetBtn.addEventListener('click', () => {
-            resetModal.close();
-        });
+        cancelResetBtn.addEventListener('click', () => resetModal.close());
 
         resetForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = resetEmailInput.value;
-
-            sendPasswordResetEmail(auth, email)
+            sendPasswordResetEmail(auth, resetEmailInput.value)
                 .then(() => {
-                    alert(`Hemos enviado un enlace de recuperación a ${email}.\n\n⚠️ IMPORTANTE: Por favor, revisa tu carpeta de SPAM.`);
+                    alert(`Enlace enviado a ${resetEmailInput.value}. Revisa SPAM.`);
                     resetModal.close();
                 })
                 .catch((error) => {
-                    console.error("Error al enviar reset:", error);
-                    if (error.code === 'auth/user-not-found') {
-                        alert('No existe ninguna cuenta con este correo electrónico.');
-                    } else {
-                        alert('Error al enviar el correo. Inténtalo de nuevo.');
-                    }
+                    alert(error.code === 'auth/user-not-found' ? 'Correo no encontrado.' : 'Error al enviar.');
                 });
         });
     }
