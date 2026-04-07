@@ -21,7 +21,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
 // Tu configuración integrada para que no falle el "No Firebase App"
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc",
   authDomain: "mi-rincon-de-lectura.firebaseapp.com",
   projectId: "mi-rincon-de-lectura",

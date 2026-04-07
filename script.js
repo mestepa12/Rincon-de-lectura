@@ -1,6 +1,8 @@
+import { firebaseConfig } from './auth.js';
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
 // 1. Inicialización (Igual que en auth.js)
 const app = initializeApp(firebaseConfig);
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function runApp(user) {
         // Referencias a colecciones (Sintaxis V10)
         const booksCollection = collection(db, 'books');
-
+        const userBooksCollection = collection(db, 'books');
         const SECTIONS = {
             'leyendo-ahora': 'Leyendo Ahora',
             'proximas-lecturas': 'Próximas Lecturas',
@@ -115,6 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteBookModalBtn = document.getElementById('delete-book-modal-btn');
         const cancelDetailModalBtn = document.getElementById('cancel-detail-modal');
         const logoutBtn = document.getElementById('logout-btn');
+        const detailCoverContainer = document.getElementById('detail-cover-container');
         
         
         // ===============================================
@@ -402,13 +405,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Cargar MI nombre de usuario
         const loadMyProfile = async () => {
             try {
-                const userDoc = await db.collection('users').doc(user.uid).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    // Mostramos el nombre en la cabecera del sidebar
+                const userDocRef = doc(db, 'users', user.uid); // Nueva forma
+                const userDocSnap = await getDoc(userDocRef);  // Nueva forma
+                
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
                     currentUserDisplay.textContent = `@${userData.username}`;
                 } else {
-                    // Si no tiene documento (usuarios antiguos), mostramos el email recortado
                     currentUserDisplay.textContent = user.email.split('@')[0];
                 }
             } catch (error) {
@@ -426,81 +429,68 @@ document.addEventListener('DOMContentLoaded', () => {
         const friendSearchResults = document.getElementById('friend-search-results');
 
         const searchUsers = async () => {
-            const queryText = friendSearchInput.value.trim().toLowerCase();
-            
-            if (queryText.length < 3) {
-                alert("Escribe al menos 3 letras para buscar.");
+        const queryText = friendSearchInput.value.trim().toLowerCase();
+
+        if (queryText.length < 3) {
+            alert("Escribe al menos 3 letras para buscar.");
+            return;
+        }
+
+        friendSearchResults.innerHTML = '<p style="text-align:center; padding:10px; color:var(--accent-color);">Buscando...</p>';
+
+        try {
+            // 1. Definir la referencia a la colección
+            const usersRef = collection(db, 'users');
+
+            // 2. Crear la consulta con la nueva sintaxis modular
+            const q = query(
+                usersRef,
+                where('searchKey', '>=', queryText),
+                where('searchKey', '<=', queryText + '\uf8ff'),
+                limit(5)
+            );
+
+            // 3. Obtener los documentos usando getDocs
+            const snapshot = await getDocs(q);
+
+            friendSearchResults.innerHTML = ''; // Limpiar resultados anteriores
+
+            if (snapshot.empty) {
+                friendSearchResults.innerHTML = `
+                    <div style="text-align:center; padding: 1rem; color: var(--text-color); opacity: 0.7;">
+                        <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">😕</p>
+                        <p>No se encontraron usuarios con ese nombre.</p>
+                    </div>
+                `;
                 return;
             }
 
-            friendSearchResults.innerHTML = '<p style="text-align:center; padding:10px; color:var(--accent-color);">Buscando...</p>';
+            // 4. Recorrer los resultados
+            snapshot.forEach(docSnap => {
+                const userData = docSnap.data();
+                if (userData.uid === auth.currentUser.uid) return;
 
-            try {
-                const usersRef = db.collection('users');
-                const snapshot = await usersRef
-                    .where('searchKey', '>=', queryText)
-                    .where('searchKey', '<=', queryText + '\uf8ff')
-                    .limit(5)
-                    .get();
+                // Aquí continúa la creación de tus 'user-card' (userItem)
+                // ...
+            });
 
-                friendSearchResults.innerHTML = ''; // Limpiar
-
-                // --- AQUÍ ESTÁ EL MENSAJE DE NO ENCONTRADO ---
-                if (snapshot.empty) {
-                    friendSearchResults.innerHTML = `
-                        <div style="text-align:center; padding: 1rem; color: var(--text-color); opacity: 0.7;">
-                            <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">😕</p>
-                            <p>No se encontraron usuarios con ese nombre.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                // ---------------------------------------------
-
-                snapshot.forEach(doc => {
-                    const userData = doc.data();
-                    if (userData.uid === user.uid) return;
-
-                    const userItem = document.createElement('div');
-                    userItem.className = 'user-card';
-                    // Estilos en línea para asegurar que se vea bien
-                    userItem.style.cssText = `
-                        display: flex; justify-content: space-between; align-items: center; 
-                        padding: 10px; background: var(--bg-color); border-radius: 8px; 
-                        margin-bottom: 8px; border: 1px solid var(--border-color);
-                    `;
-
-                    userItem.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="user-avatar-placeholder" style="width:30px; height:30px; font-size:0.8rem;">👤</div>
-                            <span style="font-weight:bold;">@${userData.username}</span>
-                        </div>
-                        <button class="btn-add-friend" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">Añadir</button>
-                    `;
-                    
-                    const addBtn = userItem.querySelector('.btn-add-friend');
-                    addBtn.addEventListener('click', () => {
-                        enviarSolicitudAmistad(userData);
-                    });
-
-                    friendSearchResults.appendChild(userItem);
-                });
-
-            } catch (error) {
-                console.error("Error buscando usuarios:", error);
-                friendSearchResults.innerHTML = '<p class="empty-msg">Error al buscar.</p>';
-            }
-        };
+        } catch (error) {
+            console.error("Error buscando usuarios:", error);
+            friendSearchResults.innerHTML = '<p class="empty-msg">Error al buscar.</p>';
+        }
+    };
 
         // 4. ESCUCHAR SOLICITUDES PENDIENTES (El Buzón)
         const friendRequestsList = document.getElementById('friend-requests-list');
         const requestsCountBadge = document.getElementById('requests-count');
 
         // Esta función se activa sola cada vez que hay cambios en la base de datos
-        db.collection('users').doc(user.uid).collection('friend_requests')
-            .where('status', '==', 'pending') // Solo las pendientes
-            .onSnapshot((snapshot) => {
-                
+        const qRequests = query(
+            collection(db, 'users', user.uid, 'friend_requests'), 
+            where('status', '==', 'pending')
+        );
+
+            onSnapshot(qRequests, (snapshot) => {                
                 // 1. Actualizar el contador rojo
                 const count = snapshot.size;
                 if(requestsCountBadge) {
@@ -550,30 +540,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Lógica para Aceptar/Rechazar ---
         const aceptarSolicitud = async (friendId, requestData) => {
             try {
-                const batch = db.batch();
+                const batch = writeBatch(db);
 
                 // 1. Añadirlo a MIS amigos
-                const myFriendRef = db.collection('users').doc(user.uid).collection('friends').doc(friendId);
+                const myFriendRef = doc(db, 'users', user.uid, 'friends', friendId);
                 batch.set(myFriendRef, {
                     friendUid: friendId,
                     friendUsername: requestData.fromUsername,
-                    since: firebase.firestore.FieldValue.serverTimestamp()
+                    since: serverTimestamp()
                 });
 
                 // 2. Añadirme a SUS amigos (recíproco)
-                // Primero necesito mi propio username
-                const myProfile = await db.collection('users').doc(user.uid).get();
-                const myUsername = myProfile.data().username;
+                const myProfileSnap = await getDoc(doc(db, 'users', user.uid));
+                const myUsername = myProfileSnap.data().username;
 
-                const theirFriendRef = db.collection('users').doc(friendId).collection('friends').doc(user.uid);
+                const theirFriendRef = doc(db, 'users', friendId, 'friends', user.uid);
                 batch.set(theirFriendRef, {
                     friendUid: user.uid,
                     friendUsername: myUsername,
-                    since: firebase.firestore.FieldValue.serverTimestamp()
+                    since: serverTimestamp()
                 });
 
                 // 3. Borrar la solicitud
-                const reqRef = db.collection('users').doc(user.uid).collection('friend_requests').doc(friendId);
+                const reqRef = doc(db, 'users', user.uid, 'friend_requests', friendId);
                 batch.delete(reqRef);
 
                 await batch.commit();
@@ -588,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rechazarSolicitud = async (friendId) => {
             if(!confirm("¿Rechazar solicitud?")) return;
             try {
-                await db.collection('users').doc(user.uid).collection('friend_requests').doc(friendId).delete();
+                await deleteDoc(doc(db, 'users', user.uid, 'friend_requests', friendId));
             } catch (error) {
                 console.error("Error al rechazar:", error);
             }
@@ -596,38 +585,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Función REAL para enviar solicitud
         const enviarSolicitudAmistad = async (targetUser) => {
-            
-            // --- 1. CHEQUEO DE SEGURIDAD PREVIO ---
-            // Antes de molestar a la base de datos, miramos si ya lo tenemos en la lista local
             if (myFriendIds.has(targetUser.uid)) {
                 alert(`¡Ya eres amigo de @${targetUser.username}! No es necesario enviar solicitud.`);
-                
-                // Actualizamos el botón visualmente para que se bloquee
                 const btn = document.querySelector(`button[data-uid="${targetUser.uid}"]`); 
                 if (btn) {
                     btn.textContent = "Amigo ✔";
                     btn.disabled = true;
                     btn.style.opacity = "0.7";
                 }
-                return; // ¡DETENEMOS LA FUNCIÓN AQUÍ!
+                return;
             }
-            // --------------------------------------
 
             const btn = document.querySelector(`button[data-uid="${targetUser.uid}"]`); 
             if(btn) btn.textContent = "Enviando...";
 
             try {
-                const myProfileSnap = await db.collection('users').doc(user.uid).get();
+                const myProfileSnap = await getDoc(doc(db, 'users', user.uid));
                 const myUsername = myProfileSnap.data().username;
 
-                const requestRef = db.collection('users').doc(targetUser.uid)
-                                     .collection('friend_requests').doc(user.uid);
+                const requestRef = doc(db, 'users', targetUser.uid, 'friend_requests', user.uid);
 
-                await requestRef.set({
+                await setDoc(requestRef, {
                     fromUid: user.uid,
                     fromUsername: myUsername,
                     status: 'pending',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    timestamp: serverTimestamp()
                 });
 
                 alert(`¡Solicitud enviada a @${targetUser.username}!`);
@@ -638,110 +620,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error("Error al enviar solicitud:", error);
-                
-                // Si por alguna razón la regla de seguridad falla, mostramos un mensaje más amigable
                 if (error.code === 'permission-denied') {
                      alert("No se pudo enviar la solicitud. Es posible que ya seáis amigos o que tengas una solicitud pendiente.");
                 } else {
                      alert("Error al enviar la solicitud. Inténtalo de nuevo.");
                 }
-                
                 if(btn) btn.textContent = "Reintentar";
             }
         };
         
-        
-        // Eventos del buscador
-        if (friendSearchBtn) {
-            friendSearchBtn.addEventListener('click', searchUsers);
-        }
-        // Permitir buscar pulsando Enter
-        if (friendSearchInput) {
-            friendSearchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') searchUsers();
-            });
-        }
-
-
-        // 5. LISTA DE AMIGOS Y VER BIBLIOTECAS
-        const friendsList = document.getElementById('friends-list');
-
-        // Escuchamos cambios en la colección de amigos confirmados
-        db.collection('users').doc(user.uid).collection('friends')
-            .orderBy('since', 'desc')
-            .onSnapshot((snapshot) => {
-                
-                // --- ACTUALIZAMOS EL SET PARA EL BUSCADOR ---
-                myFriendIds.clear();
-                snapshot.forEach(doc => myFriendIds.add(doc.id));
-                // -------------------------------------------
-
-                if (snapshot.empty) {
-                    friendsList.innerHTML = '<p class="empty-msg">Aún no tienes amigos agregados.</p>';
-                } else {
-                    friendsList.innerHTML = '';
-                    
-                    snapshot.forEach(doc => {
-                        const friendData = doc.data();
-                        
-                        const div = document.createElement('div');
-                        div.className = 'user-card';
-                        div.style.cssText = `
-                            display: flex; justify-content: space-between; align-items: center;
-                            padding: 10px; background: var(--bg-color); 
-                            border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 5px;
-                        `;
-                        
-                        // AÑADIMOS EL BOTÓN DE PAPELERA 🗑️
-                        div.innerHTML = `
-                            <div style="font-size:0.9rem; display:flex; align-items:center; gap:8px; overflow:hidden;">
-                                <span style="font-size:1.2rem;">👤</span>
-                                <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">@${friendData.friendUsername}</b>
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <button class="btn-view" style="background:var(--accent-color); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Ver</button>
-                                <button class="btn-delete-friend" style="background:transparent; border:1px solid #E53E3E; color:#E53E3E; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;" title="Eliminar amigo">🗑️</button>
-                            </div>
-                        `;
-
-                        // Al hacer clic en "Ver"
-                        div.querySelector('.btn-view').addEventListener('click', () => {
-                            cargarBibliotecaAmigo(friendData.friendUid, friendData.friendUsername);
-                        });
-
-                        // Al hacer clic en "Eliminar" (NUEVO)
-                        div.querySelector('.btn-delete-friend').addEventListener('click', () => {
-                            eliminarAmigo(friendData.friendUid, friendData.friendUsername);
-                        });
-
-                        friendsList.appendChild(div);
-                    });
-                }
-            });
-
-
-            // --- FUNCIÓN PARA ELIMINAR AMIGO ---
+        // --- FUNCIÓN PARA ELIMINAR AMIGO ---
         const eliminarAmigo = async (friendUid, friendName) => {
             if (!confirm(`¿Estás seguro de que quieres eliminar a @${friendName} de tus amigos?\nDejaréis de ver vuestras bibliotecas mutuamente.`)) {
                 return;
             }
 
             try {
-                const batch = db.batch();
+                const batch = writeBatch(db);
 
                 // 1. Borrar de MI lista
-                const myRef = db.collection('users').doc(user.uid).collection('friends').doc(friendUid);
+                const myRef = doc(db, 'users', user.uid, 'friends', friendUid);
                 batch.delete(myRef);
 
                 // 2. Borrar de SU lista (Recíproco)
-                const theirRef = db.collection('users').doc(friendUid).collection('friends').doc(user.uid);
+                const theirRef = doc(db, 'users', friendUid, 'friends', user.uid);
                 batch.delete(theirRef);
 
                 await batch.commit();
                 
                 alert(`Has eliminado a @${friendName}.`);
 
-                // EXTRA: Si estabas viendo su biblioteca justo ahora, te mandamos a casa para evitar errores
                 const currentTitle = document.getElementById('site-title').textContent;
                 if (currentTitle.includes(friendName)) {
                     window.location.reload();
@@ -773,19 +681,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 4. Cargamos SUS libros
             // Nota: Esto funciona gracias a las reglas de seguridad que cambiamos antes
-            db.collection('books')
-                .where("userId", "==", friendUid)
-                .onSnapshot(snapshot => {
-                    booksData = [];
-                    snapshot.forEach(doc => {
-                        booksData.push({ id: doc.id, ...doc.data() });
-                    });
-                    booksData.sort((a, b) => a.title.localeCompare(b.title));
-                    renderBooks(); // Usamos tu función de renderizado existente
-                    
-                    // Añadimos un botón para "Volver a mi biblioteca"
-                    mostrarBotonVolver();
-                });
+            const q = query(collection(db, 'books'), where("userId", "==", friendUid));
+
+onSnapshot(q, (snapshot) => {
+    booksData = [];
+    snapshot.forEach(doc => {
+        booksData.push({ id: doc.id, ...doc.data() });
+    });
+    booksData.sort((a, b) => a.title.localeCompare(b.title));
+    renderBooks();
+    mostrarBotonVolver();
+});
+
         };
 
         const mostrarBotonVolver = () => {
@@ -819,13 +726,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentPage: 0,
                 notes: '',
                 rating: 0,
-                googleLink: formData.get('googleLink') || '' // <--- ¡NUEVO! Guardamos en la BBDD
+                googleLink: formData.get('googleLink') || ''
             };
         
-            userBooksCollection.add(newBook).then(() => {
+            addDoc(collection(db, 'books'), newBook).then(() => {
                 console.log("Libro añadido a Firebase");
                 addBookForm.reset();
-                if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = ''; // Limpiar búsqueda
+                if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = '';
                 addBookModal.close();
             }).catch(error => console.error("Error al añadir libro:", error));
         };
@@ -845,27 +752,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
             }
         
-            userBooksCollection.doc(bookId).update(updatedData).then(() => {
+            updateDoc(doc(db, 'books', bookId), updatedData).then(() => {
                 console.log("Detalles actualizados");
                 bookDetailModal.close();
             }).catch(error => console.error("Error al guardar:", error));
         };
 
         const handleDeleteBook = (bookId) => {
-            userBooksCollection.doc(String(bookId)).delete().catch(error => console.error("Error al eliminar:", error));
+            deleteDoc(doc(db, 'books', String(bookId))).catch(error => console.error("Error al eliminar:", error));
         };
 
         const handleMoveBook = (bookId, targetSection) => {
-            const bookRef = userBooksCollection.doc(bookId); 
-            bookRef.update({
+            const bookRef = doc(db, 'books', bookId); 
+            updateDoc(bookRef, {
                 section: targetSection,
                 currentPage: 0,
-                rating: firebase.firestore.FieldValue.delete()
+                rating: deleteField()
             }).catch(error => console.error("Error al mover:", error));
         };
         
         const handleRateBook = (bookId, rating) => {
-            userBooksCollection.doc(String(bookId)).update({ rating: rating }).catch(error => console.error("Error al valorar:", error));
+            updateDoc(doc(db, 'books', String(bookId)), { rating: rating }).catch(error => console.error("Error al valorar:", error));
         };
         
         const handleMainContentClick = (e) => {
@@ -902,21 +809,27 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // --- LISTENER TIEMPO REAL FIREBASE ---
-        userBooksCollection
-        .where("userId", "==", user.uid) 
-        .onSnapshot(snapshot => {
+        // 1. Definimos la referencia a la colección 'books'
+        const booksRef = collection(db, 'books');
+
+        // 2. Creamos la consulta (query)
+        const qMyBooks = query(booksRef, where("userId", "==", user.uid));
+
+        // 3. Escuchamos los cambios con onSnapshot
+        onSnapshot(qMyBooks, (snapshot) => {
             viewingFriendLibrary = false;
             booksData = [];
-            snapshot.forEach(doc => {
-                const book = { id: doc.id, ...doc.data() }; 
+            
+            snapshot.forEach(docSnap => {
+                const book = { id: docSnap.id, ...docSnap.data() }; 
                 booksData.push(book);
             });
+
             // Orden alfabético por título
             booksData.sort((a, b) => a.title.localeCompare(b.title));
             renderBooks();
-        }, error => {
+        }, (error) => {
             console.error("Error al recibir datos de Firebase: ", error);
-            // Evitamos alert molesto si es por adblock, solo log
         });
 
         // --- ASIGNACIÓN DE EVENTOS ---
@@ -951,18 +864,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        detailCoverContainer.addEventListener('click', () => {
+        detailCoverContainer.addEventListener('click', async () => {
             const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
             const newCoverUrl = prompt('Introduce la nueva URL para la portada:', book.cover || '');
             if (newCoverUrl !== null) {
-                detailCover.src = newCoverUrl || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-                book.cover = newCoverUrl;
+                try {
+                    detailCover.src = newCoverUrl || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+                    const bookRef = doc(db, 'books', bookId);
+                    await updateDoc(bookRef, { cover: newCoverUrl });
+                } catch (error) {
+                    console.error("Error al actualizar la portada:", error);
+                }
             }
-        });
-        
-        moveBookSelect.addEventListener('change', () => {
+        });        
+                moveBookSelect.addEventListener('change', () => {
             const bookId = bookDetailModal.dataset.bookId;
             const newSection = moveBookSelect.value;
             if (bookId && newSection) {
