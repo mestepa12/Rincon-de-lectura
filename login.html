@@ -29,6 +29,16 @@
             </div>
             <button type="submit" class="btn-primary">Entrar</button>
             <p id="login-error" class="error-message"></p>
+
+            <div id="msg-verificacion" style="display: none; margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-size: 14px;">
+                <p style="margin: 0; color: #333;">
+                    ⚠️ Tu cuenta no ha sido verificada todavía. 
+                    <br>
+                    <a href="#" id="btn-reenviar-correo" style="color: #007bff; font-weight: bold;">Haz clic aquí para recibir un nuevo enlace.</a>
+                </p>
+                <p id="estado-envio" style="margin-top: 5px; font-size: 12px; display: none;"></p>
+            </div>
+
         </form>
 
     <dialog id="reset-password-modal">

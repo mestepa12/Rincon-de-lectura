@@ -1,3 +1,5 @@
+    import { getAuth, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- REFERENCIAS DE ELEMENTOS (LOGIN) ---
     const loginForm = document.getElementById('login-form');
@@ -80,6 +82,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
+
+
+    const auth = getAuth();
+    const divAviso = document.getElementById('msg-verificacion');
+    const btnReenviar = document.getElementById('btn-reenviar-correo');
+    const textoEstado = document.getElementById('estado-envio');
+
+    // 1. Detectar si el usuario está logueado pero no verificado
+    onAuthStateChanged(auth, (user) => {
+    if (user) {
+        if (!user.emailVerified) {
+        divAviso.style.display = 'block'; // Mostramos el aviso
+        } else {
+        divAviso.style.display = 'none'; // Lo ocultamos si ya verificó
+        }
+    } else {
+        divAviso.style.display = 'none'; // Lo ocultamos si no hay sesión
+    }
+    });
+
+    // 2. Lógica para el botón de reenviar
+    btnReenviar.addEventListener('click', async (e) => {
+    e.preventDefault();
+    const user = auth.currentUser;
+
+    if (user) {
+        try {
+        await sendEmailVerification(user);
+        textoEstado.innerText = "✅ Correo enviado. Revisa tu bandeja de SPAM.";
+        textoEstado.style.color = "green";
+        textoEstado.style.display = "block";
+        } catch (error) {
+        if (error.code === 'auth/too-many-requests') {
+            textoEstado.innerText = "❌ Demasiados intentos. Espera unos minutos.";
+        } else {
+            textoEstado.innerText = "❌ Error al enviar. Inténtalo más tarde.";
+        }
+        textoEstado.style.color = "red";
+        textoEstado.style.display = "block";
+        }
+    }
+    });
  
     // --- MANEJO DEL FORMULARIO DE REGISTRO (MODIFICADO) ---
     if (registerForm) {
