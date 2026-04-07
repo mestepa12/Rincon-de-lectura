@@ -1,4 +1,23 @@
-    import { getAuth, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import { 
+    getAuth, 
+    onAuthStateChanged, 
+    sendEmailVerification, 
+    signInWithPopup, 
+    GoogleAuthProvider, 
+    signInWithEmailAndPassword, 
+    createUserWithEmailAndPassword, 
+    signOut, 
+    sendPasswordResetEmail 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+
+import { 
+    getFirestore, 
+    doc, 
+    setDoc 
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+const auth = getAuth();
+const db = getFirestore();
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- REFERENCIAS DE ELEMENTOS (LOGIN) ---
@@ -10,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- REFERENCIAS DE ELEMENTOS (REGISTRO) ---
     const registerForm = document.getElementById('register-form');
-    const regUsernameInput = document.getElementById('username'); // <--- NUEVO: Referencia al campo de usuario
+    const regUsernameInput = document.getElementById('username');
     const regPasswordInput = document.getElementById('register-password'); 
     const regTogglePasswordBtn = document.getElementById('toggle-register-password'); 
     const regConfirmInput = document.getElementById('register-password-confirm'); 
@@ -48,18 +67,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleSignInBtn = document.getElementById('google-signin-btn');
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
+            const provider = new GoogleAuthProvider();
             
-            firebase.auth().signInWithPopup(provider)
+            signInWithPopup(auth, provider)
                 .then((result) => {
-                    // OPCIONAL: Si quisieras guardar también el usuario de Google en la base de datos, iría aquí.
-                    // Por ahora lo dejamos simple para el login.
                     console.log("Inicio de sesión con Google exitoso:", result.user.email);
                     window.location.href = 'biblioteca.html';
                 })
                 .catch((error) => {
                     console.error("Error al iniciar sesión con Google:", error);
-                    const loginError = document.getElementById('login-error'); 
                     if(loginError) loginError.textContent = 'No se pudo iniciar sesión con Google.';
                 });
         });
@@ -72,9 +88,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = emailInput.value;
             const password = passwordInput.value; 
 
-            firebase.auth().signInWithEmailAndPassword(email, password)
-                .then(() => {
-                    window.location.href = 'biblioteca.html';
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    if (userCredential.user.emailVerified) {
+                        window.location.href = 'biblioteca.html';
+                    } else {
+                        loginError.textContent = 'Por favor, verifica tu correo antes de entrar.';
+                    }
                 })
                 .catch((error) => {
                     loginError.textContent = 'Correo o contraseña incorrectos.';
@@ -83,54 +103,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-
-    const auth = getAuth();
     const divAviso = document.getElementById('msg-verificacion');
     const btnReenviar = document.getElementById('btn-reenviar-correo');
     const textoEstado = document.getElementById('estado-envio');
 
     // 1. Detectar si el usuario está logueado pero no verificado
     onAuthStateChanged(auth, (user) => {
-    if (user) {
-        if (!user.emailVerified) {
-        divAviso.style.display = 'block'; // Mostramos el aviso
+        if (user) {
+            if (!user.emailVerified) {
+                if(divAviso) divAviso.style.display = 'block';
+            } else {
+                if(divAviso) divAviso.style.display = 'none';
+            }
         } else {
-        divAviso.style.display = 'none'; // Lo ocultamos si ya verificó
+            if(divAviso) divAviso.style.display = 'none';
         }
-    } else {
-        divAviso.style.display = 'none'; // Lo ocultamos si no hay sesión
-    }
     });
 
     // 2. Lógica para el botón de reenviar
-    btnReenviar.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const user = auth.currentUser;
+    if (btnReenviar) {
+        btnReenviar.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
 
-    if (user) {
-        try {
-        await sendEmailVerification(user);
-        textoEstado.innerText = "✅ Correo enviado. Revisa tu bandeja de SPAM.";
-        textoEstado.style.color = "green";
-        textoEstado.style.display = "block";
-        } catch (error) {
-        if (error.code === 'auth/too-many-requests') {
-            textoEstado.innerText = "❌ Demasiados intentos. Espera unos minutos.";
-        } else {
-            textoEstado.innerText = "❌ Error al enviar. Inténtalo más tarde.";
-        }
-        textoEstado.style.color = "red";
-        textoEstado.style.display = "block";
-        }
+            if (user) {
+                try {
+                    await sendEmailVerification(user);
+                    textoEstado.innerText = "✅ Correo enviado. Revisa tu bandeja de SPAM.";
+                    textoEstado.style.color = "green";
+                    textoEstado.style.display = "block";
+                } catch (error) {
+                    if (error.code === 'auth/too-many-requests') {
+                        textoEstado.innerText = "❌ Demasiados intentos. Espera unos minutos.";
+                    } else {
+                        textoEstado.innerText = "❌ Error al enviar. Inténtalo más tarde.";
+                    }
+                    textoEstado.style.color = "red";
+                    textoEstado.style.display = "block";
+                }
+            }
+        });
     }
-    });
  
-    // --- MANEJO DEL FORMULARIO DE REGISTRO (MODIFICADO) ---
+    // --- MANEJO DEL FORMULARIO DE REGISTRO ---
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
-            const username = regUsernameInput.value; // <--- NUEVO: Capturamos el valor
+            const username = regUsernameInput.value;
             const password = regPasswordInput.value; 
             const confirmPassword = regConfirmInput.value; 
             const registerError = document.getElementById('register-error');
@@ -140,34 +160,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 1. Creamos el usuario en Authentication
-            firebase.auth().createUserWithEmailAndPassword(email, password)
+            createUserWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     const user = userCredential.user;
-                    const db = firebase.firestore(); // <--- Inicializamos Firestore
-
-                    // 2. NUEVO: Guardamos la ficha pública en Firestore
-                    return db.collection("users").doc(user.uid).set({
+                    return setDoc(doc(db, "users", user.uid), {
                         username: username,
                         email: email,
                         uid: user.uid,
-                        searchKey: username.toLowerCase() // Para buscar fácil
+                        searchKey: username.toLowerCase()
                     }).then(() => {
-                        // 3. Si se guarda bien en la BD, enviamos el correo
-                        return user.sendEmailVerification();
+                        return sendEmailVerification(user);
                     });
                 })
                 .then(() => {
-                    // 4. Cerramos sesión tras enviar el correo
-                    return firebase.auth().signOut();
+                    return signOut(auth);
                 })
                 .then(() => {
-                    // 5. Avisamos al usuario y redirigimos
                     alert(`Cuenta creada correctamente para "${username}".\n\nHemos enviado un correo de verificación a ${email}.\nPor favor, revisa tu bandeja de entrada.`);
                     window.location.href = 'login.html';
                 })
                 .catch((error) => {
-                    // Manejo de errores
                     if (error.code == 'auth/weak-password') {
                         registerError.textContent = 'La contraseña debe tener al menos 6 caracteres.';
                     } else if (error.code == 'auth/email-already-in-use') {
@@ -179,7 +191,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-
 
     // --- MANEJO DE RECUPERACIÓN DE CONTRASEÑA ---
     const forgotPasswordLink = document.getElementById('forgot-password-link');
@@ -206,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = resetEmailInput.value;
 
-            firebase.auth().sendPasswordResetEmail(email)
+            sendPasswordResetEmail(auth, email)
                 .then(() => {
                     alert(`Hemos enviado un enlace de recuperación a ${email}.\n\n⚠️ IMPORTANTE: Por favor, revisa tu carpeta de SPAM.`);
                     resetModal.close();
