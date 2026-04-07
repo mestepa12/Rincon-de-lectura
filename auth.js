@@ -20,20 +20,30 @@ import {
     setDoc 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-// Inicialización unificada usando el objeto global de config.js
+// Tu configuración integrada para que no falle el "No Firebase App"
+const firebaseConfig = {
+  apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc",
+  authDomain: "mi-rincon-de-lectura.firebaseapp.com",
+  projectId: "mi-rincon-de-lectura",
+  storageBucket: "mi-rincon-de-lectura.appspot.com",
+  messagingSenderId: "333643518949",
+  appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
+};
+
+// Inicializamos ANTES de cualquier otra cosa
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- REFERENCIAS DE ELEMENTOS (LOGIN) ---
+    // Referencias de Login
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
     const loginError = document.getElementById('login-error');
     const togglePasswordBtn = document.getElementById('toggle-password'); 
 
-    // --- REFERENCIAS DE ELEMENTOS (REGISTRO) ---
+    // Referencias de Registro
     const registerForm = document.getElementById('register-form');
     const regUsernameInput = document.getElementById('username'); 
     const regPasswordInput = document.getElementById('register-password'); 
@@ -41,181 +51,123 @@ document.addEventListener('DOMContentLoaded', () => {
     const regConfirmInput = document.getElementById('register-password-confirm'); 
     const regConfirmToggleBtn = document.getElementById('toggle-register-password-confirm'); 
     
-    // --- ELEMENTOS DE VERIFICACIÓN ---
+    // Referencias de Verificación
     const divAviso = document.getElementById('msg-verificacion');
     const btnReenviar = document.getElementById('btn-reenviar-correo');
     const textoEstado = document.getElementById('estado-envio');
 
-    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (LOGIN) ---
-    if (passwordInput && togglePasswordBtn) {
-        togglePasswordBtn.addEventListener('click', () => {
-            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            passwordInput.setAttribute('type', type);
-            togglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-    }
+    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA ---
+    const setupToggle = (btn, input) => {
+        if (btn && input) {
+            btn.addEventListener('click', () => {
+                const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+                input.setAttribute('type', type);
+                btn.textContent = type === 'password' ? '👁️' : '🙈';
+            });
+        }
+    };
+    setupToggle(togglePasswordBtn, passwordInput);
+    setupToggle(regTogglePasswordBtn, regPasswordInput);
+    setupToggle(regConfirmToggleBtn, regConfirmInput);
 
-    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA (REGISTRO) ---
-    if (regPasswordInput && regTogglePasswordBtn) {
-        regTogglePasswordBtn.addEventListener('click', () => {
-            const type = regPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            regPasswordInput.setAttribute('type', type);
-            regTogglePasswordBtn.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-    }
-
-    if (regConfirmInput && regConfirmToggleBtn) {
-        regConfirmToggleBtn.addEventListener('click', () => {
-            const type = regConfirmInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            regConfirmInput.setAttribute('type', type);
-            regConfirmToggleBtn.textContent = type === 'password' ? '👁️' : '🙈';
-        });
-    }
-
-    // --- MANEJADOR PARA EL INICIO DE SESIÓN CON GOOGLE ---
+    // --- LOGIN GOOGLE ---
     const googleSignInBtn = document.getElementById('google-signin-btn');
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
-            const provider = new GoogleAuthProvider();
-            signInWithPopup(auth, provider)
-                .then((result) => {
-                    console.log("Inicio de sesión con Google exitoso:", result.user.email);
-                    window.location.href = 'biblioteca.html';
-                })
-                .catch((error) => {
-                    console.error("Error Google:", error);
-                    if(loginError) loginError.textContent = 'No se pudo iniciar sesión con Google.';
-                });
+            signInWithPopup(auth, new GoogleAuthProvider())
+                .then(() => window.location.href = 'biblioteca.html')
+                .catch(err => console.error("Error Google:", err));
         });
     }
     
-    // --- MANEJADOR PARA EL FORMULARIO DE LOGIN ---
+    // --- LOGIN EMAIL ---
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    if (user.emailVerified) {
+                .then(userCred => {
+                    if (userCred.user.emailVerified) {
                         window.location.href = 'biblioteca.html';
                     } else {
-                        loginError.textContent = 'Por favor, verifica tu correo antes de entrar.';
+                        loginError.textContent = 'Verifica tu correo antes de entrar.';
                     }
                 })
-                .catch((error) => {
+                .catch(err => {
                     loginError.textContent = 'Correo o contraseña incorrectos.';
-                    console.error("Error login:", error);
                 });
         });
     }
 
-    // --- DETECTOR DE ESTADO (MENSAJE DE VERIFICACIÓN) ---
+    // --- DETECTOR DE VERIFICACIÓN ---
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            if (!user.emailVerified) {
-                if (divAviso) divAviso.style.display = 'block'; 
-            } else {
-                if (divAviso) divAviso.style.display = 'none'; 
-            }
+        if (user && !user.emailVerified) {
+            if (divAviso) divAviso.style.display = 'block'; 
         } else {
             if (divAviso) divAviso.style.display = 'none'; 
         }
     });
 
-    // --- LÓGICA REENVIAR CORREO ---
+    // --- REENVIAR CORREO ---
     if (btnReenviar) {
         btnReenviar.addEventListener('click', async (e) => {
             e.preventDefault();
-            const user = auth.currentUser;
-            if (user) {
+            if (auth.currentUser) {
                 try {
-                    await sendEmailVerification(user);
-                    if (textoEstado) {
-                        textoEstado.innerText = "✅ Correo enviado. Revisa tu bandeja de SPAM.";
-                        textoEstado.style.color = "green";
-                        textoEstado.style.display = "block";
-                    }
-                } catch (error) {
-                    if (textoEstado) {
-                        textoEstado.innerText = error.code === 'auth/too-many-requests' 
-                            ? "❌ Demasiados intentos. Espera unos minutos." 
-                            : "❌ Error al enviar.";
-                        textoEstado.style.color = "red";
-                        textoEstado.style.display = "block";
-                    }
+                    await sendEmailVerification(auth.currentUser);
+                    textoEstado.innerText = "✅ Enviado. Revisa SPAM.";
+                    textoEstado.style.display = "block";
+                } catch (err) {
+                    textoEstado.innerText = "❌ Error. Espera un poco.";
+                    textoEstado.style.display = "block";
                 }
             }
         });
     }
  
-    // --- MANEJO DEL FORMULARIO DE REGISTRO ---
+    // --- REGISTRO ---
     if (registerForm) {
         registerForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
-            const username = regUsernameInput.value;
-            const password = regPasswordInput.value; 
-            const confirmPassword = regConfirmInput.value; 
-            const registerError = document.getElementById('register-error');
-
-            if (password !== confirmPassword) {
-                registerError.textContent = 'Las contraseñas no coinciden.';
+            const pass = regPasswordInput.value;
+            if (pass !== regConfirmInput.value) {
+                document.getElementById('register-error').textContent = 'Las contraseñas no coinciden.';
                 return;
             }
 
-            createUserWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    return setDoc(doc(db, "users", user.uid), {
-                        username: username,
+            createUserWithEmailAndPassword(auth, email, pass)
+                .then(userCred => {
+                    return setDoc(doc(db, "users", userCred.user.uid), {
+                        username: regUsernameInput.value,
                         email: email,
-                        uid: user.uid,
-                        searchKey: username.toLowerCase()
-                    }).then(() => sendEmailVerification(user));
+                        uid: userCred.user.uid
+                    }).then(() => sendEmailVerification(userCred.user));
                 })
                 .then(() => signOut(auth))
                 .then(() => {
-                    alert(`Cuenta creada para "${username}". Verifica tu correo.`);
+                    alert("Cuenta creada. Verifica tu correo.");
                     window.location.href = 'login.html';
                 })
-                .catch((error) => {
-                    if (error.code == 'auth/weak-password') {
-                        registerError.textContent = 'Contraseña débil (mín. 6 caracteres).';
-                    } else if (error.code == 'auth/email-already-in-use') {
-                        registerError.textContent = 'El correo ya está registrado.';
-                    } else {
-                        registerError.textContent = 'Error: ' + error.message;
-                    }
-                });
+                .catch(err => console.error(err));
         });
     }
 
-    // --- MANEJO DE RECUPERACIÓN DE CONTRASEÑA ---
-    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    // --- RECUPERAR CONTRASEÑA ---
+    const forgotLink = document.getElementById('forgot-password-link');
     const resetModal = document.getElementById('reset-password-modal');
-    const resetForm = document.getElementById('reset-password-form');
-    const cancelResetBtn = document.getElementById('cancel-reset-btn');
-    const resetEmailInput = document.getElementById('reset-email');
-
-    if (forgotPasswordLink && resetModal) {
-        forgotPasswordLink.addEventListener('click', (e) => {
+    if (forgotLink && resetModal) {
+        forgotLink.addEventListener('click', (e) => {
             e.preventDefault();
-            if (emailInput && emailInput.value) resetEmailInput.value = emailInput.value;
             resetModal.showModal();
         });
-
-        cancelResetBtn.addEventListener('click', () => resetModal.close());
-
-        resetForm.addEventListener('submit', (e) => {
+        document.getElementById('reset-password-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            sendPasswordResetEmail(auth, resetEmailInput.value)
+            sendPasswordResetEmail(auth, document.getElementById('reset-email').value)
                 .then(() => {
-                    alert(`Enlace enviado a ${resetEmailInput.value}. Revisa SPAM.`);
+                    alert("Enlace enviado.");
                     resetModal.close();
-                })
-                .catch((error) => {
-                    alert(error.code === 'auth/user-not-found' ? 'Correo no encontrado.' : 'Error al enviar.');
                 });
         });
+        document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.close());
     }
 });
