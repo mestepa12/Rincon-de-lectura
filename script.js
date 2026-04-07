@@ -1,4 +1,5 @@
 import { firebaseConfig } from './auth.js';
+import { googleBooksApiKey } from './config.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
@@ -429,60 +430,87 @@ document.addEventListener('DOMContentLoaded', () => {
         const friendSearchResults = document.getElementById('friend-search-results');
 
         const searchUsers = async () => {
-        const queryText = friendSearchInput.value.trim().toLowerCase();
+            const queryText = friendSearchInput.value.trim().toLowerCase();
 
-        if (queryText.length < 3) {
-            alert("Escribe al menos 3 letras para buscar.");
-            return;
-        }
-
-        friendSearchResults.innerHTML = '<p style="text-align:center; padding:10px; color:var(--accent-color);">Buscando...</p>';
-
-        try {
-            // 1. Definir la referencia a la colección
-            const usersRef = collection(db, 'users');
-
-            // 2. Crear la consulta con la nueva sintaxis modular
-            const q = query(
-                usersRef,
-                where('searchKey', '>=', queryText),
-                where('searchKey', '<=', queryText + '\uf8ff'),
-                limit(5)
-            );
-
-            // 3. Obtener los documentos usando getDocs
-            const snapshot = await getDocs(q);
-
-            friendSearchResults.innerHTML = ''; // Limpiar resultados anteriores
-
-            if (snapshot.empty) {
-                friendSearchResults.innerHTML = `
-                    <div style="text-align:center; padding: 1rem; color: var(--text-color); opacity: 0.7;">
-                        <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">😕</p>
-                        <p>No se encontraron usuarios con ese nombre.</p>
-                    </div>
-                `;
+            if (queryText.length < 3) {
+                alert("Escribe al menos 3 letras para buscar.");
                 return;
             }
 
-            // 4. Recorrer los resultados
-            snapshot.forEach(docSnap => {
-                const userData = docSnap.data();
-                if (userData.uid === auth.currentUser.uid) return;
+            friendSearchResults.innerHTML = '<p style="text-align:center; padding:10px; color:var(--accent-color);">Buscando...</p>';
 
-                // Aquí continúa la creación de tus 'user-card' (userItem)
-                // ...
-            });
+            try {
+                const usersRef = collection(db, 'users');
+                const q = query(
+                    usersRef,
+                    where('searchKey', '>=', queryText),
+                    where('searchKey', '<=', queryText + '\uf8ff'),
+                    limit(5)
+                );
 
-        } catch (error) {
-            console.error("Error buscando usuarios:", error);
-            friendSearchResults.innerHTML = '<p class="empty-msg">Error al buscar.</p>';
-        }
-    };
+                const snapshot = await getDocs(q);
+                friendSearchResults.innerHTML = ''; 
+
+                if (snapshot.empty) {
+                    friendSearchResults.innerHTML = `
+                        <div style="text-align:center; padding: 1rem; color: var(--text-color); opacity: 0.7;">
+                            <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">😕</p>
+                            <p>No se encontraron usuarios con ese nombre.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                snapshot.forEach(docSnap => {
+                    const userData = docSnap.data();
+                    
+                    // Si el usuario soy yo mismo, no lo muestro
+                    if (userData.uid === user.uid) return;
+
+                    const userItem = document.createElement('div');
+                    userItem.className = 'user-card';
+                    userItem.style.cssText = `
+                        display: flex; justify-content: space-between; align-items: center; 
+                        padding: 10px; background: var(--bg-color); border-radius: 8px; 
+                        margin-bottom: 8px; border: 1px solid var(--border-color);
+                    `;
+
+                    userItem.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="user-avatar-placeholder" style="width:30px; height:30px; font-size:0.8rem;">👤</div>
+                            <span style="font-weight:bold;">@${userData.username}</span>
+                        </div>
+                        <button class="btn-add-friend" data-uid="${userData.uid}" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">Añadir</button>
+                    `;
+                    
+                    const addBtn = userItem.querySelector('.btn-add-friend');
+                    addBtn.addEventListener('click', () => {
+                        enviarSolicitudAmistad(userData);
+                    });
+
+                    friendSearchResults.appendChild(userItem);
+                });
+
+            } catch (error) {
+                console.error("Error buscando usuarios:", error);
+                friendSearchResults.innerHTML = '<p class="empty-msg">Error al buscar.</p>';
+            }
+        };
 
         // 4. ESCUCHAR SOLICITUDES PENDIENTES (El Buzón)
         const friendRequestsList = document.getElementById('friend-requests-list');
         const requestsCountBadge = document.getElementById('requests-count');
+
+        // --- EVENTOS DEL BUSCADOR DE AMIGOS ---
+        if (friendSearchBtn) {
+            friendSearchBtn.addEventListener('click', searchUsers);
+        }
+        
+        if (friendSearchInput) {
+            friendSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchUsers();
+            });
+        }
 
         // Esta función se activa sola cada vez que hay cambios en la base de datos
         const qRequests = query(
@@ -537,7 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-        // --- Lógica para Aceptar/Rechazar ---
+// --- Lógica para Aceptar/Rechazar ---
         const aceptarSolicitud = async (friendId, requestData) => {
             try {
                 const batch = writeBatch(db);
@@ -552,7 +580,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // 2. Añadirme a SUS amigos (recíproco)
                 const myProfileSnap = await getDoc(doc(db, 'users', user.uid));
-                const myUsername = myProfileSnap.data().username;
+                
+                // --- SOLUCIÓN AQUÍ ---
+                const myUsername = myProfileSnap.exists() && myProfileSnap.data().username 
+                    ? myProfileSnap.data().username 
+                    : user.email.split('@')[0];
 
                 const theirFriendRef = doc(db, 'users', friendId, 'friends', user.uid);
                 batch.set(theirFriendRef, {
@@ -601,7 +633,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const myProfileSnap = await getDoc(doc(db, 'users', user.uid));
-                const myUsername = myProfileSnap.data().username;
+                
+                // --- SOLUCIÓN AQUÍ ---
+                const myUsername = myProfileSnap.exists() && myProfileSnap.data().username 
+                    ? myProfileSnap.data().username 
+                    : user.email.split('@')[0];
 
                 const requestRef = doc(db, 'users', targetUser.uid, 'friend_requests', user.uid);
 
@@ -628,7 +664,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(btn) btn.textContent = "Reintentar";
             }
         };
-        
+
         // --- FUNCIÓN PARA ELIMINAR AMIGO ---
         const eliminarAmigo = async (friendUid, friendName) => {
             if (!confirm(`¿Estás seguro de que quieres eliminar a @${friendName} de tus amigos?\nDejaréis de ver vuestras bibliotecas mutuamente.`)) {
@@ -660,6 +696,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("Hubo un error al intentar eliminar al amigo.");
             }
         };
+
+        // ===============================================
+        // === 5. LISTA DE AMIGOS ========================
+        // ===============================================
+        const friendsList = document.getElementById('friends-list');
+
+        const friendsRef = collection(db, 'users', user.uid, 'friends');
+        const qFriends = query(friendsRef, orderBy('since', 'desc'));
+
+        onSnapshot(qFriends, (snapshot) => {
+            myFriendIds.clear();
+            snapshot.forEach(docSnap => myFriendIds.add(docSnap.id));
+
+            if (snapshot.empty) {
+                friendsList.innerHTML = '<p class="empty-msg">Aún no tienes amigos agregados.</p>';
+            } else {
+                friendsList.innerHTML = '';
+                
+                snapshot.forEach(docSnap => {
+                    const friendData = docSnap.data();
+                    
+                    const div = document.createElement('div');
+                    div.className = 'user-card';
+                    div.style.cssText = `
+                        display: flex; justify-content: space-between; align-items: center;
+                        padding: 10px; background: var(--bg-color); 
+                        border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 5px;
+                    `;
+                    
+                    div.innerHTML = `
+                        <div style="font-size:0.9rem; display:flex; align-items:center; gap:8px; overflow:hidden;">
+                            <span style="font-size:1.2rem;">👤</span>
+                            <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">@${friendData.friendUsername}</b>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn-view" style="background:var(--accent-color); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Ver</button>
+                            <button class="btn-delete-friend" style="background:transparent; border:1px solid #E53E3E; color:#E53E3E; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;" title="Eliminar amigo">🗑️</button>
+                        </div>
+                    `;
+
+                    div.querySelector('.btn-view').addEventListener('click', () => {
+                        cargarBibliotecaAmigo(friendData.friendUid, friendData.friendUsername);
+                    });
+
+                    div.querySelector('.btn-delete-friend').addEventListener('click', () => {
+                        eliminarAmigo(friendData.friendUid, friendData.friendUsername);
+                    });
+
+                    friendsList.appendChild(div);
+                });
+            }
+        });
 
 
 
