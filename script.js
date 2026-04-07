@@ -976,15 +976,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (logoutBtn) {
-    logoutBtn.addEventListener('click', () => {
-        signOut(auth)
-            .then(() => {
-                // Redirigir al inicio después de cerrar sesión
-                window.location.href = 'index.html';
-            })
-            .catch((error) => {
-                console.error("Error al cerrar sesión:", error);
-            });
+    logoutBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        signOut(auth).then(() => {
+            // Esto obliga a ir a index y evita que el usuario pueda volver atrás
+            window.location.replace('index.html');
+        }).catch((error) => {
+            console.error("Error al salir:", error);
+        });
     });
 }
 
