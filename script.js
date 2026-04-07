@@ -1,32 +1,32 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+// 1. Inicialización (Igual que en auth.js)
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
 document.addEventListener('DOMContentLoaded', () => {
 
-// --- AUTENTICACIÓN: El portero de nuestra aplicación ---
-    firebase.auth().onAuthStateChanged(user => {
+    // --- EL PORTERO: Vigilando la entrada ---
+    onAuthStateChanged(auth, (user) => {
         if (user) {
-            // 1. Comprobamos si ha verificado su correo
             if (user.emailVerified) {
-                console.log("Usuario autenticado y verificado:", user.email);
-                
-                // --- CAMBIO AQUÍ: Migramos antes de iniciar ---
-               // migrarLibrosAntiguos(user).then(() => {
-                    runApp(user); 
-               // });
-                // ----------------------------------------------
-
+                console.log("Usuario verificado:", user.email);
+                runApp(user); 
             } else {
-                // 2. Si NO está verificado, le avisamos y cerramos su sesión
                 console.log("Usuario no verificado.");
-                alert("Por favor, verifica tu correo electrónico para poder entrar.");
-                
-                firebase.auth().signOut().then(() => {
-                    window.location.href = 'login.html';
-                });
+                // Si intentan entrar en la biblioteca sin verificar, al login
+                window.location.href = 'login.html';
             }
         } else {
-            // Si no hay usuario, lo redirigimos a la página de login.
-            console.log("Usuario no autenticado. Redirigiendo a login...");
-            if (window.location.pathname.indexOf('login.html') === -1) {
-                window.location.href = 'login.html';
+            console.log("No hay sesión activa.");
+            // Si el usuario cierra sesión o no está logueado, a la Home (Index)
+            if (window.location.pathname.indexOf('index.html') === -1 && 
+                window.location.pathname.indexOf('login.html') === -1 &&
+                window.location.pathname.indexOf('register.html') === -1) {
+                window.location.href = 'index.html';
             }
         }
     });
@@ -75,8 +75,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- FUNCIÓN PRINCIPAL DE LA APP ---
     function runApp(user) {
-        const db = firebase.firestore();
-        const userBooksCollection = db.collection('books');
+        // Referencias a colecciones (Sintaxis V10)
+        const booksCollection = collection(db, 'books');
+
         const SECTIONS = {
             'leyendo-ahora': 'Leyendo Ahora',
             'proximas-lecturas': 'Próximas Lecturas',
@@ -86,25 +87,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let booksData = []; 
         let viewingFriendLibrary = false;
-        let myFriendIds = new Set(); // Usamos un Set para búsquedas rápidas
+        let myFriendIds = new Set();
 
         // --- SELECTORES DOM ---
         const mainContent = document.getElementById('main-content');
         const toggleViewBtn = document.getElementById('toggle-view');
         const toggleThemeBtn = document.getElementById('toggle-theme');
         const searchBar = document.getElementById('search-bar');
-        
-        // Modal Añadir Libro y Búsqueda Google
         const addBookModal = document.getElementById('add-book-modal');
         const addBookForm = document.getElementById('add-book-form');
         const addBookBtn = document.getElementById('add-book-btn');
         const cancelAddBookBtn = document.getElementById('cancel-add-book');
-        const totalPagesInput = document.getElementById('total-pages');
         const bookSearchInput = document.getElementById('book-search');
         const bookSearchResultsDiv = document.getElementById('book-search-results');
-
-        // Modal Detalles
-        const detailCoverContainer = document.getElementById('detail-cover-container');
         const bookDetailModal = document.getElementById('book-detail-modal');
         const detailCover = document.getElementById('detail-cover');
         const detailTitle = document.getElementById('detail-title');
@@ -120,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteBookModalBtn = document.getElementById('delete-book-modal-btn');
         const cancelDetailModalBtn = document.getElementById('cancel-detail-modal');
         const logoutBtn = document.getElementById('logout-btn');
+        
         
         // ===============================================
         // === 1. INTEGRACIÓN API GOOGLE BOOKS ===========
