@@ -975,9 +975,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        logoutBtn.addEventListener('click', () => {
-            firebase.auth().signOut();
-        });
+        if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth)
+            .then(() => {
+                // Redirigir al inicio después de cerrar sesión
+                window.location.href = 'index.html';
+            })
+            .catch((error) => {
+                console.error("Error al cerrar sesión:", error);
+            });
+    });
+}
 
 // --- CERRAR MODALES AL HACER CLIC FUERA ---
         const closeOnBackdropClick = (modal) => {
