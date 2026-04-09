@@ -1,3 +1,5 @@
+import { googleBooksApiKey } from './config.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Datos iniciales (Demo)
     let booksData = [
