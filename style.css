@@ -475,3 +475,24 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     color: #333;
     border-color: #bbb;
 }
+
+
+.main-footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: 40px;
+    border-top: 1px solid var(--border-color); /* Una línea sutil para separarlo */
+    color: var(--text-color); /* Se adapta al modo claro/oscuro */
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.main-footer a {
+    color: var(--accent-color); /* Usa el color principal de tu web */
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.main-footer a:hover {
+    text-decoration: underline;
+}
