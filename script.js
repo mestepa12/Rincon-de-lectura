@@ -836,7 +836,13 @@ onSnapshot(q, (snapshot) => {
             };
         
             if (book.section === 'leyendo-ahora') {
-                const newPage = parseInt(currentPageInput.value, 10) || 0;
+                let newPage = parseInt(currentPageInput.value, 10);
+                
+                // Si la casilla está vacía o hay un error al leerla, dejamos la que ya tenía
+                if (isNaN(newPage)) {
+                    newPage = book.currentPage || 0; 
+                }
+                
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
             }
         
