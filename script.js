@@ -986,6 +986,8 @@ onSnapshot(q, (snapshot) => {
     logoutBtn.addEventListener('click', (e) => {
         e.preventDefault();
         signOut(auth).then(() => {
+            localStorage.removeItem('rincon_user_email');
+            localStorage.removeItem('rincon_user_pass');
             // Esto obliga a ir a index y evita que el usuario pueda volver atrás
             window.location.replace('index.html');
         }).catch((error) => {
@@ -993,6 +995,10 @@ onSnapshot(q, (snapshot) => {
         });
     });
 }
+
+
+
+
 
 // --- CERRAR MODALES AL HACER CLIC FUERA ---
         const closeOnBackdropClick = (modal) => {

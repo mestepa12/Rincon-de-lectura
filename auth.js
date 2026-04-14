@@ -39,6 +39,21 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// 1. INTENTO DE RECUPERACIÓN MANUAL (El salvavidas)
+// Si el usuario guardó su sesión localmente pero Firebase se olvidó
+const savedEmail = localStorage.getItem('rincon_user_email');
+const savedPass = localStorage.getItem('rincon_user_pass');
+
+if (savedEmail && savedPass && !auth.currentUser) {
+    signInWithEmailAndPassword(auth, savedEmail, savedPass).catch(err => {
+        console.error("Fallo al auto-recuperar sesión:", err);
+        // Si la contraseña cambió y falla, limpiamos
+        localStorage.removeItem('rincon_user_email');
+        localStorage.removeItem('rincon_user_pass');
+    });
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
@@ -86,13 +101,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            // FORZAMOS LA PERSISTENCIA JUSTO ANTES DE LOGUEAR
+            const email = emailInput.value;
+            const pass = passwordInput.value;
+            
             setPersistence(auth, browserLocalPersistence)
                 .then(() => {
-                    return signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                    return signInWithEmailAndPassword(auth, email, pass);
                 })
                 .then(userCred => {
                     if (userCred.user.emailVerified) {
+                        // 2. GUARDAMOS EL TESTIGO DE EMERGENCIA
+                        localStorage.setItem('rincon_user_email', email);
+                        localStorage.setItem('rincon_user_pass', pass);
                         window.location.href = 'biblioteca.html';
                     } else {
                         loginError.textContent = 'Verifica tu correo antes de entrar.';
@@ -108,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user && user.emailVerified) {
             const path = window.location.pathname;
-            // Si carga la raíz (rinconlectura.es), index, o login, salta directo a la biblioteca
             if (path === '/' || path.includes('index.html') || path.includes('login.html') || path.includes('register.html')) {
                 window.location.href = 'biblioteca.html';
             }
@@ -168,8 +187,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 await sendEmailVerification(userCred.user);
-                await signOut(auth);
+                await signOut(auth); // Nos aseguramos de desloguear aquí para que verifique el email
                 
+                // Limpiamos el salvavidas por si acaso
+                localStorage.removeItem('rincon_user_email');
+                localStorage.removeItem('rincon_user_pass');
+
                 alert("Cuenta creada. Verifica tu correo.");
                 window.location.href = 'login.html';
 
@@ -198,4 +221,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.close());
     }
+    
+    
 });
