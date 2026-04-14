@@ -2,8 +2,6 @@ import {
     initializeApp 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 
-import { collection, query, where, getDocs } from "firebase/firestore";
-
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -19,7 +17,11 @@ import {
 import { 
     getFirestore, 
     doc, 
-    setDoc 
+    setDoc,
+    collection, 
+    query, 
+    where, 
+    getDocs
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
 // Tu configuración integrada para que no falle el "No Firebase App"
