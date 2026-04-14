@@ -1,6 +1,6 @@
 const firebaseConfig = {
   apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc", // Pega aquí tu última clave de API
-  authDomain: "mi-rincon-de-lectura.firebaseapp.com",
+  authDomain: "rinconlectura.es",
   projectId: "mi-rincon-de-lectura",
   storageBucket: "mi-rincon-de-lectura.appspot.com",
   messagingSenderId: "333643518949",
