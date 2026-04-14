@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
-                    alert("Este nombre de usuario ya está en uso. Por favor, elige otro.");
+                    document.getElementById('register-error').textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
                     return; // Detenemos el registro si existe
                 }
 
