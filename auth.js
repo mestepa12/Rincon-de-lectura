@@ -11,7 +11,9 @@ import {
     signInWithEmailAndPassword, 
     createUserWithEmailAndPassword, 
     signOut, 
-    sendPasswordResetEmail 
+    sendPasswordResetEmail,
+    setPersistence,
+    browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
 
 import { 
@@ -24,7 +26,7 @@ import {
     getDocs
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-// Tu configuración integrada para que no falle el "No Firebase App"
+// Tu configuración integrada
 export const firebaseConfig = {
   apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc",
   authDomain: "mi-rincon-de-lectura.firebaseapp.com",
@@ -34,10 +36,16 @@ export const firebaseConfig = {
   appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
 };
 
-// Inicializamos ANTES de cualquier otra cosa
+// Inicializamos
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// FORZAMOS LA PERSISTENCIA LOCAL PARA QUE NO SE CIERRE SOLA
+setPersistence(auth, browserLocalPersistence)
+    .catch((error) => {
+        console.error("Error ajustando la persistencia:", error);
+    });
 
 document.addEventListener('DOMContentLoaded', () => {
     // Referencias de Login
@@ -49,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Referencias de Registro
     const registerForm = document.getElementById('register-form');
-    const regUsernameInput = document.getElementById('username') || document.getElementById('register-username'); // Soporte para ambos IDs
+    const regUsernameInput = document.getElementById('username') || document.getElementById('register-username');
     const regPasswordInput = document.getElementById('register-password'); 
     const regTogglePasswordBtn = document.getElementById('toggle-register-password'); 
     const regConfirmInput = document.getElementById('register-password-confirm'); 
@@ -130,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
  
     // --- REGISTRO ---
     if (registerForm) {
-        // Hacemos la función async para poder usar 'await' en la consulta
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
@@ -143,17 +150,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // 1. COMPROBAR SI EL USUARIO EXISTE (Integrado desde el Canvas)
+                // 1. COMPROBAR SI EL USUARIO EXISTE
                 const usersRef = collection(db, "users"); 
                 const q = query(usersRef, where("username", "==", usernameInputVal));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
+                    // Muestra el error en rojo en lugar del alert
                     document.getElementById('register-error').textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
-                    return; // Detenemos el registro si existe
+                    return; 
                 }
 
-                // 2. CREAR CUENTA SI EL NOMBRE ESTÁ LIBRE
+                // 2. CREAR CUENTA
                 const userCred = await createUserWithEmailAndPassword(auth, email, pass);
                 
                 await setDoc(doc(db, "users", userCred.user.uid), {
