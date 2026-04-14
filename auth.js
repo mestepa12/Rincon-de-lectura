@@ -26,7 +26,6 @@ import {
     getDocs
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-// Tu configuración integrada
 export const firebaseConfig = {
   apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc",
   authDomain: "mi-rincon-de-lectura.firebaseapp.com",
@@ -36,44 +35,17 @@ export const firebaseConfig = {
   appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
 };
 
-// Inicializamos
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// FORZAMOS LA PERSISTENCIA LOCAL PARA QUE NO SE CIERRE SOLA
-setPersistence(auth, browserLocalPersistence)
-    .catch((error) => {
-        console.error("Error ajustando la persistencia:", error);
-    });
-
 document.addEventListener('DOMContentLoaded', () => {
-    // --- REDIRECCIÓN AUTOMÁTICA SI YA HAY SESIÓN ---
-    onAuthStateChanged(auth, (user) => {
-        if (user && user.emailVerified) {
-            const path = window.location.pathname;
-            // Detecta index, login o la raíz de GitHub Pages
-            if (path.includes('index.html') || path.includes('login.html') || path.endsWith('/') || path.endsWith('mi-rincon-de-lectura')) {
-                window.location.href = 'biblioteca.html';
-            }
-        } else {
-            // Tu código original de verificación
-            if (user && !user.emailVerified) {
-                if (divAviso) divAviso.style.display = 'block'; 
-            } else {
-                if (divAviso) divAviso.style.display = 'none'; 
-            }
-        }
-    });
-
-    // Referencias de Login
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
     const loginError = document.getElementById('login-error');
     const togglePasswordBtn = document.getElementById('toggle-password'); 
 
-    // Referencias de Registro
     const registerForm = document.getElementById('register-form');
     const regUsernameInput = document.getElementById('username') || document.getElementById('register-username');
     const regPasswordInput = document.getElementById('register-password'); 
@@ -81,12 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const regConfirmInput = document.getElementById('register-password-confirm'); 
     const regConfirmToggleBtn = document.getElementById('toggle-register-password-confirm'); 
     
-    // Referencias de Verificación
     const divAviso = document.getElementById('msg-verificacion');
     const btnReenviar = document.getElementById('btn-reenviar-correo');
     const textoEstado = document.getElementById('estado-envio');
 
-    // --- MANEJO MOSTRAR/OCULTAR CONTRASEÑA ---
     const setupToggle = (btn, input) => {
         if (btn && input) {
             btn.addEventListener('click', () => {
@@ -104,9 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const googleSignInBtn = document.getElementById('google-signin-btn');
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
-            signInWithPopup(auth, new GoogleAuthProvider())
-                .then(() => window.location.href = 'biblioteca.html')
-                .catch(err => console.error("Error Google:", err));
+            setPersistence(auth, browserLocalPersistence).then(() => {
+                return signInWithPopup(auth, new GoogleAuthProvider());
+            })
+            .then(() => window.location.href = 'biblioteca.html')
+            .catch(err => console.error("Error Google:", err));
         });
     }
     
@@ -114,7 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value)
+            // FORZAMOS LA PERSISTENCIA JUSTO ANTES DE LOGUEAR
+            setPersistence(auth, browserLocalPersistence)
+                .then(() => {
+                    return signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                })
                 .then(userCred => {
                     if (userCred.user.emailVerified) {
                         window.location.href = 'biblioteca.html';
@@ -128,7 +104,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-   
+    // --- DETECTOR DE SESIÓN Y REDIRECCIÓN ---
+    onAuthStateChanged(auth, (user) => {
+        if (user && user.emailVerified) {
+            const path = window.location.pathname;
+            // Si carga la raíz (rinconlectura.es), index, o login, salta directo a la biblioteca
+            if (path === '/' || path.includes('index.html') || path.includes('login.html') || path.includes('register.html')) {
+                window.location.href = 'biblioteca.html';
+            }
+        } else if (user && !user.emailVerified) {
+            if (divAviso) divAviso.style.display = 'block'; 
+        } else {
+            if (divAviso) divAviso.style.display = 'none'; 
+        }
+    });
 
     // --- REENVIAR CORREO ---
     if (btnReenviar) {
@@ -161,18 +150,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // 1. COMPROBAR SI EL USUARIO EXISTE
                 const usersRef = collection(db, "users"); 
                 const q = query(usersRef, where("username", "==", usernameInputVal));
                 const querySnapshot = await getDocs(q);
 
                 if (!querySnapshot.empty) {
-                    // Muestra el error en rojo en lugar del alert
                     document.getElementById('register-error').textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
                     return; 
                 }
 
-                // 2. CREAR CUENTA
                 const userCred = await createUserWithEmailAndPassword(auth, email, pass);
                 
                 await setDoc(doc(db, "users", userCred.user.uid), {
