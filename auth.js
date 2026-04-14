@@ -2,6 +2,8 @@ import {
     initializeApp 
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
 
+import { collection, query, where, getDocs } from "firebase/firestore";
+
 import { 
     getAuth, 
     onAuthStateChanged, 
@@ -45,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Referencias de Registro
     const registerForm = document.getElementById('register-form');
-    const regUsernameInput = document.getElementById('username'); 
+    const regUsernameInput = document.getElementById('username') || document.getElementById('register-username'); // Soporte para ambos IDs
     const regPasswordInput = document.getElementById('register-password'); 
     const regTogglePasswordBtn = document.getElementById('toggle-register-password'); 
     const regConfirmInput = document.getElementById('register-password-confirm'); 
@@ -126,29 +128,48 @@ document.addEventListener('DOMContentLoaded', () => {
  
     // --- REGISTRO ---
     if (registerForm) {
-        registerForm.addEventListener('submit', (e) => {
+        // Hacemos la función async para poder usar 'await' en la consulta
+        registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('register-email').value;
             const pass = regPasswordInput.value;
+            const usernameInputVal = regUsernameInput.value.trim();
+
             if (pass !== regConfirmInput.value) {
                 document.getElementById('register-error').textContent = 'Las contraseñas no coinciden.';
                 return;
             }
 
-            createUserWithEmailAndPassword(auth, email, pass)
-                .then(userCred => {
-                    return setDoc(doc(db, "users", userCred.user.uid), {
-                        username: regUsernameInput.value,
-                        email: email,
-                        uid: userCred.user.uid
-                    }).then(() => sendEmailVerification(userCred.user));
-                })
-                .then(() => signOut(auth))
-                .then(() => {
-                    alert("Cuenta creada. Verifica tu correo.");
-                    window.location.href = 'login.html';
-                })
-                .catch(err => console.error(err));
+            try {
+                // 1. COMPROBAR SI EL USUARIO EXISTE (Integrado desde el Canvas)
+                const usersRef = collection(db, "users"); 
+                const q = query(usersRef, where("username", "==", usernameInputVal));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    alert("Este nombre de usuario ya está en uso. Por favor, elige otro.");
+                    return; // Detenemos el registro si existe
+                }
+
+                // 2. CREAR CUENTA SI EL NOMBRE ESTÁ LIBRE
+                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                
+                await setDoc(doc(db, "users", userCred.user.uid), {
+                    username: usernameInputVal,
+                    email: email,
+                    uid: userCred.user.uid
+                });
+                
+                await sendEmailVerification(userCred.user);
+                await signOut(auth);
+                
+                alert("Cuenta creada. Verifica tu correo.");
+                window.location.href = 'login.html';
+
+            } catch (error) {
+                console.error("Error en el registro:", error);
+                document.getElementById('register-error').textContent = 'Error al crear la cuenta. Inténtalo de nuevo.';
+            }
         });
     }
 
