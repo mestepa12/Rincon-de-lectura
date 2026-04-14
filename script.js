@@ -14,23 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- EL PORTERO: Vigilando la entrada ---
     onAuthStateChanged(auth, (user) => {
-        if (user) {
-            if (user.emailVerified) {
-                console.log("Usuario verificado:", user.email);
-                runApp(user); 
-            } else {
-                console.log("Usuario no verificado.");
-                // Si intentan entrar en la biblioteca sin verificar, al login
-                window.location.href = 'login.html';
-            }
-        } else {
-            console.log("No hay sesión activa.");
-            // Si el usuario cierra sesión o no está logueado, a la Home (Index)
-            if (window.location.pathname.indexOf('index.html') === -1 && 
-                window.location.pathname.indexOf('login.html') === -1 &&
-                window.location.pathname.indexOf('register.html') === -1) {
-                window.location.href = 'index.html';
-            }
+        if (user && user.emailVerified) {
+            console.log("Usuario verificado:", user.email);
+            runApp(user); 
         }
     });
         // --- FUNCIÓN DE MIGRACIÓN (SOLO PARA TRASPASAR DATOS) ---
