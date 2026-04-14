@@ -48,6 +48,17 @@ setPersistence(auth, browserLocalPersistence)
     });
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- REDIRECCIÓN AUTOMÁTICA SI YA HAY SESIÓN ---
+        // Si estamos en la página de login o index y ya hay usuario, lo mandamos a la biblioteca
+        onAuthStateChanged(auth, (user) => {
+            const currentPage = window.location.pathname;
+            if (user && user.emailVerified) {
+                if (currentPage.endsWith('login.html') || currentPage.endsWith('index.html') || currentPage === '/') {
+                    window.location.href = 'biblioteca.html';
+                }
+            }
+        });
+
     // Referencias de Login
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
