@@ -49,15 +49,22 @@ setPersistence(auth, browserLocalPersistence)
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- REDIRECCIÓN AUTOMÁTICA SI YA HAY SESIÓN ---
-        // Si estamos en la página de login o index y ya hay usuario, lo mandamos a la biblioteca
-        onAuthStateChanged(auth, (user) => {
-            const currentPage = window.location.pathname;
-            if (user && user.emailVerified) {
-                if (currentPage.endsWith('login.html') || currentPage.endsWith('index.html') || currentPage === '/') {
-                    window.location.href = 'biblioteca.html';
-                }
+    onAuthStateChanged(auth, (user) => {
+        if (user && user.emailVerified) {
+            const path = window.location.pathname;
+            // Detecta index, login o la raíz de GitHub Pages
+            if (path.includes('index.html') || path.includes('login.html') || path.endsWith('/') || path.endsWith('mi-rincon-de-lectura')) {
+                window.location.href = 'biblioteca.html';
             }
-        });
+        } else {
+            // Tu código original de verificación
+            if (user && !user.emailVerified) {
+                if (divAviso) divAviso.style.display = 'block'; 
+            } else {
+                if (divAviso) divAviso.style.display = 'none'; 
+            }
+        }
+    });
 
     // Referencias de Login
     const loginForm = document.getElementById('login-form');
@@ -121,14 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- DETECTOR DE VERIFICACIÓN ---
-    onAuthStateChanged(auth, (user) => {
-        if (user && !user.emailVerified) {
-            if (divAviso) divAviso.style.display = 'block'; 
-        } else {
-            if (divAviso) divAviso.style.display = 'none'; 
-        }
-    });
+   
 
     // --- REENVIAR CORREO ---
     if (btnReenviar) {
