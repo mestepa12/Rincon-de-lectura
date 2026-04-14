@@ -28,7 +28,7 @@ import {
 
 export const firebaseConfig = {
   apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc",
-  authDomain: "rinconlectura.es",
+  authDomain: "mi-rincon-de-lectura.firebaseapp.com",
   projectId: "mi-rincon-de-lectura",
   storageBucket: "mi-rincon-de-lectura.appspot.com",
   messagingSenderId: "333643518949",
