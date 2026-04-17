@@ -92,7 +92,26 @@ document.addEventListener('DOMContentLoaded', () => {
             setPersistence(auth, browserLocalPersistence).then(() => {
                 return signInWithPopup(auth, new GoogleAuthProvider());
             })
-            .then(() => window.location.href = 'biblioteca.html')
+            .then(async (userCred) => {
+                // Comprobamos si el usuario ya existe en Firestore
+                const q = query(collection(db, "users"), where("uid", "==", userCred.user.uid));
+                const snapshot = await getDocs(q);
+
+                // Si es nuevo (la consulta está vacía), lo creamos en la base de datos
+                if (snapshot.empty) {
+                    // Creamos un username a partir de su nombre de Google
+                    const nombreGoogle = userCred.user.displayName ? userCred.user.displayName.replace(/\s+/g, '') : 'Lector';
+                    const usernameGenerado = nombreGoogle + Math.floor(Math.random() * 1000);
+
+                    await setDoc(doc(db, "users", userCred.user.uid), {
+                        username: usernameGenerado,
+                        searchKey: usernameGenerado.toLowerCase(),
+                        email: userCred.user.email,
+                        uid: userCred.user.uid
+                    });
+                }
+                window.location.href = 'biblioteca.html';
+            })
             .catch(err => console.error("Error Google:", err));
         });
     }
