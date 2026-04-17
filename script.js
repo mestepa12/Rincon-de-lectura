@@ -429,8 +429,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const usersRef = collection(db, 'users');
                 const q = query(
                     usersRef,
-                    where('username', '>=', queryText),
-                    where('username', '<=', queryText + '\uf8ff'),
+                    where('searchKey', '>=', queryText),
+                    where('searchKey', '<=', queryText + '\uf8ff'),
                     limit(5)
                 );
 

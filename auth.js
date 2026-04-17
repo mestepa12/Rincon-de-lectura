@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 await setDoc(doc(db, "users", userCred.user.uid), {
                     username: usernameInputVal,
+                    searchKey: usernameInputVal.toLowerCase(), // <--- ESTA ES LA LÍNEA QUE FALTABA
                     email: email,
                     uid: userCred.user.uid
                 });
