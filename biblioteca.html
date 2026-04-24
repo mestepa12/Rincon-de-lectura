@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="style.css">
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
@@ -72,6 +73,15 @@
             <h2>Añadir Nuevo Libro</h2>
 
             <div class="google-books-section" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+                
+                <button type="button" id="btn-scan-isbn" class="btn-primary" style="margin-bottom: 15px; width: 100%;">
+                    📷 Escanear Código de Barras (ISBN)
+                </button>
+
+                <div id="scanner-container" style="display: none; margin-bottom: 15px;">
+                    <div id="reader" style="width: 100%;"></div>
+                    <button type="button" id="btn-close-scanner" style="margin-top: 10px; width: 100%; padding: 8px;">Cancelar Escáner</button>
+                </div>
                 <label for="book-search">🔍 Autocompletar con Google Books:</label>
                 <input type="search" id="book-search" placeholder="Escribe el título para buscar...">
                 

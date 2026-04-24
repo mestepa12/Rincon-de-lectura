@@ -197,6 +197,79 @@ function openModal(id) {
         bookDetailModal.close();
     };
 
+    // --- ESCÁNER DE ISBN ---
+    const btnScanIsbn = document.getElementById('btn-scan-isbn');
+    const scannerContainer = document.getElementById('scanner-container');
+    const btnCloseScanner = document.getElementById('btn-close-scanner');
+    let html5QrcodeScanner; 
+
+    // Función para conectar con Google Books
+    async function buscarLibroPorISBN(isbn) {
+        try {
+            // Buscamos el ISBN en Google Books
+            const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}`);
+            const data = await response.json();
+
+            if (data.items && data.items.length > 0) {
+                const libro = data.items[0].volumeInfo;
+                
+                // Rellenamos el formulario automáticamente
+                document.getElementById('book-title').value = libro.title || '';
+                document.getElementById('book-author').value = libro.authors ? libro.authors.join(', ') : '';
+                
+                // Extraemos la portada y la pasamos a https para que no falle
+                if (libro.imageLinks && libro.imageLinks.thumbnail) {
+                    // Cambia 'book-cover' por el ID real del input de tu URL de imagen
+                    document.getElementById('book-cover').value = libro.imageLinks.thumbnail.replace('http:', 'https:');
+                }
+                
+                alert(`¡Libro encontrado: ${libro.title}!`);
+            } else {
+                alert("No se ha encontrado el libro. Tendrás que rellenarlo a mano.");
+            }
+        } catch (error) {
+            console.error("Error con Google Books:", error);
+            alert("Error al buscar el libro.");
+        }
+    }
+
+    // Encender la cámara
+    if (btnScanIsbn) {
+        btnScanIsbn.addEventListener('click', () => {
+            scannerContainer.style.display = 'block';
+            btnScanIsbn.style.display = 'none';
+
+            // Configuramos el recuadro de lectura (rectangular para códigos de barras)
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader", 
+                { fps: 10, qrbox: {width: 250, height: 100} }, 
+                false
+            );
+
+            html5QrcodeScanner.render(
+                // Si lee el código con éxito:
+                (decodedText) => {
+                    html5QrcodeScanner.clear(); // Apaga la cámara
+                    scannerContainer.style.display = 'none';
+                    btnScanIsbn.style.display = 'block';
+                    
+                    buscarLibroPorISBN(decodedText);
+                },
+                // Si está intentando enfocar (ignoramos los avisos):
+                (error) => {} 
+            );
+        });
+    }
+
+    // Apagar la cámara manualmente
+    if (btnCloseScanner) {
+        btnCloseScanner.addEventListener('click', () => {
+            if (html5QrcodeScanner) html5QrcodeScanner.clear();
+            scannerContainer.style.display = 'none';
+            btnScanIsbn.style.display = 'block';
+        });
+    }
+
     // Botones Header
     document.getElementById('add-book-btn').onclick = () => addBookModal.showModal();
     document.getElementById('cancel-add-book').onclick = () => addBookModal.close();
