@@ -108,7 +108,7 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
 form { display: flex; flex-direction: column; gap: 1rem; }
 form h2 { margin: 0 0 1rem; border: none; }
 form label { font-weight: bold; }
-form input, form select { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
+form input, form select { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 16px; }
 form input:focus, form select:focus { outline: none; border-color: var(--accent-color-interactive); }
 
 .modal-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; gap: 1rem; }
@@ -411,7 +411,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 
 .search-box-sidebar input {
     padding: 0.4rem;
-    font-size: 0.9rem;
+    font-size: 16px;
 }
 
 .search-box-sidebar button {
