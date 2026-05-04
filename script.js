@@ -71,7 +71,8 @@ document.addEventListener('DOMContentLoaded', () => {
             'leyendo-ahora': 'Leyendo Ahora',
             'proximas-lecturas': 'Próximas Lecturas',
             'libros-terminados': 'Libros Terminados',
-            'lista-deseos': 'Lista de Deseos'
+            'lista-deseos': 'Lista de Deseos',
+            'libros-abandonados': 'Libros Abandonados'
         };
         
         let booksData = []; 
