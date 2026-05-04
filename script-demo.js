@@ -33,6 +33,41 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookSearchInput = document.getElementById('book-search');
     const bookSearchResultsDiv = document.getElementById('book-search-results');
     const bookDetailModal = document.getElementById('book-detail-modal');
+    const streakCounter = document.getElementById('streak-counter');
+
+    // === RACHA DEMO: inicializar desde localStorage ===
+    if (streakCounter) {
+        const racha = parseInt(localStorage.getItem('demo_racha') || '0', 10);
+        streakCounter.textContent = `🔥 ${racha}`;
+    }
+
+    function updateStreakDemo() {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const todayStr = hoy.toISOString().split('T')[0];
+        const savedDate = localStorage.getItem('demo_ultima_lectura');
+        let racha = parseInt(localStorage.getItem('demo_racha') || '0', 10);
+
+        if (!savedDate) {
+            racha = 1;
+        } else {
+            const ultima = new Date(savedDate);
+            ultima.setHours(0, 0, 0, 0);
+            const diffDias = Math.round((hoy - ultima) / (1000 * 60 * 60 * 24));
+            if (diffDias === 0) return;        // Mismo día: no cambia
+            else if (diffDias === 1) racha++;  // Día consecutivo
+            else racha = 1;                    // Racha rota
+        }
+
+        localStorage.setItem('demo_ultima_lectura', todayStr);
+        localStorage.setItem('demo_racha', String(racha));
+        if (streakCounter) {
+            streakCounter.textContent = `🔥 ${racha}`;
+            streakCounter.classList.remove('streak-updated');
+            void streakCounter.offsetWidth;
+            streakCounter.classList.add('streak-updated');
+        }
+    }
 
     // 3. Función de Renderizado (Filtrado)
     function renderBooks() {
@@ -181,11 +216,13 @@ function openModal(id) {
             book.notes = document.getElementById('detail-notes').value;
 
             const newSection = document.getElementById('move-book-select').value;
-                if (newSection) {
-                    book.section = newSection;
-                }
+            if (newSection) book.section = newSection;
+
             if (book.section === 'leyendo-ahora') {
-                book.currentPage = parseInt(document.getElementById('current-page').value) || 0;
+                const oldPage = book.currentPage || 0;
+                const newPage = parseInt(document.getElementById('current-page').value) || 0;
+                if (newPage > oldPage) updateStreakDemo();
+                book.currentPage = newPage;
             }
             renderBooks();
             bookDetailModal.close();

@@ -410,6 +410,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cargamos el perfil al iniciar
         loadMyProfile();
 
+        // === RACHA DIARIA: Listener en tiempo real sobre el perfil del usuario ===
+        const streakCounter = document.getElementById('streak-counter');
+        onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+            if (docSnap.exists() && streakCounter) {
+                const racha = docSnap.data().rachaActual || 0;
+                const textoAnterior = streakCounter.textContent;
+                streakCounter.textContent = `🔥 ${racha}`;
+                // Animación solo si el número ha cambiado
+                if (textoAnterior !== streakCounter.textContent) {
+                    streakCounter.classList.remove('streak-updated');
+                    void streakCounter.offsetWidth; // reflow
+                    streakCounter.classList.add('streak-updated');
+                }
+            }
+        });
+
 
         // 3. LÓGICA DE BÚSQUEDA DE AMIGOS
         const friendSearchInput = document.getElementById('friend-search-input');
@@ -812,7 +828,41 @@ onSnapshot(q, (snapshot) => {
             }).catch(error => console.error("Error al añadir libro:", error));
         };
         
-        const handleSaveDetails = () => {
+        // === RACHA DIARIA DE LECTURA ===
+        const updateStreak = async () => {
+            const userRef = doc(db, 'users', user.uid);
+            try {
+                const userSnap = await getDoc(userRef);
+                if (!userSnap.exists()) return;
+
+                const userData = userSnap.data();
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                let rachaActual = userData.rachaActual || 0;
+                const ultimaFechaTimestamp = userData.ultimaFechaLectura;
+
+                if (ultimaFechaTimestamp) {
+                    const ultima = ultimaFechaTimestamp.toDate();
+                    ultima.setHours(0, 0, 0, 0);
+                    const diffDias = Math.round((hoy - ultima) / (1000 * 60 * 60 * 24));
+
+                    if (diffDias === 0) return;          // Mismo día: ya contabilizado
+                    else if (diffDias === 1) rachaActual += 1;  // Día consecutivo
+                    else rachaActual = 1;                // Racha rota
+                } else {
+                    rachaActual = 1; // Primera vez leyendo
+                }
+
+                await updateDoc(userRef, {
+                    rachaActual,
+                    ultimaFechaLectura: serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error actualizando racha:', error);
+            }
+        };
+
+        const handleSaveDetails = async () => {
             const bookId = bookDetailModal.dataset.bookId; 
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
@@ -822,21 +872,26 @@ onSnapshot(q, (snapshot) => {
                 cover: detailCover.src
             };
         
+            let paginaProgresada = false;
             if (book.section === 'leyendo-ahora') {
+                const oldPage = book.currentPage || 0;
                 let newPage = parseInt(currentPageInput.value, 10);
-                
+
                 // Si la casilla está vacía o hay un error al leerla, dejamos la que ya tenía
-                if (isNaN(newPage)) {
-                    newPage = book.currentPage || 0; 
-                }
-                
+                if (isNaN(newPage)) newPage = oldPage;
+
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
+                if (updatedData.currentPage > oldPage) paginaProgresada = true;
             }
-        
-            updateDoc(doc(db, 'books', bookId), updatedData).then(() => {
-                console.log("Detalles actualizados");
+
+            try {
+                await updateDoc(doc(db, 'books', bookId), updatedData);
+                if (paginaProgresada) await updateStreak();
+                console.log('Detalles actualizados');
                 bookDetailModal.close();
-            }).catch(error => console.error("Error al guardar:", error));
+            } catch (error) {
+                console.error('Error al guardar:', error);
+            }
         };
 
         const handleDeleteBook = (bookId) => {

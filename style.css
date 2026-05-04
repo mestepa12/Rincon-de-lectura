@@ -477,6 +477,39 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 }
 
 
+/* ======== STREAK COUNTER ======== */
+.streak-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: linear-gradient(135deg, #FF6B35, #FF4500);
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 20px;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 2px 8px rgba(255, 69, 0, 0.35);
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.streak-counter:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 14px rgba(255, 69, 0, 0.5);
+}
+
+@keyframes streak-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); }
+}
+
+.streak-counter.streak-updated {
+    animation: streak-pulse 0.5s ease;
+}
+
 .main-footer {
     text-align: center;
     padding: 20px;
