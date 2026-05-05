@@ -384,6 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (show) {
                 friendsSidebar.classList.add('open');
                 sidebarOverlay.classList.add('active');
+                renderRanking(); // Actualizar ranking cada vez que se abre
             } else {
                 friendsSidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
@@ -992,11 +993,72 @@ onSnapshot(q, (snapshot) => {
             try {
                 await updateDoc(doc(db, 'books', bookId), updatedData);
                 if (paginaProgresada) await updateStreak();
+
+                // Recalcular totalPaginasLeidas con el estado que tendrá el libro tras el update
+                const totalPaginasLeidas = booksData.reduce((total, b) => {
+                    if (b.id === bookId) {
+                        const s = updatedData.section || b.section;
+                        if (s === 'libros-terminados') return total + (b.totalPages || 0);
+                        return total + (updatedData.currentPage !== undefined ? updatedData.currentPage : (b.currentPage || 0));
+                    }
+                    if (b.section === 'libros-terminados') return total + (b.totalPages || 0);
+                    return total + (b.currentPage || 0);
+                }, 0);
+                await updateDoc(doc(db, 'users', user.uid), { totalPaginasLeidas });
+
                 await evaluarLogros();
                 console.log('Detalles actualizados');
                 bookDetailModal.close();
             } catch (error) {
                 console.error('Error al guardar:', error);
+            }
+        };
+
+        // === RANKING DE PÁGINAS ===
+        const renderRanking = async () => {
+            const rankingList = document.getElementById('ranking-list');
+            if (!rankingList) return;
+            rankingList.innerHTML = '<li class="ranking-loading">⏳ Cargando…</li>';
+            try {
+                const mySnap = await getDoc(doc(db, 'users', user.uid));
+                const myData = mySnap.data() || {};
+                const entries = [{
+                    username: myData.username || user.email?.split('@')[0] || 'Yo',
+                    paginas: myData.totalPaginasLeidas || 0,
+                    isMe: true
+                }];
+
+                const friendsSnap = await getDocs(collection(db, 'users', user.uid, 'friends'));
+                const friendPromises = friendsSnap.docs.map(async (fDoc) => {
+                    try {
+                        const fSnap = await getDoc(doc(db, 'users', fDoc.data().friendUid));
+                        if (fSnap.exists()) {
+                            const fd = fSnap.data();
+                            return { username: fd.username || '?', paginas: fd.totalPaginasLeidas || 0, isMe: false };
+                        }
+                    } catch {}
+                    return null;
+                });
+                entries.push(...(await Promise.all(friendPromises)).filter(Boolean));
+                entries.sort((a, b) => b.paginas - a.paginas);
+
+                rankingList.innerHTML = '';
+                if (entries.length === 0) {
+                    rankingList.innerHTML = '<li class="ranking-loading">Sin datos aún.</li>';
+                    return;
+                }
+                entries.forEach((entry, i) => {
+                    const li = document.createElement('li');
+                    li.className = `ranking-item${entry.isMe ? ' ranking-me' : ''}`;
+                    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`;
+                    li.innerHTML = `<span class="ranking-pos">${medal}</span>
+                        <span class="ranking-user">@${entry.username}${entry.isMe ? ' ★' : ''}</span>
+                        <span class="ranking-pages">${entry.paginas.toLocaleString('es')} págs</span>`;
+                    rankingList.appendChild(li);
+                });
+            } catch (e) {
+                console.error('Error cargando ranking:', e);
+                rankingList.innerHTML = '<li class="ranking-loading">Error al cargar.</li>';
             }
         };
 
