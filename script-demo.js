@@ -44,6 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const bookSearchResultsDiv = document.getElementById('book-search-results');
     const bookDetailModal = document.getElementById('book-detail-modal');
     const streakCounter = document.getElementById('streak-counter');
+    let pieChartInst = null;
+    let barChartInst = null;
 
     // === RACHA DEMO: inicializar desde localStorage ===
     if (streakCounter) {
@@ -113,6 +115,49 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('demo_logros', JSON.stringify(actualizados));
             renderLogros(actualizados);
             nuevos.forEach(id => { const l = LOGROS.find(x => x.id === id); if (l) mostrarToastLogro(l); });
+        }
+    };
+
+    // === ESTADÍSTICAS (demo) ===
+    const renderStats = () => {
+        if (pieChartInst) { pieChartInst.destroy(); pieChartInst = null; }
+        if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
+        const isDark = document.body.classList.contains('dark-mode');
+        const tc = isDark ? '#E2E8F0' : '#4E443A';
+        const gc = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+        const COLORS = ['#9A3B3B','#A1887F','#5B9B6B','#60A5FA','#718096'];
+        const counts = {};
+        Object.keys(SECTIONS).forEach(k => counts[k] = 0);
+        booksData.forEach(b => { if (counts[b.section] !== undefined) counts[b.section]++; });
+        const pieCtx = document.getElementById('pieChart');
+        if (pieCtx && typeof Chart !== 'undefined') {
+            pieChartInst = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: { labels: Object.values(SECTIONS), datasets: [{ data: Object.keys(SECTIONS).map(k => counts[k]), backgroundColor: COLORS, borderWidth: 0, hoverOffset: 6 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 11 }, padding: 8 } } } }
+            });
+        }
+        const pags = {
+            'Leyendo':     booksData.filter(b => b.section === 'leyendo-ahora').reduce((s,b) => s+(b.currentPage||0), 0),
+            'Terminados':  booksData.filter(b => b.section === 'libros-terminados').reduce((s,b) => s+(b.totalPages||0), 0),
+            'Abandonados': booksData.filter(b => b.section === 'libros-abandonados').reduce((s,b) => s+(b.currentPage||0), 0),
+        };
+        const barCtx = document.getElementById('barChart');
+        if (barCtx && typeof Chart !== 'undefined') {
+            barChartInst = new Chart(barCtx, {
+                type: 'bar',
+                data: { labels: Object.keys(pags), datasets: [{ data: Object.values(pags), backgroundColor: ['#9A3B3B','#5B9B6B','#718096'], borderRadius: 8, borderWidth: 0 }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks:{color:tc}, grid:{color:gc} }, y: { ticks:{color:tc}, grid:{color:gc}, beginAtZero:true } } }
+            });
+        }
+        const totalPags = Object.values(pags).reduce((s,v) => s+v, 0);
+        const summary = document.getElementById('stats-summary');
+        if (summary) {
+            summary.innerHTML = [
+                ['📚', booksData.length, 'Libros totales'],
+                ['✅', counts['libros-terminados']||0, 'Terminados'],
+                ['📖', totalPags.toLocaleString('es'), 'Páginas leídas'],
+            ].map(([ico,val,lbl]) => `<div class="stat-card"><div class="stat-ico">${ico}</div><div class="stat-num">${val}</div><div class="stat-lbl">${lbl}</div></div>`).join('');
         }
     };
 
@@ -290,6 +335,17 @@ function openModal(id) {
     }
     if (closeLogrosBtn && logrosModal) {
         closeLogrosBtn.addEventListener('click', () => logrosModal.close());
+    }
+
+    // === ESTADÍSTICAS: Botón abrir/cerrar modal ===
+    const statsBtn = document.getElementById('stats-btn');
+    const statsModal = document.getElementById('stats-modal');
+    const closeStatsBtn = document.getElementById('close-stats-btn');
+    if (statsBtn && statsModal) {
+        statsBtn.addEventListener('click', () => { renderStats(); statsModal.showModal(); });
+    }
+    if (closeStatsBtn && statsModal) {
+        closeStatsBtn.addEventListener('click', () => statsModal.close());
     }
 
     document.getElementById('delete-book-modal-btn').onclick = () => {

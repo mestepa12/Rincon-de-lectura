@@ -88,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let booksData = []; 
         let viewingFriendLibrary = false;
         let myFriendIds = new Set();
+        let pieChartInst = null;
+        let barChartInst = null;
 
         // --- SELECTORES DOM ---
         const mainContent = document.getElementById('main-content');
@@ -888,6 +890,52 @@ onSnapshot(q, (snapshot) => {
             } catch (e) { console.error('Error evaluando logros:', e); }
         };
 
+        // === ESTADÍSTICAS ===
+        const renderStats = () => {
+            if (pieChartInst) { pieChartInst.destroy(); pieChartInst = null; }
+            if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
+            const isDark = document.body.classList.contains('dark-mode');
+            const tc = isDark ? '#E2E8F0' : '#4E443A';
+            const gc = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+            const COLORS = ['#9A3B3B','#A1887F','#5B9B6B','#60A5FA','#718096'];
+            // Pie: libros por sección
+            const counts = {};
+            Object.keys(SECTIONS).forEach(k => counts[k] = 0);
+            booksData.forEach(b => { if (counts[b.section] !== undefined) counts[b.section]++; });
+            const pieCtx = document.getElementById('pieChart');
+            if (pieCtx && typeof Chart !== 'undefined') {
+                pieChartInst = new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: { labels: Object.values(SECTIONS), datasets: [{ data: Object.keys(SECTIONS).map(k => counts[k]), backgroundColor: COLORS, borderWidth: 0, hoverOffset: 6 }] },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 11 }, padding: 8 } } } }
+                });
+            }
+            // Bar: páginas leídas
+            const pags = {
+                'Leyendo':     booksData.filter(b => b.section === 'leyendo-ahora').reduce((s,b) => s+(b.currentPage||0), 0),
+                'Terminados':  booksData.filter(b => b.section === 'libros-terminados').reduce((s,b) => s+(b.totalPages||0), 0),
+                'Abandonados': booksData.filter(b => b.section === 'libros-abandonados').reduce((s,b) => s+(b.currentPage||0), 0),
+            };
+            const barCtx = document.getElementById('barChart');
+            if (barCtx && typeof Chart !== 'undefined') {
+                barChartInst = new Chart(barCtx, {
+                    type: 'bar',
+                    data: { labels: Object.keys(pags), datasets: [{ data: Object.values(pags), backgroundColor: ['#9A3B3B','#5B9B6B','#718096'], borderRadius: 8, borderWidth: 0 }] },
+                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks:{color:tc}, grid:{color:gc} }, y: { ticks:{color:tc}, grid:{color:gc}, beginAtZero:true } } }
+                });
+            }
+            // Resumen
+            const totalPags = Object.values(pags).reduce((s,v) => s+v, 0);
+            const summary = document.getElementById('stats-summary');
+            if (summary) {
+                summary.innerHTML = [
+                    ['📚', booksData.length, 'Libros totales'],
+                    ['✅', counts['libros-terminados']||0, 'Terminados'],
+                    ['📖', totalPags.toLocaleString('es'), 'Páginas leídas'],
+                ].map(([ico,val,lbl]) => `<div class="stat-card"><div class="stat-ico">${ico}</div><div class="stat-num">${val}</div><div class="stat-lbl">${lbl}</div></div>`).join('');
+            }
+        };
+
         // === RACHA DIARIA DE LECTURA ===
         const updateStreak = async () => {
             const userRef = doc(db, 'users', user.uid);
@@ -1126,6 +1174,17 @@ onSnapshot(q, (snapshot) => {
         }
         if (closeLogrosBtn && logrosModal) {
             closeLogrosBtn.addEventListener('click', () => logrosModal.close());
+        }
+
+        // === ESTADÍSTICAS: Botón abrir/cerrar modal ===
+        const statsBtn = document.getElementById('stats-btn');
+        const statsModal = document.getElementById('stats-modal');
+        const closeStatsBtn = document.getElementById('close-stats-btn');
+        if (statsBtn && statsModal) {
+            statsBtn.addEventListener('click', () => { renderStats(); statsModal.showModal(); });
+        }
+        if (closeStatsBtn && statsModal) {
+            closeStatsBtn.addEventListener('click', () => statsModal.close());
         }
 
         setupTheme(); // (Esta línea ya la tenías al final)

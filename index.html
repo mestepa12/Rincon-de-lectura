@@ -14,6 +14,7 @@
     <meta property="og:url" content="https://rinconlectura.es">    
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <style>
         /* Banner informativo superior */
@@ -55,6 +56,7 @@
                 <button id="toggle-view" type="button">Cuadrícula / Lista</button>
                 <button id="toggle-theme" type="button">🌙</button>
                 <button type="button" onclick="location.href='login.html'">Entrar</button>
+                <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
             </div>
@@ -170,6 +172,25 @@
         <button id="close-logros-btn" type="button" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-color);">✕</button>
     </div>
     <div id="logros-grid" class="logros-grid"></div>
+</dialog>
+<dialog id="stats-modal" style="max-width:680px;width:95%;max-height:85vh;overflow:hidden;border-radius:12px;padding:0;border:2px solid var(--border-color);background:var(--card-bg-color);color:var(--text-color);">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem;border-bottom:2px solid var(--border-color);">
+        <h2 style="margin:0;font-family:var(--font-title);">📊 Mis Estadísticas</h2>
+        <button id="close-stats-btn" type="button" style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-color);">✕</button>
+    </div>
+    <div style="padding:1.5rem;overflow-y:auto;max-height:calc(85vh - 85px);">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:center;">
+            <div>
+                <p style="text-align:center;font-size:0.8rem;font-weight:700;letter-spacing:.05em;color:var(--accent-color);margin:0 0 .75rem;">LIBROS POR SECCIÓN</p>
+                <canvas id="pieChart"></canvas>
+            </div>
+            <div>
+                <p style="text-align:center;font-size:0.8rem;font-weight:700;letter-spacing:.05em;color:var(--accent-color);margin:0 0 .75rem;">PÁGINAS LEÍDAS</p>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+        <div id="stats-summary" style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;"></div>
+    </div>
 </dialog>
 <footer class="main-footer">
     <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a></p>
