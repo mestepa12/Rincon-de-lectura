@@ -15,6 +15,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
     <style>
         /* Banner informativo superior */
@@ -160,6 +161,7 @@
                 <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
                 <div class="modal-actions-right">
                     <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
+                    <button type="button" id="share-ig-btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:white;border:none;padding:0.75rem 1rem;border-radius:5px;font-weight:bold;cursor:pointer;">&#128248; Compartir en IG/TikTok</button>
                     <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
                 </div>
             </div>
@@ -192,6 +194,17 @@
         <div id="stats-summary" style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;"></div>
     </div>
 </dialog>
+<div id="export-card">
+    <div class="ec-cover-wrap"><img id="export-cover" src="" alt="" class="ec-cover"></div>
+    <div class="ec-content">
+        <div id="export-stars" class="ec-stars"></div>
+        <h2 id="export-title" class="ec-title"></h2>
+        <p id="export-author" class="ec-author"></p>
+        <div class="ec-divider"></div>
+        <p id="export-notes" class="ec-notes"></p>
+    </div>
+    <div class="ec-footer">📚 Mi Rincón de Lectura</div>
+</div>
 <footer class="main-footer">
     <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a></p>
 </footer>

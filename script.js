@@ -1003,6 +1003,33 @@ onSnapshot(q, (snapshot) => {
             }
         };
 
+        // === EXPORTAR RESEÑA COMO IMAGEN ===
+        const shareAsImage = async () => {
+            const bookId = bookDetailModal.dataset.bookId;
+            const book = booksData.find(b => b.id === bookId);
+            if (!book) return;
+            const card = document.getElementById('export-card');
+            document.getElementById('export-cover').src = book.cover || '';
+            document.getElementById('export-title').textContent = book.title || '';
+            document.getElementById('export-author').textContent = book.author || '';
+            document.getElementById('export-notes').textContent = book.notes || '';
+            const r = book.rating || 0;
+            document.getElementById('export-stars').textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
+            card.style.display = 'flex';
+            try {
+                const canvas = await html2canvas(card, { scale: 2, useCORS: true, allowTaint: false, logging: false });
+                const link = document.createElement('a');
+                link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error('Error generando imagen:', err);
+                alert('No se pudo generar la imagen. Asegúrate de que la portada sea accesible (HTTPS).');
+            } finally {
+                card.style.display = 'none';
+            }
+        };
+
         const handleDeleteBook = (bookId) => {
             deleteDoc(doc(db, 'books', String(bookId))).catch(error => console.error("Error al eliminar:", error));
         };
@@ -1186,6 +1213,10 @@ onSnapshot(q, (snapshot) => {
         if (closeStatsBtn && statsModal) {
             closeStatsBtn.addEventListener('click', () => statsModal.close());
         }
+
+        // === COMPARTIR EN IG/TIKTOK ===
+        const shareIgBtn = document.getElementById('share-ig-btn');
+        if (shareIgBtn) shareIgBtn.addEventListener('click', shareAsImage);
 
         setupTheme(); // (Esta línea ya la tenías al final)
     }

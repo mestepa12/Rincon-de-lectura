@@ -596,6 +596,34 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 .stat-num { font-size: 1.9rem; font-weight: 700; color: var(--accent-color-interactive); font-family: var(--font-title); line-height: 1.1; }
 .stat-lbl { font-size: 0.78rem; color: var(--accent-color); }
 
+/* ======== EXPORT CARD (Instagram / TikTok Story 9:16) ======== */
+#export-card {
+    display: none;
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 540px;
+    height: 960px;
+    background: linear-gradient(160deg, #1a0905 0%, #4a2010 30%, #8B3A3A 65%, #c4875a 100%);
+    color: white;
+    font-family: 'Lora', Georgia, serif;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 70px 50px 50px;
+    box-sizing: border-box;
+}
+.ec-cover-wrap { display: flex; justify-content: center; width: 100%; }
+.ec-cover { width: 220px; height: 330px; object-fit: cover; border-radius: 10px; box-shadow: 0 24px 64px rgba(0,0,0,0.7); }
+.ec-content { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1; justify-content: center; padding: 32px 0 0; gap: 0; }
+.ec-stars { font-size: 1.8rem; color: #FFC107; letter-spacing: 6px; text-align: center; margin-bottom: 18px; }
+.ec-title { font-size: 1.9rem; font-weight: 700; text-align: center; margin: 0 0 10px; line-height: 1.2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+.ec-author { font-size: 1rem; text-align: center; opacity: 0.8; margin: 0 0 22px; font-style: italic; font-family: 'Lato', sans-serif; }
+.ec-divider { width: 50px; height: 2px; background: rgba(255,255,255,0.35); margin: 0 auto 22px; }
+.ec-notes { font-size: 0.9rem; text-align: center; line-height: 1.7; opacity: 0.88; font-style: italic; max-height: 130px; overflow: hidden; font-family: 'Lato', sans-serif; }
+.ec-footer { font-size: 0.75rem; opacity: 0.6; text-align: center; letter-spacing: 3px; text-transform: uppercase; font-family: 'Lato', sans-serif; }
+
 .main-footer {
     text-align: center;
     padding: 20px;
