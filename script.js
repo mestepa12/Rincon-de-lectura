@@ -321,21 +321,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailProgressSection.style.display = 'none';
             }
             
-            // Rellenar select (Igual que antes)
+            // Rellenar select: todas las secciones, la actual preseleccionada
             moveBookSelect.innerHTML = '';
-            const defaultOption = document.createElement('option');
-            defaultOption.textContent = 'Mover a otra sección...';
-            defaultOption.disabled = true;
-            defaultOption.selected = true;
-            moveBookSelect.appendChild(defaultOption);
-            
             Object.entries(SECTIONS).forEach(([key, name]) => {
-                if (key !== book.section) {
-                    const option = document.createElement('option');
-                    option.value = key;
-                    option.textContent = name;
-                    moveBookSelect.appendChild(option);
-                }
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = key === book.section ? `📍 ${name} (actual)` : name;
+                if (key === book.section) option.selected = true;
+                moveBookSelect.appendChild(option);
             });
 
             // =================================================
@@ -982,9 +975,9 @@ onSnapshot(q, (snapshot) => {
         
             let paginaProgresada = false;
 
-            // Si el usuario ha seleccionado mover a otra sección, incluirlo en el guardado
+            // Cambio de sección solo si el usuario eligió una diferente
             const newSection = moveBookSelect.value;
-            if (newSection && newSection !== book.section) {
+            if (newSection !== book.section) {
                 updatedData.section    = newSection;
                 updatedData.currentPage = 0;          // resetear progreso al cambiar sección
                 updatedData.rating      = deleteField(); // limpiar valoración
@@ -1015,7 +1008,9 @@ onSnapshot(q, (snapshot) => {
                 z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.35);opacity:0;transition:opacity 0.3s;
                 line-height:1.4;border-left:4px solid #60A5FA;`;
             t.innerHTML = '📸 <b>Generando imagen…</b><br><span style="opacity:0.85">Si la portada es de Google Books y la URL ha cambiado, puede que no aparezca en la imagen.</span>';
-            document.body.appendChild(t);
+            // Appendear al dialog abierto para superar el top-layer del navegador
+            const target = document.querySelector('dialog[open]') || document.body;
+            target.appendChild(t);
             setTimeout(() => t.style.opacity = '1', 10);
             setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
         };

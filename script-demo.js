@@ -283,20 +283,15 @@ function openModal(id) {
         prog.style.display = 'none';
     }
 
-    // 3. RELLENAR EL SELECT (¡Aquí está la magia!)
+    // Rellenar select: todas las secciones, la actual preseleccionada
     const moveSelect = document.getElementById('move-book-select');
-    
-    // Limpiamos y ponemos la opción por defecto
-    moveSelect.innerHTML = '<option value="" disabled selected>Selecciona un destino...</option>';
-    
-    // Recorremos las secciones y añadimos las que NO son la actual
+    moveSelect.innerHTML = '';
     Object.entries(SECTIONS).forEach(([key, name]) => {
-        if (key !== book.section) {
-            const opt = document.createElement('option');
-            opt.value = key;
-            opt.textContent = name;
-            moveSelect.appendChild(opt);
-        }
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = key === book.section ? `📍 ${name} (actual)` : name;
+        if (key === book.section) opt.selected = true;
+        moveSelect.appendChild(opt);
     });
 
     // 4. Abrir por fin el modal
@@ -309,7 +304,7 @@ function openModal(id) {
             book.notes = document.getElementById('detail-notes').value;
 
             const newSection = document.getElementById('move-book-select').value;
-            if (newSection && newSection !== book.section) {
+            if (newSection !== book.section) {
                 // Cambio de sección: resetear progreso y valoración
                 book.section = newSection;
                 book.currentPage = 0;
@@ -360,7 +355,9 @@ function openModal(id) {
             z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.35);opacity:0;transition:opacity 0.3s;
             line-height:1.4;border-left:4px solid #60A5FA;`;
         t.innerHTML = '📸 <b>Generando imagen…</b><br><span style="opacity:0.85">Si la portada es de Google Books y la URL ha cambiado, puede que no aparezca en la imagen.</span>';
-        document.body.appendChild(t);
+        // Appendear al dialog abierto para superar el top-layer del navegador
+        const target = document.querySelector('dialog[open]') || document.body;
+        target.appendChild(t);
         setTimeout(() => t.style.opacity = '1', 10);
         setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
     };
