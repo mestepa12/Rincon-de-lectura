@@ -25,13 +25,13 @@ body.dark-mode {
 
 /* ======== GLOBAL & RESET ======== */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; overflow-x: hidden; }
-
+html { scroll-behavior: smooth; overflow-x: hidden; width: 100%; }
 body {
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: var(--font-body);
     margin: 0;
+    width: 100%;
     line-height: 1.6;
     overflow-x: hidden;
     transition: background-color var(--transition-speed), color var(--transition-speed);
@@ -55,11 +55,14 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
     position: sticky;
     top: 0;
     z-index: 1000;
+    width: 100%;         /* imprescindible en sticky */
+    max-width: 100%;     /* evita overflow */
+    box-sizing: border-box;
 }
-.header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 1rem; }
-#site-title { color: var(--bg-color); font-family: var(--font-title); margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
+.header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 0.75rem; min-width: 0; }
+#site-title { color: var(--bg-color); font-family: var(--font-title); margin: 0; font-size: clamp(1.2rem, 4vw, 2rem); min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.header-controls { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+.header-controls { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; min-width: 0; flex-shrink: 1; max-width: 100%; }
 .header-controls button {
     background-color: transparent; border: 2px solid #a1887f; color: white; padding: 0.5rem 1rem;
     border-radius: 5px; cursor: pointer; font-family: var(--font-body); font-weight: 700;
@@ -282,12 +285,23 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 
     /* Modal Detalle en Móvil */
     #book-detail-modal { width: 95%; height: 90vh; }
-    .detail-modal-content { flex-direction: column; overflow-y: auto; } /* Solo aquí scroll general */
+    .detail-modal-content { flex-direction: column; overflow-y: auto; }
     .detail-cover-container { width: 150px; margin: 1.5rem auto 0 auto; align-self: center; }
-    .detail-info { width: 100%; padding: 1.5rem; overflow-y: visible; } /* Quitamos scroll interno en móvil */
+    .detail-info { width: 100%; padding: 1.5rem; overflow-y: visible; }
     #detail-title { font-size: 1.5rem; }
 
     .cookie-banner { flex-direction: column; padding: 1rem; gap: 1rem; }
+}
+
+/* Pantallas muy pequeñas: < 480px */
+@media (max-width: 480px) {
+    .site-header { padding: 0.5rem 0.75rem; }
+    #site-title { font-size: 1.1rem; white-space: normal; }
+    .header-controls { gap: 0.25rem; }
+    .header-controls button { padding: 0.35rem 0.45rem; font-size: 0.75rem; }
+    .streak-counter { font-size: 0.75rem; padding: 0.25rem 0.4rem; }
+    /* Ocultar texto verbose en botones, dejar solo los icónicos */
+    #toggle-view { display: none; }
 }
 
 
