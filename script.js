@@ -74,7 +74,17 @@ document.addEventListener('DOMContentLoaded', () => {
             'lista-deseos': 'Lista de Deseos',
             'libros-abandonados': 'Libros Abandonados'
         };
-        
+
+        const LOGROS = [
+            { id: 'primer_libro',     icono: '📖', nombre: 'Rompehielos',     descripcion: 'Añade tu primer libro.' },
+            { id: 'primer_terminado', icono: '✅', nombre: 'Primera Victoria', descripcion: 'Termina tu primer libro.' },
+            { id: 'cinco_libros',     icono: '📚', nombre: 'Coleccionista',    descripcion: 'Acumula 5 libros.' },
+            { id: 'maraton',          icono: '🏃', nombre: 'Maratón Lector',   descripcion: 'Lee más de 1.000 páginas en total.' },
+            { id: 'critico',          icono: '⭐', nombre: 'Crítico Literario', descripcion: 'Valóra 3 libros terminados.' },
+            { id: 'racha_7',          icono: '🔥', nombre: 'Una Semana',       descripcion: 'Mantén una racha de 7 días.' },
+            { id: 'racha_30',         icono: '💥', nombre: 'Imparable',        descripcion: 'Mantén una racha de 30 días.' },
+        ];
+
         let booksData = []; 
         let viewingFriendLibrary = false;
         let myFriendIds = new Set();
@@ -413,17 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // === RACHA DIARIA: Listener en tiempo real sobre el perfil del usuario ===
         const streakCounter = document.getElementById('streak-counter');
         onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
-            if (docSnap.exists() && streakCounter) {
-                const racha = docSnap.data().rachaActual || 0;
-                const textoAnterior = streakCounter.textContent;
+            if (!docSnap.exists()) return;
+            const userData = docSnap.data();
+            if (streakCounter) {
+                const racha = userData.rachaActual || 0;
+                const prev = streakCounter.textContent;
                 streakCounter.textContent = `🔥 ${racha}`;
-                // Animación solo si el número ha cambiado
-                if (textoAnterior !== streakCounter.textContent) {
+                if (prev !== streakCounter.textContent) {
                     streakCounter.classList.remove('streak-updated');
-                    void streakCounter.offsetWidth; // reflow
+                    void streakCounter.offsetWidth;
                     streakCounter.classList.add('streak-updated');
                 }
             }
+            renderLogros(userData.logrosDesbloqueados || []);
         });
 
 
@@ -828,6 +840,54 @@ onSnapshot(q, (snapshot) => {
             }).catch(error => console.error("Error al añadir libro:", error));
         };
         
+        // === LOGROS: Toast y renderizado ===
+        const mostrarToastLogro = (logro) => {
+            const t = document.createElement('div');
+            t.className = 'logro-toast';
+            t.innerHTML = `<span class="logro-toast-icono">${logro.icono}</span><div><div class="logro-toast-titulo">¡Logro desbloqueado!</div><div class="logro-toast-nombre">${logro.nombre}</div></div>`;
+            document.body.appendChild(t);
+            setTimeout(() => t.classList.add('logro-toast-visible'), 10);
+            setTimeout(() => { t.classList.remove('logro-toast-visible'); setTimeout(() => t.remove(), 500); }, 4500);
+        };
+
+        const renderLogros = (desbloqueados = []) => {
+            const grid = document.getElementById('logros-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            LOGROS.forEach(logro => {
+                const ok = desbloqueados.includes(logro.id);
+                const div = document.createElement('div');
+                div.className = `logro-card ${ok ? 'logro-desbloqueado' : 'logro-bloqueado'}`;
+                div.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-nombre">${logro.nombre}</div><div class="logro-desc">${logro.descripcion}</div><div class="logro-estado">${ok ? '✓ Obtenido' : '🔒'}</div>`;
+                grid.appendChild(div);
+            });
+        };
+
+        const evaluarLogros = async () => {
+            const userRef = doc(db, 'users', user.uid);
+            try {
+                const snap = await getDoc(userRef);
+                if (!snap.exists()) return;
+                const ud = snap.data();
+                const desbloqueados = new Set(ud.logrosDesbloqueados || []);
+                const racha = ud.rachaActual || 0;
+                const nuevos = [];
+                if (!desbloqueados.has('primer_libro')     && booksData.length >= 1) nuevos.push('primer_libro');
+                if (!desbloqueados.has('primer_terminado') && booksData.some(b => b.section === 'libros-terminados')) nuevos.push('primer_terminado');
+                if (!desbloqueados.has('cinco_libros')     && booksData.length >= 5) nuevos.push('cinco_libros');
+                const totalPags = booksData.reduce((s, b) => s + (b.currentPage || 0), 0);
+                if (!desbloqueados.has('maraton')          && totalPags >= 1000) nuevos.push('maraton');
+                const valorados = booksData.filter(b => b.section === 'libros-terminados' && b.rating > 0);
+                if (!desbloqueados.has('critico')          && valorados.length >= 3) nuevos.push('critico');
+                if (!desbloqueados.has('racha_7')          && racha >= 7)  nuevos.push('racha_7');
+                if (!desbloqueados.has('racha_30')         && racha >= 30) nuevos.push('racha_30');
+                if (nuevos.length > 0) {
+                    await updateDoc(userRef, { logrosDesbloqueados: [...desbloqueados, ...nuevos] });
+                    nuevos.forEach(id => { const l = LOGROS.find(x => x.id === id); if (l) mostrarToastLogro(l); });
+                }
+            } catch (e) { console.error('Error evaluando logros:', e); }
+        };
+
         // === RACHA DIARIA DE LECTURA ===
         const updateStreak = async () => {
             const userRef = doc(db, 'users', user.uid);
@@ -887,6 +947,7 @@ onSnapshot(q, (snapshot) => {
             try {
                 await updateDoc(doc(db, 'books', bookId), updatedData);
                 if (paginaProgresada) await updateStreak();
+                await evaluarLogros();
                 console.log('Detalles actualizados');
                 bookDetailModal.close();
             } catch (error) {
@@ -964,6 +1025,7 @@ onSnapshot(q, (snapshot) => {
             // Orden alfabético por título
             booksData.sort((a, b) => a.title.localeCompare(b.title));
             renderBooks();
+            evaluarLogros();
         }, (error) => {
             console.error("Error al recibir datos de Firebase: ", error);
         });
@@ -1054,6 +1116,17 @@ onSnapshot(q, (snapshot) => {
         // Aplicamos la lógica a ambos modales
         if (addBookModal) closeOnBackdropClick(addBookModal);
         if (bookDetailModal) closeOnBackdropClick(bookDetailModal);
+
+        // === LOGROS: Botón abrir/cerrar modal ===
+        const logrosBtn = document.getElementById('logros-btn');
+        const logrosModal = document.getElementById('logros-modal');
+        const closeLogrosBtn = document.getElementById('close-logros-btn');
+        if (logrosBtn && logrosModal) {
+            logrosBtn.addEventListener('click', () => logrosModal.showModal());
+        }
+        if (closeLogrosBtn && logrosModal) {
+            closeLogrosBtn.addEventListener('click', () => logrosModal.close());
+        }
 
         setupTheme(); // (Esta línea ya la tenías al final)
     }

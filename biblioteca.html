@@ -41,6 +41,7 @@
                 <button id="toggle-friends-btn" type="button" title="Amigos">👥</button>
                 <button id="toggle-theme" type="button">🌙</button>
                 <button id="logout-btn" type="button">Cerrar Sesión</button>
+                <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
             </div>
         </div>
@@ -167,6 +168,14 @@
                 </div>
             </div>
         </div>
+    </dialog>
+
+   <dialog id="logros-modal" style="max-width:600px; width:95%; max-height:80vh; overflow:hidden; border-radius:12px; padding:0; border:2px solid var(--border-color); background:var(--card-bg-color); color:var(--text-color);">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:1.5rem; border-bottom:2px solid var(--border-color); background:var(--card-bg-color);">
+            <h2 style="margin:0; font-family:var(--font-title);">🏅 Mis Logros</h2>
+            <button id="close-logros-btn" type="button" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-color); line-height:1;">✕</button>
+        </div>
+        <div id="logros-grid" class="logros-grid"></div>
     </dialog>
 
    <script type="module" src="auth.js"></script>

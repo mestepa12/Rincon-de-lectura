@@ -25,6 +25,16 @@ document.addEventListener('DOMContentLoaded', () => {
     'libros-abandonados': 'Libros Abandonados'
 };
 
+    const LOGROS = [
+        { id: 'primer_libro',     icono: '📖', nombre: 'Rompehielos',     descripcion: 'Añade tu primer libro.' },
+        { id: 'primer_terminado', icono: '✅', nombre: 'Primera Victoria', descripcion: 'Termina tu primer libro.' },
+        { id: 'cinco_libros',     icono: '📚', nombre: 'Coleccionista',    descripcion: 'Acumula 5 libros.' },
+        { id: 'maraton',          icono: '🏃', nombre: 'Maratón Lector',   descripcion: 'Lee más de 1.000 páginas en total.' },
+        { id: 'critico',          icono: '⭐', nombre: 'Crítico Literario', descripcion: 'Valóra 3 libros terminados.' },
+        { id: 'racha_7',          icono: '🔥', nombre: 'Una Semana',       descripcion: 'Mantén una racha de 7 días.' },
+        { id: 'racha_30',         icono: '💥', nombre: 'Imparable',        descripcion: 'Mantén una racha de 30 días.' },
+    ];
+
     // 2. Selectores
     const searchBar = document.getElementById('search-bar');
     const mainContent = document.getElementById('main-content');
@@ -47,18 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const todayStr = hoy.toISOString().split('T')[0];
         const savedDate = localStorage.getItem('demo_ultima_lectura');
         let racha = parseInt(localStorage.getItem('demo_racha') || '0', 10);
-
-        if (!savedDate) {
-            racha = 1;
-        } else {
-            const ultima = new Date(savedDate);
-            ultima.setHours(0, 0, 0, 0);
-            const diffDias = Math.round((hoy - ultima) / (1000 * 60 * 60 * 24));
-            if (diffDias === 0) return;        // Mismo día: no cambia
-            else if (diffDias === 1) racha++;  // Día consecutivo
-            else racha = 1;                    // Racha rota
+        if (!savedDate) { racha = 1; }
+        else {
+            const ultima = new Date(savedDate); ultima.setHours(0,0,0,0);
+            const d = Math.round((hoy - ultima) / 86400000);
+            if (d === 0) return; else if (d === 1) racha++; else racha = 1;
         }
-
         localStorage.setItem('demo_ultima_lectura', todayStr);
         localStorage.setItem('demo_racha', String(racha));
         if (streakCounter) {
@@ -68,6 +72,49 @@ document.addEventListener('DOMContentLoaded', () => {
             streakCounter.classList.add('streak-updated');
         }
     }
+
+    const mostrarToastLogro = (logro) => {
+        const t = document.createElement('div');
+        t.className = 'logro-toast';
+        t.innerHTML = `<span class="logro-toast-icono">${logro.icono}</span><div><div class="logro-toast-titulo">¡Logro desbloqueado!</div><div class="logro-toast-nombre">${logro.nombre}</div></div>`;
+        document.body.appendChild(t);
+        setTimeout(() => t.classList.add('logro-toast-visible'), 10);
+        setTimeout(() => { t.classList.remove('logro-toast-visible'); setTimeout(() => t.remove(), 500); }, 4500);
+    };
+
+    const renderLogros = (desbloqueados = []) => {
+        const grid = document.getElementById('logros-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+        LOGROS.forEach(logro => {
+            const ok = desbloqueados.includes(logro.id);
+            const div = document.createElement('div');
+            div.className = `logro-card ${ok ? 'logro-desbloqueado' : 'logro-bloqueado'}`;
+            div.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-nombre">${logro.nombre}</div><div class="logro-desc">${logro.descripcion}</div><div class="logro-estado">${ok ? '✓ Obtenido' : '🔒'}</div>`;
+            grid.appendChild(div);
+        });
+    };
+
+    const evaluarLogros = () => {
+        const desbloqueados = new Set(JSON.parse(localStorage.getItem('demo_logros') || '[]'));
+        const racha = parseInt(localStorage.getItem('demo_racha') || '0', 10);
+        const nuevos = [];
+        if (!desbloqueados.has('primer_libro')     && booksData.length >= 1) nuevos.push('primer_libro');
+        if (!desbloqueados.has('primer_terminado') && booksData.some(b => b.section === 'libros-terminados')) nuevos.push('primer_terminado');
+        if (!desbloqueados.has('cinco_libros')     && booksData.length >= 5) nuevos.push('cinco_libros');
+        const totalPags = booksData.reduce((s, b) => s + (b.currentPage || 0), 0);
+        if (!desbloqueados.has('maraton')          && totalPags >= 1000) nuevos.push('maraton');
+        const valorados = booksData.filter(b => b.section === 'libros-terminados' && b.rating > 0);
+        if (!desbloqueados.has('critico')          && valorados.length >= 3) nuevos.push('critico');
+        if (!desbloqueados.has('racha_7')          && racha >= 7)  nuevos.push('racha_7');
+        if (!desbloqueados.has('racha_30')         && racha >= 30) nuevos.push('racha_30');
+        if (nuevos.length > 0) {
+            const actualizados = [...desbloqueados, ...nuevos];
+            localStorage.setItem('demo_logros', JSON.stringify(actualizados));
+            renderLogros(actualizados);
+            nuevos.forEach(id => { const l = LOGROS.find(x => x.id === id); if (l) mostrarToastLogro(l); });
+        }
+    };
 
     // 3. Función de Renderizado (Filtrado)
     function renderBooks() {
@@ -163,6 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
             notes: ''
         });
         renderBooks();
+        evaluarLogros();
         addBookModal.close();
         addBookForm.reset();
     };
@@ -225,9 +273,24 @@ function openModal(id) {
                 book.currentPage = newPage;
             }
             renderBooks();
+            evaluarLogros();
             bookDetailModal.close();
         }
     };
+
+    // === LOGROS: Botón abrir/cerrar modal ===
+    const logrosBtn = document.getElementById('logros-btn');
+    const logrosModal = document.getElementById('logros-modal');
+    const closeLogrosBtn = document.getElementById('close-logros-btn');
+    if (logrosBtn && logrosModal) {
+        logrosBtn.addEventListener('click', () => {
+            renderLogros(JSON.parse(localStorage.getItem('demo_logros') || '[]'));
+            logrosModal.showModal();
+        });
+    }
+    if (closeLogrosBtn && logrosModal) {
+        closeLogrosBtn.addEventListener('click', () => logrosModal.close());
+    }
 
     document.getElementById('delete-book-modal-btn').onclick = () => {
         booksData = booksData.filter(b => b.id !== bookDetailModal.dataset.bookId);
