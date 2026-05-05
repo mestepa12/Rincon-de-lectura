@@ -1205,6 +1205,19 @@ onSnapshot(q, (snapshot) => {
             booksData.sort((a, b) => a.title.localeCompare(b.title));
             renderBooks();
             evaluarLogros();
+
+            // ── Migración automática ──────────────────────────────────────────
+            // Recalcula totalPaginasLeidas cada vez que cambian los libros.
+            // Usa setDoc+merge para que funcione aunque el campo no exista aún
+            // (usuarios registrados antes de que se añadiera esta feature).
+            const totalPaginasLeidas = booksData.reduce((sum, b) => {
+                if (b.section === 'libros-terminados') return sum + (b.totalPages || 0);
+                return sum + (b.currentPage || 0);
+            }, 0);
+            setDoc(doc(db, 'users', user.uid), { totalPaginasLeidas }, { merge: true })
+                .catch(e => console.warn('No se pudo sincronizar totalPaginasLeidas:', e));
+            // ─────────────────────────────────────────────────────────────────
+
         }, (error) => {
             console.error("Error al recibir datos de Firebase: ", error);
         });
