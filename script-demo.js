@@ -349,9 +349,36 @@ function openModal(id) {
     }
 
     // === COMPARTIR EN IG/TIKTOK (demo) ===
+    const fetchImageAsDataUrl = async (url) => {
+        if (!url) return null;
+        const toDataUrl = async (fetchUrl) => {
+            const resp = await fetch(fetchUrl, { cache: 'force-cache' });
+            if (!resp.ok) throw new Error('failed');
+            const blob = await resp.blob();
+            return new Promise((res, rej) => {
+                const reader = new FileReader();
+                reader.onload = () => res(reader.result);
+                reader.onerror = rej;
+                reader.readAsDataURL(blob);
+            });
+        };
+        try { return await toDataUrl(url); } catch {}
+        try { return await toDataUrl(`https://corsproxy.io/?${encodeURIComponent(url)}`); } catch {}
+        return null;
+    };
+
     const shareAsImage = async (book) => {
         const card = document.getElementById('export-card');
-        document.getElementById('export-cover').src = book.cover || '';
+        const coverEl = document.getElementById('export-cover');
+
+        const coverDataUrl = await fetchImageAsDataUrl(book.cover);
+        if (coverDataUrl) {
+            await new Promise((res) => { coverEl.onload = coverEl.onerror = res; coverEl.src = coverDataUrl; });
+            coverEl.style.display = '';
+        } else {
+            coverEl.style.display = 'none';
+        }
+
         document.getElementById('export-title').textContent = book.title || '';
         document.getElementById('export-author').textContent = book.author || '';
         document.getElementById('export-notes').textContent = book.notes || '';
@@ -359,7 +386,7 @@ function openModal(id) {
         document.getElementById('export-stars').textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
         card.style.display = 'flex';
         try {
-            const canvas = await html2canvas(card, { scale: 2, useCORS: true, allowTaint: false, logging: false });
+            const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
             const link = document.createElement('a');
             link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;
             link.href = canvas.toDataURL('image/png');
@@ -369,8 +396,10 @@ function openModal(id) {
             alert('No se pudo generar la imagen.');
         } finally {
             card.style.display = 'none';
+            coverEl.style.display = '';
         }
     };
+
 
     const shareIgBtn = document.getElementById('share-ig-btn');
     if (shareIgBtn) {

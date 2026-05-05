@@ -1004,12 +1004,40 @@ onSnapshot(q, (snapshot) => {
         };
 
         // === EXPORTAR RESEÑA COMO IMAGEN ===
+        const fetchImageAsDataUrl = async (url) => {
+            if (!url) return null;
+            const toDataUrl = async (fetchUrl) => {
+                const resp = await fetch(fetchUrl, { cache: 'force-cache' });
+                if (!resp.ok) throw new Error('failed');
+                const blob = await resp.blob();
+                return new Promise((res, rej) => {
+                    const reader = new FileReader();
+                    reader.onload = () => res(reader.result);
+                    reader.onerror = rej;
+                    reader.readAsDataURL(blob);
+                });
+            };
+            try { return await toDataUrl(url); } catch {}                                    // 1. Directo (funciona si el servidor permite CORS)
+            try { return await toDataUrl(`https://corsproxy.io/?${encodeURIComponent(url)}`); } catch {} // 2. Proxy CORS
+            return null;                                                                     // 3. Sin portada
+        };
+
         const shareAsImage = async () => {
             const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
             const card = document.getElementById('export-card');
-            document.getElementById('export-cover').src = book.cover || '';
+            const coverEl = document.getElementById('export-cover');
+
+            // Convertir portada a data URL para evitar bloqueos CORS en html2canvas
+            const coverDataUrl = await fetchImageAsDataUrl(book.cover);
+            if (coverDataUrl) {
+                await new Promise((res) => { coverEl.onload = coverEl.onerror = res; coverEl.src = coverDataUrl; });
+                coverEl.style.display = '';
+            } else {
+                coverEl.style.display = 'none'; // Ocultar portada si no se puede cargar
+            }
+
             document.getElementById('export-title').textContent = book.title || '';
             document.getElementById('export-author').textContent = book.author || '';
             document.getElementById('export-notes').textContent = book.notes || '';
@@ -1017,18 +1045,20 @@ onSnapshot(q, (snapshot) => {
             document.getElementById('export-stars').textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
             card.style.display = 'flex';
             try {
-                const canvas = await html2canvas(card, { scale: 2, useCORS: true, allowTaint: false, logging: false });
+                const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
                 const link = document.createElement('a');
                 link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             } catch (err) {
                 console.error('Error generando imagen:', err);
-                alert('No se pudo generar la imagen. Asegúrate de que la portada sea accesible (HTTPS).');
+                alert('No se pudo generar la imagen.');
             } finally {
                 card.style.display = 'none';
+                coverEl.style.display = ''; // restaurar visibilidad
             }
         };
+
 
         const handleDeleteBook = (bookId) => {
             deleteDoc(doc(db, 'books', String(bookId))).catch(error => console.error("Error al eliminar:", error));
