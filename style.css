@@ -25,7 +25,7 @@ body.dark-mode {
 
 /* ======== GLOBAL & RESET ======== */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
     background-color: var(--bg-color);
@@ -33,6 +33,7 @@ body {
     font-family: var(--font-body);
     margin: 0;
     line-height: 1.6;
+    overflow-x: hidden;
     transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
@@ -58,7 +59,7 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 .header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 1rem; }
 #site-title { color: var(--bg-color); font-family: var(--font-title); margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
 
-.header-controls { display: flex; gap: 0.5rem; }
+.header-controls { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
 .header-controls button {
     background-color: transparent; border: 2px solid #a1887f; color: white; padding: 0.5rem 1rem;
     border-radius: 5px; cursor: pointer; font-family: var(--font-body); font-weight: 700;
@@ -261,9 +262,21 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 
 /* ======== MEDIA QUERIES ======== */
 @media (max-width: 768px) {
-    .site-header { padding: 1rem; } 
-    .header-main { flex-direction: column; align-items: flex-start; gap: 1rem; }
-    .header-controls { width: 100%; justify-content: space-between; }
+    .site-header { padding: 0.75rem 1rem; } 
+    .header-main { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+    .header-controls {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.3rem;
+    }
+    .header-controls button {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.82rem;
+    }
+    .streak-counter {
+        font-size: 0.82rem;
+        padding: 0.3rem 0.55rem;
+    }
     main { padding: 1rem; }
     .books-container { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
