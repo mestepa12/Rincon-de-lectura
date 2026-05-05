@@ -11,8 +11,6 @@
     --font-title: 'Lora', serif;
     --font-body: 'Lato', sans-serif;
     --transition-speed: 0.3s;
-    --header-bg: #EDE5DC;
-    --header-text: #4E443A;
 }
 
 body.dark-mode { 
@@ -23,8 +21,6 @@ body.dark-mode {
     --card-bg-color: #2D3748;
     --shadow-color: rgba(0, 0, 0, 0.25);
     --border-color: #4A5568;
-    --header-bg: #2D3748;
-    --header-text: #E2E8F0;
 }
 
 /* ======== GLOBAL & RESET ======== */
@@ -49,7 +45,7 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 
 /* ======== HEADER ======== */
 .site-header {
-    background-color: var(--header-bg);
+    background-color: #4E443A;
     border-bottom: 2px solid var(--accent-color);
     padding: 1rem 2rem;
     display: flex;
@@ -58,14 +54,13 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
     position: sticky;
     top: 0;
     z-index: 1000;
-    box-shadow: 0 2px 8px var(--shadow-color);
 }
 .header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 1rem; }
-#site-title { color: var(--header-text); font-family: var(--font-title); margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
+#site-title { color: var(--bg-color); font-family: var(--font-title); margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
 
 .header-controls { display: flex; gap: 0.5rem; }
 .header-controls button {
-    background-color: transparent; border: 2px solid var(--accent-color); color: var(--header-text); padding: 0.5rem 1rem;
+    background-color: transparent; border: 2px solid #a1887f; color: white; padding: 0.5rem 1rem;
     border-radius: 5px; cursor: pointer; font-family: var(--font-body); font-weight: 700;
     transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed);
 }
