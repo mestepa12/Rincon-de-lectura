@@ -247,19 +247,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return '';
         };
 
+        // Placeholder SVG para portadas que fallan al cargar
+        const COVER_PLACEHOLDER = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 180"><rect width="120" height="180" fill="%23f4ede7" rx="4"/><text x="60" y="105" text-anchor="middle" font-size="48" font-family="sans-serif">&#x1F4D6;</text></svg>')}`;
+
         const createBookElement = (book) => {
             const bookArticle = document.createElement('article');
             bookArticle.className = 'book';
             bookArticle.dataset.id = book.id;
-            const defaultCover = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-            bookArticle.innerHTML = `
-                <img src="${book.cover || defaultCover}" alt="Portada de ${book.title}" class="book-cover" loading="lazy">
-                <div class="book-info">
-                    <h3>${book.title}</h3>
-                    <p class="author">${book.author}</p>
-                    ${createExtraInfoHTML(book)}
-                </div>
+
+            // Crear img via DOM para poder asignar onerror y evitar portadas rotas
+            const imgEl = document.createElement('img');
+            imgEl.className = 'book-cover';
+            imgEl.loading  = 'lazy';
+            imgEl.alt      = `Portada de ${book.title}`;
+            imgEl.src      = book.cover || COVER_PLACEHOLDER;
+            imgEl.onerror  = () => { imgEl.onerror = null; imgEl.src = COVER_PLACEHOLDER; };
+
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'book-info';
+            infoDiv.innerHTML = `
+                <h3>${book.title}</h3>
+                <p class="author">${book.author}</p>
+                ${createExtraInfoHTML(book)}
             `;
+
+            bookArticle.appendChild(imgEl);
+            bookArticle.appendChild(infoDiv);
             return bookArticle;
         };
 
@@ -1225,16 +1238,16 @@ onSnapshot(q, (snapshot) => {
         // === IMPORTAR DE GOODREADS ===
         const importGoodreadsCSV = async (file) => {
             const raw = await file.text();
-            const cleanText = raw.replace(/^\uFEFF/, ''); // Quitar BOM si existe
+            const csvText = raw.replace(/^\uFEFF/, ''); // Eliminar BOM
 
-            // Parser CSV robusto: respeta comillas y comas dentro de campos
+            // ── Parser CSV robusto (respeta comillas y comas dentro de campos) ─
             const parseCSV = (txt) => {
                 const rows = [];
                 let row = [], field = '', inQ = false;
                 for (let i = 0; i < txt.length; i++) {
                     const c = txt[i];
                     if (c === '"') {
-                        if (inQ && txt[i + 1] === '"') { field += '"'; i++; } // comilla escapada
+                        if (inQ && txt[i + 1] === '"') { field += '"'; i++; }
                         else inQ = !inQ;
                     } else if (c === ',' && !inQ) {
                         row.push(field); field = '';
@@ -1243,57 +1256,106 @@ onSnapshot(q, (snapshot) => {
                         row.push(field);
                         if (row.some(f => f.trim())) rows.push(row);
                         row = []; field = '';
-                    } else {
-                        field += c;
-                    }
+                    } else { field += c; }
                 }
                 if (field || row.length) { row.push(field); if (row.some(f => f.trim())) rows.push(row); }
                 return rows;
             };
 
-            const rows = parseCSV(cleanText);
+            const rows = parseCSV(csvText);
             if (rows.length < 2) { alert('El CSV está vacío o no tiene el formato de Goodreads.'); return; }
-
             const headers = rows[0].map(h => h.trim());
 
-            // Goodreads shelves → nuestras secciones
+            // ── Mapeo de estanterías Goodreads → nuestras secciones ────────────
             const SHELF_MAP = {
                 'read':              'libros-terminados',
                 'currently-reading': 'leyendo-ahora',
                 'to-read':          'lista-deseos',
             };
 
-            // ISBN en Goodreads tiene formato ="9781234567890"
+            // ── Limpieza de ISBN: Goodreads exporta como ="9781234567890" ─────
             const cleanISBN = (s) => (s || '').replace(/[^0-9X]/gi, '');
 
-            const books = rows.slice(1).map(row => {
+            // ── Limpieza de reseñas: etiquetas nativas de Goodreads ─────────────
+            // Formato: [b:Título del libro|ID|...|URL|ID] → <i>Título</i>
+            //          [a:Autor|ID|...]                  → Autor
+            //          otros [x:...]                    → eliminados
+            // Conserva <br/> existentes.
+            const cleanReview = (text) => {
+                if (!text) return '';
+                return text
+                    .replace(/\[b:([^|\]]+)\|[^\]]*\]/g, '<i>$1</i>')  // refs libro → cursiva
+                    .replace(/\[a:([^|\]]+)\|[^\]]*\]/g, '$1')          // refs autor → nombre plano
+                    .replace(/\[[a-z]+:[^\]]*\]/gi, '')                   // otros tags → borrar
+                    .trim();
+            };
+
+            // ── Sistema de portadas con fallback ─────────────────────────────
+            // 1. OpenLibrary (ISBN → URL instantánea, sin llamada de red)
+            // 2. Google Books API (sin ISBN, o si queremos mejor calidad)
+            // 3. '' → la UI muestra COVER_PLACEHOLDER via onerror
+            const fetchTimeout = (url, ms = 6000) => {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), ms);
+                return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
+            };
+
+            const getGoodreadsCover = async (isbn13, title, author) => {
+                if (isbn13) {
+                    // OpenLibrary: URL directa construida desde ISBN (sin API call)
+                    return `https://covers.openlibrary.org/b/isbn/${isbn13}-M.jpg`;
+                }
+                // Sin ISBN: consultar Google Books por título + autor
+                try {
+                    const apiKey = (typeof googleBooksApiKey !== 'undefined' && googleBooksApiKey)
+                        ? `&key=${googleBooksApiKey}` : '';
+                    const q = encodeURIComponent(`${title} ${author}`.trim());
+                    const resp = await fetchTimeout(
+                        `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1${apiKey}`
+                    );
+                    if (!resp.ok) throw new Error();
+                    const data = await resp.json();
+                    const thumb = data.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
+                    if (thumb) return thumb.replace('http://', 'https://').replace('zoom=1', 'zoom=0');
+                } catch { /* ignorar, usar fallback vacío */ }
+                return ''; // La UI usará COVER_PLACEHOLDER via onerror
+            };
+
+            // ── Paso 1: parsear filas (síncrono) ────────────────────────────
+            const parsed = rows.slice(1).map(row => {
                 const g = {};
                 headers.forEach((h, i) => g[h] = (row[i] || '').trim());
-
-                const shelf    = g['Exclusive Shelf'] || g['Bookshelves']?.split(',')[0]?.trim() || '';
-                const section  = SHELF_MAP[shelf] || 'proximas-lecturas';
-                const isbn13   = cleanISBN(g['ISBN13'] || g['ISBN'] || '');
+                const shelf      = g['Exclusive Shelf'] || g['Bookshelves']?.split(',')[0]?.trim() || '';
+                const section    = SHELF_MAP[shelf] || 'proximas-lecturas';
+                const isbn13     = cleanISBN(g['ISBN13'] || g['ISBN'] || '');
                 const totalPages = parseInt(g['Number of Pages'], 10) || 0;
-                const rating   = section === 'libros-terminados' ? (parseInt(g['My Rating'], 10) || 0) : 0;
-
+                const rating     = section === 'libros-terminados' ? (parseInt(g['My Rating'], 10) || 0) : 0;
                 return {
-                    userId:      user.uid,
-                    title:       g['Title'] || '',
-                    author:      g['Author'] || '',
-                    cover:       isbn13 ? `https://covers.openlibrary.org/b/isbn/${isbn13}-M.jpg` : '',
+                    _isbn13:      isbn13,       // campo temporal para getGoodreadsCover
+                    userId:       user.uid,
+                    title:        g['Title'] || '',
+                    author:       g['Author'] || '',
                     section,
                     totalPages,
-                    currentPage: 0,
+                    currentPage:  0,
                     rating,
-                    notes:       (g['My Review'] || '').substring(0, 2000),
-                    googleLink:  '',
+                    notes:        cleanReview(g['My Review'] || '').substring(0, 2000),
+                    googleLink:   '',
                     importedFrom: 'goodreads',
                 };
             }).filter(b => b.title);
 
-            if (books.length === 0) { alert('No se encontraron libros válidos en el CSV.'); return; }
+            if (parsed.length === 0) { alert('No se encontraron libros válidos en el CSV.'); return; }
 
-            // writeBatch en lotes de 400 (máximo Firebase: 500 operaciones/lote)
+            // ── Paso 2: obtener portadas en paralelo ─────────────────────────
+            // ISBN → OpenLibrary URL instantánea | sin ISBN → llamada Google Books
+            const books = await Promise.all(parsed.map(async (b) => {
+                const { _isbn13, ...rest } = b;
+                const cover = await getGoodreadsCover(_isbn13, b.title, b.author);
+                return { ...rest, cover };
+            }));
+
+            // ── Paso 3: writeBatch en lotes de 400 ──────────────────────────
             const BATCH_SIZE = 400;
             let imported = 0;
             for (let i = 0; i < books.length; i += BATCH_SIZE) {
@@ -1305,7 +1367,13 @@ onSnapshot(q, (snapshot) => {
                 imported += Math.min(BATCH_SIZE, books.length - i);
             }
 
-            alert(`✅ Importación completada.\n${imported} libro${imported !== 1 ? 's' : ''} importados desde Goodreads.\n\nLas portadas se obtienen desde Open Library usando el ISBN.`);
+            const sinIsbn = parsed.filter(b => !b._isbn13).length;
+            alert(
+                `✅ Importación completada.\n` +
+                `${imported} libro${imported !== 1 ? 's' : ''} importados desde Goodreads.\n\n` +
+                `Portadas: Open Library (ISBN) · Google Books (${sinIsbn} sin ISBN).\n` +
+                `Las portadas que no carguen mostrarán un icono genérico.`
+            );
         };
 
         // --- ASIGNACIÓN DE EVENTOS ---
