@@ -309,14 +309,18 @@ function openModal(id) {
             book.notes = document.getElementById('detail-notes').value;
 
             const newSection = document.getElementById('move-book-select').value;
-            if (newSection) book.section = newSection;
-
-            if (book.section === 'leyendo-ahora') {
+            if (newSection && newSection !== book.section) {
+                // Cambio de sección: resetear progreso y valoración
+                book.section = newSection;
+                book.currentPage = 0;
+                book.rating = 0;
+            } else if (book.section === 'leyendo-ahora') {
                 const oldPage = book.currentPage || 0;
                 const newPage = parseInt(document.getElementById('current-page').value) || 0;
                 if (newPage > oldPage) updateStreakDemo();
                 book.currentPage = newPage;
             }
+
             renderBooks();
             evaluarLogros();
             bookDetailModal.close();
@@ -349,6 +353,18 @@ function openModal(id) {
     }
 
     // === COMPARTIR EN IG/TIKTOK (demo) ===
+    const mostrarToastShare = () => {
+        const t = document.createElement('div');
+        t.style.cssText = `position:fixed;bottom:80px;right:1rem;background:#2D3748;color:white;
+            padding:0.8rem 1.2rem;border-radius:10px;font-size:0.83rem;max-width:290px;
+            z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.35);opacity:0;transition:opacity 0.3s;
+            line-height:1.4;border-left:4px solid #60A5FA;`;
+        t.innerHTML = '📸 <b>Generando imagen…</b><br><span style="opacity:0.85">Si la portada es de Google Books y la URL ha cambiado, puede que no aparezca en la imagen.</span>';
+        document.body.appendChild(t);
+        setTimeout(() => t.style.opacity = '1', 10);
+        setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
+    };
+
     const fetchImageAsDataUrl = async (url) => {
         if (!url) return null;
         const toDataUrl = async (fetchUrl) => {
@@ -368,6 +384,7 @@ function openModal(id) {
     };
 
     const shareAsImage = async (book) => {
+        mostrarToastShare();
         const card = document.getElementById('export-card');
         const coverEl = document.getElementById('export-cover');
 

@@ -981,13 +981,17 @@ onSnapshot(q, (snapshot) => {
             };
         
             let paginaProgresada = false;
-            if (book.section === 'leyendo-ahora') {
+
+            // Si el usuario ha seleccionado mover a otra sección, incluirlo en el guardado
+            const newSection = moveBookSelect.value;
+            if (newSection && newSection !== book.section) {
+                updatedData.section    = newSection;
+                updatedData.currentPage = 0;          // resetear progreso al cambiar sección
+                updatedData.rating      = deleteField(); // limpiar valoración
+            } else if (book.section === 'leyendo-ahora') {
                 const oldPage = book.currentPage || 0;
                 let newPage = parseInt(currentPageInput.value, 10);
-
-                // Si la casilla está vacía o hay un error al leerla, dejamos la que ya tenía
                 if (isNaN(newPage)) newPage = oldPage;
-
                 updatedData.currentPage = newPage > book.totalPages ? book.totalPages : newPage;
                 if (updatedData.currentPage > oldPage) paginaProgresada = true;
             }
@@ -1004,6 +1008,18 @@ onSnapshot(q, (snapshot) => {
         };
 
         // === EXPORTAR RESEÑA COMO IMAGEN ===
+        const mostrarToastShare = () => {
+            const t = document.createElement('div');
+            t.style.cssText = `position:fixed;bottom:80px;right:1rem;background:#2D3748;color:white;
+                padding:0.8rem 1.2rem;border-radius:10px;font-size:0.83rem;max-width:290px;
+                z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.35);opacity:0;transition:opacity 0.3s;
+                line-height:1.4;border-left:4px solid #60A5FA;`;
+            t.innerHTML = '📸 <b>Generando imagen…</b><br><span style="opacity:0.85">Si la portada es de Google Books y la URL ha cambiado, puede que no aparezca en la imagen.</span>';
+            document.body.appendChild(t);
+            setTimeout(() => t.style.opacity = '1', 10);
+            setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
+        };
+
         const fetchImageAsDataUrl = async (url) => {
             if (!url) return null;
             const toDataUrl = async (fetchUrl) => {
@@ -1023,6 +1039,7 @@ onSnapshot(q, (snapshot) => {
         };
 
         const shareAsImage = async () => {
+            mostrarToastShare();
             const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
@@ -1183,13 +1200,10 @@ onSnapshot(q, (snapshot) => {
             }
         });        
                 moveBookSelect.addEventListener('change', () => {
-            const bookId = bookDetailModal.dataset.bookId;
-            const newSection = moveBookSelect.value;
-            if (bookId && newSection) {
-                handleMoveBook(bookId, newSection);
-                bookDetailModal.close();
-            }
+            // Ya no se aplica al instante: solo actualiza el visual del select.
+            // El cambio real se aplica al pulsar "Guardar Cambios" en handleSaveDetails.
         });
+
 
         if (logoutBtn) {
     logoutBtn.addEventListener('click', (e) => {
