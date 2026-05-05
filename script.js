@@ -1222,6 +1222,92 @@ onSnapshot(q, (snapshot) => {
             console.error("Error al recibir datos de Firebase: ", error);
         });
 
+        // === IMPORTAR DE GOODREADS ===
+        const importGoodreadsCSV = async (file) => {
+            const raw = await file.text();
+            const cleanText = raw.replace(/^\uFEFF/, ''); // Quitar BOM si existe
+
+            // Parser CSV robusto: respeta comillas y comas dentro de campos
+            const parseCSV = (txt) => {
+                const rows = [];
+                let row = [], field = '', inQ = false;
+                for (let i = 0; i < txt.length; i++) {
+                    const c = txt[i];
+                    if (c === '"') {
+                        if (inQ && txt[i + 1] === '"') { field += '"'; i++; } // comilla escapada
+                        else inQ = !inQ;
+                    } else if (c === ',' && !inQ) {
+                        row.push(field); field = '';
+                    } else if ((c === '\n' || c === '\r') && !inQ) {
+                        if (c === '\r' && txt[i + 1] === '\n') i++;
+                        row.push(field);
+                        if (row.some(f => f.trim())) rows.push(row);
+                        row = []; field = '';
+                    } else {
+                        field += c;
+                    }
+                }
+                if (field || row.length) { row.push(field); if (row.some(f => f.trim())) rows.push(row); }
+                return rows;
+            };
+
+            const rows = parseCSV(cleanText);
+            if (rows.length < 2) { alert('El CSV está vacío o no tiene el formato de Goodreads.'); return; }
+
+            const headers = rows[0].map(h => h.trim());
+
+            // Goodreads shelves → nuestras secciones
+            const SHELF_MAP = {
+                'read':              'libros-terminados',
+                'currently-reading': 'leyendo-ahora',
+                'to-read':          'lista-deseos',
+            };
+
+            // ISBN en Goodreads tiene formato ="9781234567890"
+            const cleanISBN = (s) => (s || '').replace(/[^0-9X]/gi, '');
+
+            const books = rows.slice(1).map(row => {
+                const g = {};
+                headers.forEach((h, i) => g[h] = (row[i] || '').trim());
+
+                const shelf    = g['Exclusive Shelf'] || g['Bookshelves']?.split(',')[0]?.trim() || '';
+                const section  = SHELF_MAP[shelf] || 'proximas-lecturas';
+                const isbn13   = cleanISBN(g['ISBN13'] || g['ISBN'] || '');
+                const totalPages = parseInt(g['Number of Pages'], 10) || 0;
+                const rating   = section === 'libros-terminados' ? (parseInt(g['My Rating'], 10) || 0) : 0;
+
+                return {
+                    userId:      user.uid,
+                    title:       g['Title'] || '',
+                    author:      g['Author'] || '',
+                    cover:       isbn13 ? `https://covers.openlibrary.org/b/isbn/${isbn13}-M.jpg` : '',
+                    section,
+                    totalPages,
+                    currentPage: 0,
+                    rating,
+                    notes:       (g['My Review'] || '').substring(0, 2000),
+                    googleLink:  '',
+                    importedFrom: 'goodreads',
+                };
+            }).filter(b => b.title);
+
+            if (books.length === 0) { alert('No se encontraron libros válidos en el CSV.'); return; }
+
+            // writeBatch en lotes de 400 (máximo Firebase: 500 operaciones/lote)
+            const BATCH_SIZE = 400;
+            let imported = 0;
+            for (let i = 0; i < books.length; i += BATCH_SIZE) {
+                const batch = writeBatch(db);
+                books.slice(i, i + BATCH_SIZE).forEach(book => {
+                    batch.set(doc(collection(db, 'books')), book);
+                });
+                await batch.commit();
+                imported += Math.min(BATCH_SIZE, books.length - i);
+            }
+
+            alert(`✅ Importación completada.\n${imported} libro${imported !== 1 ? 's' : ''} importados desde Goodreads.\n\nLas portadas se obtienen desde Open Library usando el ISBN.`);
+        };
+
         // --- ASIGNACIÓN DE EVENTOS ---
         addBookBtn.addEventListener('click', () => addBookModal.showModal());
         
@@ -1331,6 +1417,29 @@ onSnapshot(q, (snapshot) => {
         // === COMPARTIR EN IG/TIKTOK ===
         const shareIgBtn = document.getElementById('share-ig-btn');
         if (shareIgBtn) shareIgBtn.addEventListener('click', shareAsImage);
+
+        // === IMPORTAR DE GOODREADS ===
+        const importGoodreadsBtn = document.getElementById('import-goodreads-btn');
+        const importCsvInput     = document.getElementById('import-csv');
+        if (importGoodreadsBtn && importCsvInput) {
+            importGoodreadsBtn.addEventListener('click', () => importCsvInput.click());
+            importCsvInput.addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                importGoodreadsBtn.disabled = true;
+                importGoodreadsBtn.textContent = '⏳ Importando…';
+                try {
+                    await importGoodreadsCSV(file);
+                } catch (err) {
+                    console.error('Error importando Goodreads:', err);
+                    alert('Error durante la importación:\n' + err.message);
+                } finally {
+                    importGoodreadsBtn.disabled = false;
+                    importGoodreadsBtn.innerHTML = '&#128229; Goodreads';
+                    importCsvInput.value = '';
+                }
+            });
+        }
 
         setupTheme(); // (Esta línea ya la tenías al final)
     }
