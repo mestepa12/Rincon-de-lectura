@@ -157,14 +157,14 @@
                 <textarea id="detail-notes" rows="6" placeholder="Escribe aquí tus reflexiones..."></textarea>
             </div>
 
-            <div class="modal-actions">
-                <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
-                <div class="modal-actions-right">
-                    <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
-                    <button type="button" id="share-ig-btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);color:white;border:none;padding:0.75rem 1rem;border-radius:5px;font-weight:bold;cursor:pointer;">&#128248; Compartir en IG/TikTok</button>
-                    <button type="button" id="save-details-btn" class="btn-primary">Guardar Cambios</button>
+                <div class="modal-actions">
+                    <div class="modal-actions-top">
+                        <button type="button" onclick="document.getElementById('book-detail-modal').close()" class="btn-cancel">Cerrar</button>
+                        <button type="button" id="share-ig-btn" class="btn-share-ig">📸 Compartir en IG/TikTok</button>
+                        <button type="button" id="delete-book-modal-btn" class="btn-danger">Eliminar</button>
+                    </div>
+                    <button type="button" id="save-details-btn" class="btn-primary btn-save-full">Guardar Cambios</button>
                 </div>
-            </div>
         </div>
     </div>
 </dialog>
