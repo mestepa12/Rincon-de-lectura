@@ -444,22 +444,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     streakCounter.classList.add('streak-updated');
                 }
             }
-            const hoyStrObs = getTodayStr();
-            const semanaStrObs = getWeekStartStr();
-            const objetivoDiario = userData.objetivoPaginasDiarias || 0;
-            const objetivoSemanal = userData.objetivoPaginasSemanales || 0;
-            const paginasHoyObs = userData.fechaDia === hoyStrObs ? (userData.paginasLeidasHoy || 0) : 0;
-            const paginasSemanObs = userData.fechaSemana === semanaStrObs ? (userData.paginasLeidasSemana || 0) : 0;
-
-            const fillDiario = document.getElementById('objetivo-diario-fill');
-            const txtDiario = document.getElementById('objetivo-diario-txt');
-            if (fillDiario) fillDiario.style.width = objetivoDiario > 0 ? `${Math.min(100, Math.round((paginasHoyObs / objetivoDiario) * 100))}%` : '0%';
-            if (txtDiario) txtDiario.textContent = `${paginasHoyObs} / ${objetivoDiario || '—'} páginas`;
-
-            const fillSemanal = document.getElementById('objetivo-semanal-fill');
-            const txtSemanal = document.getElementById('objetivo-semanal-txt');
-            if (fillSemanal) fillSemanal.style.width = objetivoSemanal > 0 ? `${Math.min(100, Math.round((paginasSemanObs / objetivoSemanal) * 100))}%` : '0%';
-            if (txtSemanal) txtSemanal.textContent = `${paginasSemanObs} / ${objetivoSemanal || '—'} páginas`;
+            if (typeof actualizarDisplayObjetivos === 'function') actualizarDisplayObjetivos(userData);
             renderLogros(userData.logrosDesbloqueados || []);
         });
 
@@ -1206,6 +1191,8 @@ onSnapshot(q, (snapshot) => {
                     objetivoPaginasDiarias: diarias,
                     objetivoPaginasSemanales: semanales
                 }, { merge: true });
+                const snap = await getDoc(doc(db, 'users', user.uid));
+                if (snap.exists()) actualizarDisplayObjetivos(snap.data());
                 document.getElementById('objetivos-modal').close();
             } catch (e) {
                 console.error('Error guardando objetivos:', e);
@@ -1530,16 +1517,35 @@ onSnapshot(q, (snapshot) => {
         const objetivosModal = document.getElementById('objetivos-modal');
         const objetivosForm = document.getElementById('objetivos-form');
         const cancelObjetivosBtn = document.getElementById('cancel-objetivos-btn');
+        const actualizarDisplayObjetivos = (ud) => {
+            const hoy = getTodayStr();
+            const sem = getWeekStartStr();
+            const objD = ud.objetivoPaginasDiarias || 0;
+            const objS = ud.objetivoPaginasSemanales || 0;
+            const pagHoy = ud.fechaDia === hoy ? (ud.paginasLeidasHoy || 0) : 0;
+            const pagSem = ud.fechaSemana === sem ? (ud.paginasLeidasSemana || 0) : 0;
+            const txtD = document.getElementById('objetivo-diario-txt');
+            const txtS = document.getElementById('objetivo-semanal-txt');
+            const fD   = document.getElementById('objetivo-diario-fill');
+            const fS   = document.getElementById('objetivo-semanal-fill');
+            if (txtD) txtD.textContent = `${pagHoy} / ${objD || '—'} páginas`;
+            if (txtS) txtS.textContent = `${pagSem} / ${objS || '—'} páginas`;
+            if (fD) fD.style.width = objD > 0 ? `${Math.min(100, Math.round(pagHoy / objD * 100))}%` : '0%';
+            if (fS) fS.style.width = objS > 0 ? `${Math.min(100, Math.round(pagSem / objS * 100))}%` : '0%';
+        };
+
         if (objetivosBtn && objetivosModal) {
             objetivosBtn.addEventListener('click', async () => {
                 const snap = await getDoc(doc(db, 'users', user.uid));
                 const ud = snap.data() || {};
                 document.getElementById('objetivo-diario-input').value = ud.objetivoPaginasDiarias || '';
                 document.getElementById('objetivo-semanal-input').value = ud.objetivoPaginasSemanales || '';
+                actualizarDisplayObjetivos(ud);
                 objetivosModal.showModal();
             });
         }
-        if (objetivosForm) objetivosForm.addEventListener('submit', (e) => { e.preventDefault(); handleSaveObjetivos(); });
+        const saveObjetivosBtn = document.getElementById('save-objetivos-btn');
+        if (saveObjetivosBtn) saveObjetivosBtn.addEventListener('click', handleSaveObjetivos);
         if (cancelObjetivosBtn) cancelObjetivosBtn.addEventListener('click', () => objetivosModal?.close());
         if (objetivosModal) closeOnBackdropClick(objetivosModal);
 
