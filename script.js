@@ -165,7 +165,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return [];
             }
 
-            const query = encodeURIComponent(titulo);
+            const cleanedIsbn = titulo.replace(/[-\s]/g, '');
+            const queryStr = /^97[89]\d{10}$/.test(cleanedIsbn) ? `isbn:${cleanedIsbn}` : titulo;
+            const query = encodeURIComponent(queryStr);
             const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
 
             try {
