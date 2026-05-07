@@ -1204,7 +1204,7 @@ onSnapshot(q, (snapshot) => {
             const updatedData = {
                 notes: detailNotes.value,
                 cover: detailCover.src,
-                ...(genreVal && { genre: genreVal })
+                genre: genreVal || book.genre || 'Sin género'
             };
         
             let paginaProgresada = false;
@@ -1778,12 +1778,13 @@ onSnapshot(q, (snapshot) => {
         ];
 
         const openRachaModal = () => {
-            if (!rachaModal || !lastUserData) return;
-            const racha = lastUserData.rachaActual || 0;
-            const ultimaTs = lastUserData.ultimaFechaLectura;
+            if (!rachaModal) return;
+            const ud = lastUserData || {};
+            const racha = ud.rachaActual || 0;
+            const ultimaTs = ud.ultimaFechaLectura;
             const hoyStr = getTodayStr();
             let leidoHoy = false;
-            if (ultimaTs) {
+            if (ultimaTs && ultimaTs.toDate) {
                 const ultima = ultimaTs.toDate();
                 const ultStr = ultima.getFullYear() + '-' +
                     String(ultima.getMonth() + 1).padStart(2, '0') + '-' +
@@ -1796,13 +1797,10 @@ onSnapshot(q, (snapshot) => {
             const statusEl = document.getElementById('racha-modal-status');
             const mensajeEl = document.getElementById('racha-modal-mensaje');
 
-            mascotaEl.textContent = leidoHoy ? '📖' : '😔';
-            mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad');
-            numeroEl.textContent = `🔥 ${racha}`;
-            statusEl.textContent = leidoHoy ? '¡Has leído hoy!' : 'Aún no has leído hoy';
-            statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido');
-            const pool = leidoHoy ? MENSAJES_RACHA_HOY : MENSAJES_RACHA_NO_HOY;
-            mensajeEl.textContent = pool[Math.floor(Math.random() * pool.length)];
+            if (mascotaEl) { mascotaEl.textContent = leidoHoy ? '📖' : '😔'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
+            if (numeroEl) numeroEl.textContent = `🔥 ${racha}`;
+            if (statusEl) { statusEl.textContent = leidoHoy ? '¡Has leído hoy!' : 'Aún no has leído hoy'; statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido'); }
+            if (mensajeEl) { const pool = leidoHoy ? MENSAJES_RACHA_HOY : MENSAJES_RACHA_NO_HOY; mensajeEl.textContent = pool[Math.floor(Math.random() * pool.length)]; }
 
             rachaModal.showModal();
         };
