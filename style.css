@@ -238,6 +238,15 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 }
 .modal-actions .btn-primary { background: var(--accent-color-interactive); color: white; }
 .modal-actions .btn-cancel { background: transparent; border: 2px solid var(--border-color) !important; color: var(--text-color); }
+#add-book-form .modal-actions .btn-primary,
+#add-book-form .modal-actions .btn-cancel {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
 .btn-danger { background-color: #E53E3E; color: white; border-radius: 5px; font-weight: bold; cursor: pointer; }
 .btn-danger:hover { background-color: #C53030; }
 
