@@ -1240,12 +1240,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (authEmpty) authEmpty.style.display = 'block';
             }
 
-            // === RITMO + ESTADOS DE ÁNIMO (libros terminados) ===
-            const terminados = data.filter(b => b.section === 'libros-terminados');
+            // === RITMO + ESTADOS DE ÁNIMO (todos los libros) ===
             const ritmoCounts = {};
-            terminados.forEach(b => { if (b.ritmoNarrativo) ritmoCounts[b.ritmoNarrativo] = (ritmoCounts[b.ritmoNarrativo]||0)+1; });
+            data.forEach(b => { if (b.ritmoNarrativo) ritmoCounts[b.ritmoNarrativo] = (ritmoCounts[b.ritmoNarrativo]||0)+1; });
             const moodCounts = {};
-            terminados.forEach(b => { (b.estadosDeAnimo||[]).forEach(m => { moodCounts[m] = (moodCounts[m]||0)+1; }); });
+            data.forEach(b => { (b.estadosDeAnimo||[]).forEach(m => { moodCounts[m] = (moodCounts[m]||0)+1; }); });
             const sortedMoods = Object.entries(moodCounts).sort((a,b) => b[1]-a[1]);
             const RITMO_PALETTE = ['#60A5FA','#5B9B6B','#F59E0B','#EC4899','#9A3B3B'];
 
