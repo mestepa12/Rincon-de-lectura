@@ -158,54 +158,68 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 1. INTEGRACIÓN API GOOGLE BOOKS ===========
         // ===============================================
 
+        async function buscarEnOpenLibraryPorISBN(isbn) {
+            try {
+                const resp = await fetch(`https://openlibrary.org/search.json?isbn=${isbn}&limit=3`);
+                if (!resp.ok) return [];
+                const data = await resp.json();
+                if (!data.docs?.length) return [];
+                return data.docs.map(doc => ({
+                    title: doc.title || 'Sin título',
+                    author: doc.author_name ? doc.author_name.join(', ') : 'Autor desconocido',
+                    cover: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : '',
+                    totalPages: doc.number_of_pages_median || 0,
+                    link: doc.key ? `https://openlibrary.org${doc.key}` : '',
+                    genre: doc.subject ? doc.subject[0] : 'Sin género'
+                }));
+            } catch (e) {
+                return [];
+            }
+        }
+
         async function buscarLibroPorTitulo(titulo) {
-            // Verificamos si la clave existe en config-dev.js
             if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) {
                 console.error("Falta la variable googleBooksApiKey en config.js");
                 return [];
             }
 
             const cleanedIsbn = titulo.replace(/[-\s]/g, '');
-            const queryStr = /^97[89]\d{10}$/.test(cleanedIsbn) ? `isbn:${cleanedIsbn}` : titulo;
+            const isIsbnSearch = /^97[89]\d{10}$/.test(cleanedIsbn);
+            const queryStr = isIsbnSearch ? `isbn:${cleanedIsbn}` : titulo;
             const query = encodeURIComponent(queryStr);
             const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
 
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-                
+
                 const data = await response.json();
 
                 if (data.items && data.items.length > 0) {
                     return data.items.map(item => {
                         const info = item.volumeInfo;
-                        
-                        // --- CORRECCIÓN AQUÍ ---
-                        // 1. Declaramos la variable coverUrl antes de usarla
                         let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
-                        
-                        // 2. Si hay imagen, la mejoramos
                         if (coverUrl) {
                             coverUrl = coverUrl
-                                .replace(/^http:\/\//i, 'https://') // Forzar HTTPS
-                                .replace('&edge=curl', '')      // Quitar borde doblado
-                                .replace('&zoom=1', '&zoom=0'); // Pedir alta calidad
+                                .replace(/^http:\/\//i, 'https://')
+                                .replace('&edge=curl', '')
+                                .replace('&zoom=1', '&zoom=0');
                         }
-
-                        // 3. Ahora devolvemos el objeto usando la variable ya definida
                         return {
                             title: info.title || 'Sin título',
                             author: info.authors ? info.authors.join(', ') : 'Autor desconocido',
-                            cover: coverUrl, // Ahora sí existe
+                            cover: coverUrl,
                             totalPages: info.pageCount || 0,
                             link: info.infoLink || info.previewLink || '',
                             genre: info.categories ? info.categories[0] : 'Sin género'
                         };
                     });
                 }
+                if (isIsbnSearch) return await buscarEnOpenLibraryPorISBN(cleanedIsbn);
                 return [];
             } catch (error) {
                 console.error("Error buscando en Google Books:", error);
+                if (isIsbnSearch) return await buscarEnOpenLibraryPorISBN(cleanedIsbn);
                 return [];
             }
         }
