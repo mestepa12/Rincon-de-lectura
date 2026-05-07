@@ -109,11 +109,12 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.' },
         ];
 
-        let booksData = []; 
+        let booksData = [];
         let viewingFriendLibrary = false;
         let myFriendIds = new Set();
         let pieChartInst = null;
         let barChartInst = null;
+        let prevRacha = null;
 
         // --- SELECTORES DOM ---
         const mainContent = document.getElementById('main-content');
@@ -331,6 +332,62 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 3. GESTIÓN DE MODALES Y EVENTOS ===========
         // ===============================================
 
+        const mostrarAnimacionRacha = (racha) => {
+            const overlay  = document.getElementById('racha-celebration');
+            const numEl    = document.getElementById('racha-numero-display');
+            const msgEl    = document.getElementById('racha-mensaje');
+            const confetti = document.getElementById('racha-confetti');
+            const mascota  = document.getElementById('mascota-emoji');
+            if (!overlay) return;
+
+            // Mensajes y emoji de Págino según hito
+            let emoji = '📖';
+            let msg   = '¡Págino está orgulloso de ti!';
+            if (racha >= 100) { emoji = '🌟'; msg = '¡CENTURIÓN! ¡Págino no puede creer tu dedicación!'; }
+            else if (racha >= 30) { emoji = '💎'; msg = '¡Un mes leyendo! ¡Págino llora de emoción!'; }
+            else if (racha >= 14) { emoji = '🔥'; msg = '¡Dos semanas seguidas! ¡Págino está en llamas!'; }
+            else if (racha >= 7)  { emoji = '⭐'; msg = '¡Una semana completa! ¡Págino te aplaude!'; }
+            else if (racha >= 3)  { emoji = '📖'; msg = '¡Vas muy bien! ¡Págino salta de alegría!'; }
+            else                  { emoji = '📖'; msg = '¡Buen comienzo! ¡Págino te anima!'; }
+
+            if (mascota) mascota.textContent = emoji;
+            if (numEl)   numEl.textContent   = `🔥 ${racha}`;
+            if (msgEl)   msgEl.textContent   = msg;
+
+            // Confetti
+            if (confetti) {
+                confetti.innerHTML = '';
+                const colors = ['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#cc5de8','#f76707','#12b886'];
+                for (let i = 0; i < 50; i++) {
+                    const p = document.createElement('div');
+                    p.className = 'confetti-piece';
+                    const size = 6 + Math.random() * 10;
+                    p.style.cssText = `
+                        left:${Math.random() * 100}%;
+                        background:${colors[Math.floor(Math.random() * colors.length)]};
+                        width:${size}px; height:${size}px;
+                        border-radius:${Math.random() > 0.4 ? '50%' : '2px'};
+                        animation-delay:${(Math.random() * 0.6).toFixed(2)}s;
+                        animation-duration:${(1 + Math.random()).toFixed(2)}s;
+                    `;
+                    confetti.appendChild(p);
+                }
+            }
+
+            // Mostrar
+            overlay.style.display = 'flex';
+            overlay.classList.remove('hiding');
+
+            const cerrar = () => {
+                overlay.classList.add('hiding');
+                setTimeout(() => { overlay.style.display = 'none'; overlay.classList.remove('hiding'); }, 520);
+            };
+
+            overlay.onclick = cerrar;
+            clearTimeout(overlay._timer);
+            overlay._timer = setTimeout(cerrar, 3500);
+        };
+
         const renderDetailRatingStars = (container, rating) => {
             if (!container) return;
             container.innerHTML = Array.from({ length: 5 }, (_, i) => {
@@ -507,6 +564,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     void streakCounter.offsetWidth;
                     streakCounter.classList.add('streak-updated');
                 }
+                if (prevRacha !== null && racha > prevRacha) mostrarAnimacionRacha(racha);
+                prevRacha = racha;
             }
             if (typeof actualizarDisplayObjetivos === 'function') actualizarDisplayObjetivos(userData);
             renderLogros(userData.logrosDesbloqueados || []);
