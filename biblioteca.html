@@ -26,7 +26,6 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
     <script>
@@ -92,10 +91,7 @@
             <div class="google-books-section"
                 style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
                 <label for="book-search">🔍 Autocompletar con Google Books:</label>
-                <div class="book-search-row">
-                    <input type="search" id="book-search" placeholder="Escribe el título para buscar...">
-                    <button type="button" id="scan-isbn-btn" class="btn-scan-isbn">📷 ISBN</button>
-                </div>
+                <input type="search" id="book-search" placeholder="Escribe el título para buscar...">
 
                 <div id="book-search-results" class="book-search-results"></div>
                 <div class="google-attribution">
@@ -445,17 +441,6 @@
     </footer>
 
     <input type="file" id="import-csv" accept=".csv" style="display:none;">
-
-    <dialog id="isbn-scanner-dialog" class="isbn-scanner-dialog">
-        <div class="isbn-scanner-box">
-            <div class="isbn-scanner-header">
-                <span>📷 Apunta al código de barras del libro</span>
-                <button type="button" id="close-scanner-btn" aria-label="Cerrar escáner">✕</button>
-            </div>
-            <div id="isbn-reader"></div>
-            <p class="isbn-scanner-hint">Se cerrará automáticamente al detectar el ISBN</p>
-        </div>
-    </dialog>
 
     <datalist id="genre-datalist">
         <option value="Acción y Aventura">

@@ -133,9 +133,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const cancelAddBookBtn = document.getElementById('cancel-add-book');
         const bookSearchInput = document.getElementById('book-search');
         const bookSearchResultsDiv = document.getElementById('book-search-results');
-        const scanIsbnBtn = document.getElementById('scan-isbn-btn');
-        const isbnScannerDialog = document.getElementById('isbn-scanner-dialog');
-        const closeScannerBtn = document.getElementById('close-scanner-btn');
         const bookDetailModal = document.getElementById('book-detail-modal');
         const detailCover = document.getElementById('detail-cover');
         const detailTitle = document.getElementById('detail-title');
@@ -158,40 +155,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 1. INTEGRACIÓN API GOOGLE BOOKS ===========
         // ===============================================
 
-        async function buscarEnOpenLibraryPorISBN(isbn) {
-            try {
-                const resp = await fetch(
-                    `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
-                );
-                if (!resp.ok) return [];
-                const data = await resp.json();
-                const book = data[`ISBN:${isbn}`];
-                if (!book) return [];
-                const cover = book.cover?.large || book.cover?.medium || book.cover?.small
-                    || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
-                return [{
-                    title: book.title || 'Sin título',
-                    author: book.authors?.map(a => a.name).join(', ') || 'Autor desconocido',
-                    cover,
-                    totalPages: book.number_of_pages || 0,
-                    link: book.url || `https://openlibrary.org/isbn/${isbn}`,
-                    genre: book.subjects?.[0]?.name || 'Sin género'
-                }];
-            } catch (e) {
-                return [];
-            }
-        }
-
         async function buscarLibroPorTitulo(titulo) {
+            // Verificamos si la clave existe en config-dev.js
             if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) {
                 console.error("Falta la variable googleBooksApiKey en config.js");
                 return [];
             }
 
-            const cleanedIsbn = titulo.replace(/[-\s]/g, '');
-            const isIsbnSearch = /^97[89]\d{10}$/.test(cleanedIsbn);
-            const queryStr = isIsbnSearch ? `isbn:${cleanedIsbn}` : titulo;
-            const query = encodeURIComponent(queryStr);
+            const query = encodeURIComponent(titulo);
             const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
 
             try {
@@ -203,13 +174,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.items && data.items.length > 0) {
                     return data.items.map(item => {
                         const info = item.volumeInfo;
+
                         let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+
                         if (coverUrl) {
                             coverUrl = coverUrl
                                 .replace(/^http:\/\//i, 'https://')
                                 .replace('&edge=curl', '')
                                 .replace('&zoom=1', '&zoom=0');
                         }
+
                         return {
                             title: info.title || 'Sin título',
                             author: info.authors ? info.authors.join(', ') : 'Autor desconocido',
@@ -220,11 +194,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         };
                     });
                 }
-                if (isIsbnSearch) return await buscarEnOpenLibraryPorISBN(cleanedIsbn);
                 return [];
             } catch (error) {
                 console.error("Error buscando en Google Books:", error);
-                if (isIsbnSearch) return await buscarEnOpenLibraryPorISBN(cleanedIsbn);
                 return [];
             }
         }
@@ -286,65 +258,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     bookSearchResultsDiv.innerHTML = '';
                 }
-            });
-        }
-
-        // ===============================================
-        // === 1b. ESCÁNER ISBN (html5-qrcode) ===========
-        // ===============================================
-        let html5QrCodeInstance = null;
-
-        const stopScanner = async () => {
-            if (html5QrCodeInstance) {
-                try { await html5QrCodeInstance.stop(); } catch (e) {}
-                html5QrCodeInstance = null;
-            }
-            if (isbnScannerDialog?.open) isbnScannerDialog.close();
-        };
-
-        if (scanIsbnBtn) {
-            scanIsbnBtn.addEventListener('click', async () => {
-                if (!window.Html5Qrcode) {
-                    alert('El escáner no está disponible. Verifica tu conexión a internet.');
-                    return;
-                }
-                isbnScannerDialog.showModal();
-                html5QrCodeInstance = new Html5Qrcode('isbn-reader');
-                const config = { fps: 10, qrbox: { width: 260, height: 100 } };
-                if (window.Html5QrcodeSupportedFormats) {
-                    config.formatsToSupport = [
-                        Html5QrcodeSupportedFormats.EAN_13,
-                        Html5QrcodeSupportedFormats.EAN_8
-                    ];
-                }
-                try {
-                    await html5QrCodeInstance.start(
-                        { facingMode: 'environment' },
-                        config,
-                        async (decodedText) => {
-                            if (!/^97[89]\d{10}$/.test(decodedText)) return;
-                            await stopScanner();
-                            bookSearchInput.value = decodedText;
-                            bookSearchResultsDiv.innerHTML = '<div style="padding:0.5rem;">Buscando...</div>';
-                            buscarLibroPorTitulo(decodedText).then(mostrarResultadosBusqueda);
-                        },
-                        () => {}
-                    );
-                } catch (err) {
-                    await stopScanner();
-                    if (err?.name === 'NotAllowedError') {
-                        alert('Permiso de cámara denegado. Actívalo en los ajustes del navegador.');
-                    } else {
-                        alert('No se pudo acceder a la cámara.');
-                    }
-                }
-            });
-        }
-
-        if (closeScannerBtn) closeScannerBtn.addEventListener('click', stopScanner);
-        if (isbnScannerDialog) {
-            isbnScannerDialog.addEventListener('click', e => {
-                if (e.target === isbnScannerDialog) stopScanner();
             });
         }
 
@@ -1072,7 +985,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
             addDoc(collection(db, 'books'), newBook).then(() => {
                 console.log("Libro añadido a Firebase");
-                stopScanner();
                 addBookForm.reset();
                 if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = '';
                 addBookModal.close();
@@ -1823,7 +1735,6 @@ document.addEventListener('DOMContentLoaded', () => {
         addBookBtn.addEventListener('click', () => addBookModal.showModal());
         
         cancelAddBookBtn.addEventListener('click', () => {
-            stopScanner();
             addBookForm.reset();
             if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = '';
             document.getElementById('manual-data-details').open = false;
