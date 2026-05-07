@@ -364,14 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!overlay) return;
 
             // Mensajes y emoji de Págino según hito
-            let emoji = '📖';
+            let emoji = '🦕';
             let msg   = '¡Págino está orgulloso de ti!';
             if (racha >= 100) { emoji = '🌟'; msg = '¡CENTURIÓN! ¡Págino no puede creer tu dedicación!'; }
             else if (racha >= 30) { emoji = '💎'; msg = '¡Un mes leyendo! ¡Págino llora de emoción!'; }
             else if (racha >= 14) { emoji = '🔥'; msg = '¡Dos semanas seguidas! ¡Págino está en llamas!'; }
             else if (racha >= 7)  { emoji = '⭐'; msg = '¡Una semana completa! ¡Págino te aplaude!'; }
-            else if (racha >= 3)  { emoji = '📖'; msg = '¡Vas muy bien! ¡Págino salta de alegría!'; }
-            else                  { emoji = '📖'; msg = '¡Buen comienzo! ¡Págino te anima!'; }
+            else if (racha >= 3)  { emoji = '🦕'; msg = '¡Vas muy bien! ¡Págino salta de alegría!'; }
+            else                  { emoji = '🦕'; msg = '¡Buen comienzo! ¡Págino te anima!'; }
 
             if (mascota) mascota.textContent = emoji;
             if (numEl)   numEl.textContent   = `🔥 ${racha}`;
@@ -2005,13 +2005,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const nombreEl = document.getElementById('racha-modal-nombre');
             if (viewingFriendLibrary) {
-                if (mascotaEl) { mascotaEl.textContent = leidoHoy ? '📖' : '😔'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
+                if (mascotaEl) { mascotaEl.textContent = '🦕'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
                 if (numeroEl) numeroEl.textContent = `🔥 ${racha}`;
                 if (statusEl) { statusEl.textContent = leidoHoy ? `@${currentFriendName} ha leído hoy` : `@${currentFriendName} no ha leído hoy`; statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido'); }
                 if (mensajeEl) mensajeEl.textContent = '';
                 if (nombreEl) nombreEl.textContent = `— Racha de @${currentFriendName} —`;
             } else {
-                if (mascotaEl) { mascotaEl.textContent = leidoHoy ? '📖' : '😔'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
+                if (mascotaEl) { mascotaEl.textContent = '🦕'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
                 if (numeroEl) numeroEl.textContent = `🔥 ${racha}`;
                 if (statusEl) { statusEl.textContent = leidoHoy ? '¡Has leído hoy!' : 'Aún no has leído hoy'; statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido'); }
                 if (mensajeEl) { const pool = leidoHoy ? MENSAJES_RACHA_HOY : MENSAJES_RACHA_NO_HOY; mensajeEl.textContent = pool[Math.floor(Math.random() * pool.length)]; }
