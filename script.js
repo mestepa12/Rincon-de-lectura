@@ -305,6 +305,28 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 3. GESTIÓN DE MODALES Y EVENTOS ===========
         // ===============================================
 
+        const renderDetailRatingStars = (container, rating) => {
+            if (!container) return;
+            container.innerHTML = Array.from({ length: 5 }, (_, i) => {
+                let cls = 'star';
+                if (rating >= i + 1) cls += ' filled';
+                else if (rating > i) cls += ' half';
+                return `<button type="button" class="${cls}" data-value="${i + 1}" aria-label="Valorar con ${i + 1} estrellas">★</button>`;
+            }).join('');
+        };
+
+        document.getElementById('detail-rating-stars').addEventListener('click', (e) => {
+            if (!e.target.matches('.star')) return;
+            const bookId = bookDetailModal.dataset.bookId;
+            const btn = e.target;
+            const value = parseInt(btn.dataset.value, 10);
+            const rect = btn.getBoundingClientRect();
+            const isLeftHalf = (e.clientX - rect.left) < rect.width / 2;
+            const rating = isLeftHalf ? value - 0.5 : value;
+            handleRateBook(bookId, rating);
+            renderDetailRatingStars(btn.parentElement, rating);
+        });
+
         const openDetailModal = (bookId) => {
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
@@ -325,6 +347,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     googleLinkBtn.style.display = 'none';
                 }
+            }
+
+            // Valoración en modal (solo libros terminados)
+            const detailRatingSection = document.getElementById('detail-rating-section');
+            const detailRatingStars = document.getElementById('detail-rating-stars');
+            if (book.section === 'libros-terminados') {
+                detailRatingSection.style.display = 'block';
+                renderDetailRatingStars(detailRatingStars, book.rating || 0);
+            } else {
+                detailRatingSection.style.display = 'none';
             }
 
             // Configurar barra de progreso (Igual que antes)
