@@ -186,7 +186,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             author: info.authors ? info.authors.join(', ') : 'Autor desconocido',
                             cover: coverUrl, // Ahora sí existe
                             totalPages: info.pageCount || 0,
-                            link: info.infoLink || info.previewLink || ''
+                            link: info.infoLink || info.previewLink || '',
+                            genre: info.categories ? info.categories[0] : 'Sin género'
                         };
                     });
                 }
@@ -223,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('cover').value = libro.cover;
                     document.getElementById('total-pages').value = libro.totalPages;
                     document.getElementById('googleLink').value = libro.link;
+                    document.getElementById('book-genre').value = libro.genre || 'Sin género';
                     
                     // Limpiar búsqueda
                     bookSearchResultsDiv.innerHTML = '';
@@ -901,7 +903,8 @@ onSnapshot(q, (snapshot) => {
                 currentPage: 0,
                 notes: '',
                 rating: 0,
-                googleLink: formData.get('googleLink') || ''
+                googleLink: formData.get('googleLink') || '',
+                genre: (document.getElementById('book-genre-manual')?.value.trim()) || document.getElementById('book-genre')?.value || 'Sin género'
             };
         
             addDoc(collection(db, 'books'), newBook).then(() => {
@@ -1000,9 +1003,26 @@ onSnapshot(q, (snapshot) => {
         };
 
         // === ESTADÍSTICAS ===
+        const populateGenreFilter = () => {
+            const sel = document.getElementById('stats-genre-filter');
+            if (!sel) return;
+            const current = sel.value;
+            const genres = [...new Set(booksData.map(b => b.genre).filter(g => g && g !== 'Sin género'))].sort();
+            sel.innerHTML = '<option value="">Todos los géneros</option>';
+            genres.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = g;
+                sel.appendChild(opt);
+            });
+            if (current && genres.includes(current)) sel.value = current;
+        };
+
         const renderStats = () => {
             if (pieChartInst) { pieChartInst.destroy(); pieChartInst = null; }
             if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
+            const genreFilter = document.getElementById('stats-genre-filter')?.value || '';
+            const data = genreFilter ? booksData.filter(b => b.genre === genreFilter) : booksData;
             const isDark = document.body.classList.contains('dark-mode');
             const tc = isDark ? '#E2E8F0' : '#4E443A';
             const gc = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
@@ -1010,7 +1030,7 @@ onSnapshot(q, (snapshot) => {
             // Pie: libros por sección
             const counts = {};
             Object.keys(SECTIONS).forEach(k => counts[k] = 0);
-            booksData.forEach(b => { if (counts[b.section] !== undefined) counts[b.section]++; });
+            data.forEach(b => { if (counts[b.section] !== undefined) counts[b.section]++; });
             const pieCtx = document.getElementById('pieChart');
             if (pieCtx && typeof Chart !== 'undefined') {
                 pieChartInst = new Chart(pieCtx, {
@@ -1021,9 +1041,9 @@ onSnapshot(q, (snapshot) => {
             }
             // Bar: páginas leídas
             const pags = {
-                'Leyendo':     booksData.filter(b => b.section === 'leyendo-ahora').reduce((s,b) => s+(b.currentPage||0), 0),
-                'Terminados':  booksData.filter(b => b.section === 'libros-terminados').reduce((s,b) => s+(b.totalPages||0), 0),
-                'Abandonados': booksData.filter(b => b.section === 'libros-abandonados').reduce((s,b) => s+(b.currentPage||0), 0),
+                'Leyendo':     data.filter(b => b.section === 'leyendo-ahora').reduce((s,b) => s+(b.currentPage||0), 0),
+                'Terminados':  data.filter(b => b.section === 'libros-terminados').reduce((s,b) => s+(b.totalPages||0), 0),
+                'Abandonados': data.filter(b => b.section === 'libros-abandonados').reduce((s,b) => s+(b.currentPage||0), 0),
             };
             const barCtx = document.getElementById('barChart');
             if (barCtx && typeof Chart !== 'undefined') {
@@ -1038,7 +1058,7 @@ onSnapshot(q, (snapshot) => {
             const summary = document.getElementById('stats-summary');
             if (summary) {
                 summary.innerHTML = [
-                    ['📚', booksData.length, 'Libros totales'],
+                    ['📚', data.length, 'Libros totales'],
                     ['✅', counts['libros-terminados']||0, 'Terminados'],
                     ['📖', totalPags.toLocaleString('es'), 'Páginas leídas'],
                 ].map(([ico,val,lbl]) => `<div class="stat-card"><div class="stat-ico">${ico}</div><div class="stat-num">${val}</div><div class="stat-lbl">${lbl}</div></div>`).join('');
@@ -1671,8 +1691,10 @@ onSnapshot(q, (snapshot) => {
         const statsBtn = document.getElementById('stats-btn');
         const statsModal = document.getElementById('stats-modal');
         const closeStatsBtn = document.getElementById('close-stats-btn');
+        const statsGenreFilter = document.getElementById('stats-genre-filter');
+        if (statsGenreFilter) statsGenreFilter.addEventListener('change', renderStats);
         if (statsBtn && statsModal) {
-            statsBtn.addEventListener('click', () => { renderStats(); statsModal.showModal(); });
+            statsBtn.addEventListener('click', () => { populateGenreFilter(); renderStats(); statsModal.showModal(); });
         }
         if (closeStatsBtn && statsModal) {
             closeStatsBtn.addEventListener('click', () => statsModal.close());
