@@ -51,7 +51,13 @@
                 <button id="toggle-theme" type="button">🌙</button>
                 <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
-                <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
+                <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
+                <div class="streak-wrapper">
+                    <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
+                    <div id="objetivo-diario-bar" class="objetivo-diario-bar">
+                        <div id="objetivo-diario-fill" class="objetivo-diario-fill"></div>
+                    </div>
+                </div>
                 <button id="logout-btn" type="button">Cerrar Sesión</button>
             </div>
         </div>
@@ -223,6 +229,20 @@
             <div id="stats-summary"
                 style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;"></div>
         </div>
+    </dialog>
+
+    <dialog id="objetivos-modal">
+        <form id="objetivos-form">
+            <h2>🎯 Objetivos de Lectura</h2>
+            <label for="objetivo-diario-input">Páginas diarias:</label>
+            <input type="number" id="objetivo-diario-input" min="0" placeholder="Ej: 30">
+            <label for="objetivo-semanal-input">Páginas semanales:</label>
+            <input type="number" id="objetivo-semanal-input" min="0" placeholder="Ej: 200">
+            <div class="modal-actions">
+                <button type="submit" class="btn-primary">Guardar</button>
+                <button type="button" id="cancel-objetivos-btn" class="btn-cancel">Cancelar</button>
+            </div>
+        </form>
     </dialog>
 
     <div id="export-card">

@@ -444,6 +444,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     streakCounter.classList.add('streak-updated');
                 }
             }
+            const hoyStrObs = getTodayStr();
+            const objetivoDiario = userData.objetivoPaginasDiarias || 0;
+            const paginasHoyObs = userData.fechaDia === hoyStrObs ? (userData.paginasLeidasHoy || 0) : 0;
+            const fillEl = document.getElementById('objetivo-diario-fill');
+            if (fillEl) {
+                if (objetivoDiario > 0) {
+                    const pct = Math.min(100, Math.round((paginasHoyObs / objetivoDiario) * 100));
+                    fillEl.style.width = `${pct}%`;
+                    const barEl = document.getElementById('objetivo-diario-bar');
+                    if (barEl) barEl.title = `${paginasHoyObs}/${objetivoDiario} páginas hoy (${pct}%)`;
+                } else {
+                    fillEl.style.width = '0%';
+                }
+            }
             renderLogros(userData.logrosDesbloqueados || []);
         });
 
@@ -977,8 +991,39 @@ onSnapshot(q, (snapshot) => {
             }
         };
 
+        const getTodayStr = () => new Date().toISOString().split('T')[0];
+        const getWeekStartStr = () => {
+            const d = new Date();
+            const day = d.getDay();
+            const monday = new Date(d);
+            monday.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+            return monday.toISOString().split('T')[0];
+        };
+
+        const updatePaginasObjetivo = async (paginasAvanzadas) => {
+            const userRef = doc(db, 'users', user.uid);
+            try {
+                const snap = await getDoc(userRef);
+                const ud = snap.data() || {};
+                const hoyStr = getTodayStr();
+                const semanaStr = getWeekStartStr();
+                let paginasHoy = ud.fechaDia === hoyStr ? (ud.paginasLeidasHoy || 0) : 0;
+                let paginasSemana = ud.fechaSemana === semanaStr ? (ud.paginasLeidasSemana || 0) : 0;
+                paginasHoy += paginasAvanzadas;
+                paginasSemana += paginasAvanzadas;
+                await updateDoc(userRef, {
+                    paginasLeidasHoy: paginasHoy,
+                    paginasLeidasSemana: paginasSemana,
+                    fechaDia: hoyStr,
+                    fechaSemana: semanaStr
+                });
+            } catch (e) {
+                console.error('Error actualizando páginas objetivo:', e);
+            }
+        };
+
         const handleSaveDetails = async () => {
-            const bookId = bookDetailModal.dataset.bookId; 
+            const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
 
@@ -1005,7 +1050,11 @@ onSnapshot(q, (snapshot) => {
 
             try {
                 await updateDoc(doc(db, 'books', bookId), updatedData);
-                if (paginaProgresada) await updateStreak();
+                if (paginaProgresada) {
+                    await updateStreak();
+                    const paginasAvanzadas = (updatedData.currentPage) - (book.currentPage || 0);
+                    await updatePaginasObjetivo(paginasAvanzadas);
+                }
 
                 // Recalcular totalPaginasLeidas con el estado que tendrá el libro tras el update
                 const totalPaginasLeidas = booksData.reduce((total, b) => {
@@ -1146,6 +1195,20 @@ onSnapshot(q, (snapshot) => {
             }
         };
 
+
+        const handleSaveObjetivos = async () => {
+            const diarias = parseInt(document.getElementById('objetivo-diario-input').value, 10) || 0;
+            const semanales = parseInt(document.getElementById('objetivo-semanal-input').value, 10) || 0;
+            try {
+                await setDoc(doc(db, 'users', user.uid), {
+                    objetivoPaginasDiarias: diarias,
+                    objetivoPaginasSemanales: semanales
+                }, { merge: true });
+                document.getElementById('objetivos-modal').close();
+            } catch (e) {
+                console.error('Error guardando objetivos:', e);
+            }
+        };
 
         const handleDeleteBook = (bookId) => {
             deleteDoc(doc(db, 'books', String(bookId))).catch(error => console.error("Error al eliminar:", error));
@@ -1459,6 +1522,24 @@ onSnapshot(q, (snapshot) => {
         // Aplicamos la lógica a ambos modales
         if (addBookModal) closeOnBackdropClick(addBookModal);
         if (bookDetailModal) closeOnBackdropClick(bookDetailModal);
+
+        // === OBJETIVOS DE LECTURA ===
+        const objetivosBtn = document.getElementById('objetivos-btn');
+        const objetivosModal = document.getElementById('objetivos-modal');
+        const objetivosForm = document.getElementById('objetivos-form');
+        const cancelObjetivosBtn = document.getElementById('cancel-objetivos-btn');
+        if (objetivosBtn && objetivosModal) {
+            objetivosBtn.addEventListener('click', async () => {
+                const snap = await getDoc(doc(db, 'users', user.uid));
+                const ud = snap.data() || {};
+                document.getElementById('objetivo-diario-input').value = ud.objetivoPaginasDiarias || '';
+                document.getElementById('objetivo-semanal-input').value = ud.objetivoPaginasSemanales || '';
+                objetivosModal.showModal();
+            });
+        }
+        if (objetivosForm) objetivosForm.addEventListener('submit', (e) => { e.preventDefault(); handleSaveObjetivos(); });
+        if (cancelObjetivosBtn) cancelObjetivosBtn.addEventListener('click', () => objetivosModal?.close());
+        if (objetivosModal) closeOnBackdropClick(objetivosModal);
 
         // === LOGROS: Botón abrir/cerrar modal ===
         const logrosBtn = document.getElementById('logros-btn');
