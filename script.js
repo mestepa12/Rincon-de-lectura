@@ -155,50 +155,67 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 1. INTEGRACIÓN API GOOGLE BOOKS ===========
         // ===============================================
 
-        async function buscarLibroPorTitulo(titulo) {
-            // Verificamos si la clave existe en config-dev.js
-            if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) {
-                console.error("Falta la variable googleBooksApiKey en config.js");
-                return [];
-            }
-
-            const query = encodeURIComponent(titulo);
-            const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
-
+        async function buscarEnOpenLibrary(query) {
             try {
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-
-                const data = await response.json();
-
-                if (data.items && data.items.length > 0) {
-                    return data.items.map(item => {
-                        const info = item.volumeInfo;
-
-                        let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
-
-                        if (coverUrl) {
-                            coverUrl = coverUrl
-                                .replace(/^http:\/\//i, 'https://')
-                                .replace('&edge=curl', '')
-                                .replace('&zoom=1', '&zoom=0');
-                        }
-
-                        return {
-                            title: info.title || 'Sin título',
-                            author: info.authors ? info.authors.join(', ') : 'Autor desconocido',
-                            cover: coverUrl,
-                            totalPages: info.pageCount || 0,
-                            link: info.infoLink || info.previewLink || '',
-                            genre: info.categories ? info.categories[0] : 'Sin género'
-                        };
-                    });
-                }
-                return [];
-            } catch (error) {
-                console.error("Error buscando en Google Books:", error);
+                const resp = await fetch(
+                    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,author_name,cover_i,number_of_pages_median,subject,key`
+                );
+                if (!resp.ok) return [];
+                const data = await resp.json();
+                if (!data.docs?.length) return [];
+                return data.docs.map(doc => ({
+                    title: doc.title || 'Sin título',
+                    author: doc.author_name?.join(', ') || 'Autor desconocido',
+                    cover: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : '',
+                    totalPages: doc.number_of_pages_median || 0,
+                    link: doc.key ? `https://openlibrary.org${doc.key}` : '',
+                    genre: doc.subject?.[0] || 'Sin género'
+                }));
+            } catch (e) {
                 return [];
             }
+        }
+
+        async function buscarLibroPorTitulo(titulo) {
+            if (typeof googleBooksApiKey !== 'undefined' && googleBooksApiKey) {
+                const query = encodeURIComponent(titulo);
+                const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
+                try {
+                    const response = await fetch(url);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.items?.length) {
+                            return data.items.map(item => {
+                                const info = item.volumeInfo;
+                                let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+                                if (coverUrl) {
+                                    coverUrl = coverUrl
+                                        .replace(/^http:\/\//i, 'https://')
+                                        .replace('&edge=curl', '')
+                                        .replace('&zoom=1', '&zoom=0');
+                                }
+                                if (!coverUrl) {
+                                    const isbn = info.industryIdentifiers
+                                        ?.find(id => id.type === 'ISBN_13' || id.type === 'ISBN_10')
+                                        ?.identifier;
+                                    if (isbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+                                }
+                                return {
+                                    title: info.title || 'Sin título',
+                                    author: info.authors?.join(', ') || 'Autor desconocido',
+                                    cover: coverUrl,
+                                    totalPages: info.pageCount || 0,
+                                    link: info.infoLink || info.previewLink || '',
+                                    genre: info.categories?.[0] || 'Sin género'
+                                };
+                            });
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error buscando en Google Books:", e);
+                }
+            }
+            return buscarEnOpenLibrary(titulo);
         }
 
         function mostrarResultadosBusqueda(resultados) {
