@@ -130,6 +130,31 @@
                 <option value="lista-deseos">Lista de Deseos</option>
                 <option value="libros-abandonados">Libros Abandonados</option>
             </select>
+
+            <div class="book-vibes-section">
+                <p class="vibes-section-title">Ritmo Narrativo</p>
+                <div class="ritmo-options">
+                    <label class="ritmo-label"><input type="radio" name="ritmo" value="Lento"> 🐢 Lento</label>
+                    <label class="ritmo-label"><input type="radio" name="ritmo" value="Pausado"> 🍃 Pausado</label>
+                    <label class="ritmo-label"><input type="radio" name="ritmo" value="Moderado"> ⚖️ Moderado</label>
+                    <label class="ritmo-label"><input type="radio" name="ritmo" value="Rápido"> 🏃 Rápido</label>
+                    <label class="ritmo-label"><input type="radio" name="ritmo" value="Trepidante"> ⚡ Trepidante</label>
+                </div>
+                <p class="vibes-section-title">Estados de Ánimo</p>
+                <div class="mood-options">
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Reflexivo"> 🤔 Reflexivo</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Oscuro"> 🌑 Oscuro</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Aventurero"> 🗺️ Aventurero</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Romántico"> 💕 Romántico</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Misterioso"> 🔮 Misterioso</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Emotivo"> 🥺 Emotivo</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Tenso"> 😰 Tenso</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Inspirador"> ✨ Inspirador</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Humorístico"> 😄 Humorístico</label>
+                    <label class="mood-label"><input type="checkbox" name="moods" value="Tranquilizador"> 🍵 Tranquilizador</label>
+                </div>
+            </div>
+
             <input type="hidden" id="googleLink" name="googleLink">
             <input type="hidden" id="book-genre" name="genre">
             <div class="modal-actions">
@@ -178,6 +203,30 @@
                     <label for="detail-notes">Mis Notas</label>
                     <textarea id="detail-notes" rows="6"
                         placeholder="Añade tus notas, citas favoritas o reflexiones aquí..."></textarea>
+                </div>
+
+                <div id="detail-vibes-section" class="book-vibes-section detail-vibes-section">
+                    <p class="vibes-section-title">Ritmo Narrativo</p>
+                    <div class="ritmo-options" id="detail-ritmo-options">
+                        <label class="ritmo-label"><input type="radio" name="detail-ritmo" value="Lento"> 🐢 Lento</label>
+                        <label class="ritmo-label"><input type="radio" name="detail-ritmo" value="Pausado"> 🍃 Pausado</label>
+                        <label class="ritmo-label"><input type="radio" name="detail-ritmo" value="Moderado"> ⚖️ Moderado</label>
+                        <label class="ritmo-label"><input type="radio" name="detail-ritmo" value="Rápido"> 🏃 Rápido</label>
+                        <label class="ritmo-label"><input type="radio" name="detail-ritmo" value="Trepidante"> ⚡ Trepidante</label>
+                    </div>
+                    <p class="vibes-section-title">Estados de Ánimo</p>
+                    <div class="mood-options" id="detail-mood-options">
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Reflexivo"> 🤔 Reflexivo</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Oscuro"> 🌑 Oscuro</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Aventurero"> 🗺️ Aventurero</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Romántico"> 💕 Romántico</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Misterioso"> 🔮 Misterioso</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Emotivo"> 🥺 Emotivo</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Tenso"> 😰 Tenso</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Inspirador"> ✨ Inspirador</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Humorístico"> 😄 Humorístico</label>
+                        <label class="mood-label"><input type="checkbox" name="detail-moods" value="Tranquilizador"> 🍵 Tranquilizador</label>
+                    </div>
                 </div>
 
                 <div class="detail-page-actions">
@@ -256,6 +305,20 @@
             <div class="stats-chart-cell-full">
                 <canvas id="authorsChart"></canvas>
                 <p class="stats-chart-empty" id="authors-chart-empty" style="display:none;">Sin datos de autores</p>
+            </div>
+
+            <p class="stats-section-title">RITMO Y ESTADOS DE ÁNIMO</p>
+            <div class="stats-charts-row">
+                <div class="stats-chart-cell">
+                    <p class="stats-chart-label">RITMO NARRATIVO</p>
+                    <canvas id="ritmoChart"></canvas>
+                    <p class="stats-chart-empty" id="ritmo-chart-empty" style="display:none;">Sin datos de ritmo aún</p>
+                </div>
+                <div class="stats-chart-cell">
+                    <p class="stats-chart-label">ESTADOS DE ÁNIMO</p>
+                    <canvas id="moodChart"></canvas>
+                    <p class="stats-chart-empty" id="mood-chart-empty" style="display:none;">Sin datos de ánimo aún</p>
+                </div>
             </div>
 
             <div id="stats-extra" class="stats-extra-grid"></div>

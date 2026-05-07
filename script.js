@@ -119,6 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let genreChartInst = null;
         let ratingChartInst = null;
         let authorsChartInst = null;
+        let ritmoChartInst = null;
+        let moodChartInst = null;
         let prevRacha = null;
         let lastUserData = null;
 
@@ -442,6 +444,13 @@ document.addEventListener('DOMContentLoaded', () => {
             detailAuthor.textContent = book.author;
             const detailGenreInput = document.getElementById('detail-genre');
             if (detailGenreInput) detailGenreInput.value = (book.genre && book.genre !== 'Sin género') ? book.genre : '';
+            document.querySelectorAll('#detail-ritmo-options input[name="detail-ritmo"]').forEach(r => {
+                r.checked = r.value === (book.ritmoNarrativo || '');
+            });
+            const bookMoods = book.estadosDeAnimo || [];
+            document.querySelectorAll('#detail-mood-options input[name="detail-moods"]').forEach(cb => {
+                cb.checked = bookMoods.includes(cb.value);
+            });
             detailNotes.value = book.notes || '';
             
             // Mostrar/Ocultar enlace de Google (Igual que antes)
@@ -503,9 +512,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailNotes.disabled = true;
                 currentPageInput.disabled = true;
                 moveBookSelect.disabled = true;
-                
-                // Opcional: Cambiar el estilo visual para que se note
                 detailNotes.style.opacity = '0.7';
+                document.querySelectorAll('#detail-ritmo-options input, #detail-mood-options input').forEach(i => { i.disabled = true; });
                 
             } else {
                 // MODO EDICIÓN (DUEÑO)
@@ -518,8 +526,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 detailNotes.disabled = false;
                 currentPageInput.disabled = false;
                 moveBookSelect.disabled = false;
-                
                 detailNotes.style.opacity = '1';
+                document.querySelectorAll('#detail-ritmo-options input, #detail-mood-options input').forEach(i => { i.disabled = false; });
             }
 
             bookDetailModal.showModal();
@@ -997,7 +1005,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 notes: '',
                 rating: 0,
                 googleLink: formData.get('googleLink') || '',
-                genre: (document.getElementById('book-genre-manual')?.value.trim()) || document.getElementById('book-genre')?.value || 'Sin género'
+                genre: (document.getElementById('book-genre-manual')?.value.trim()) || document.getElementById('book-genre')?.value || 'Sin género',
+                ritmoNarrativo: addBookForm.querySelector('input[name="ritmo"]:checked')?.value || '',
+                estadosDeAnimo: [...addBookForm.querySelectorAll('input[name="moods"]:checked')].map(cb => cb.value)
             };
         
             addDoc(collection(db, 'books'), newBook).then(() => {
@@ -1112,8 +1122,8 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const renderStats = () => {
-            [pieChartInst, barChartInst, genreChartInst, ratingChartInst, authorsChartInst].forEach(c => { if (c) c.destroy(); });
-            pieChartInst = barChartInst = genreChartInst = ratingChartInst = authorsChartInst = null;
+            [pieChartInst, barChartInst, genreChartInst, ratingChartInst, authorsChartInst, ritmoChartInst, moodChartInst].forEach(c => { if (c) c.destroy(); });
+            pieChartInst = barChartInst = genreChartInst = ratingChartInst = authorsChartInst = ritmoChartInst = moodChartInst = null;
 
             const genreFilter = document.getElementById('stats-genre-filter')?.value || '';
             const data = genreFilter ? booksData.filter(b => b.genre === genreFilter) : booksData;
@@ -1230,6 +1240,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (authEmpty) authEmpty.style.display = 'block';
             }
 
+            // === RITMO + ESTADOS DE ÁNIMO (libros terminados) ===
+            const terminados = data.filter(b => b.section === 'libros-terminados');
+            const ritmoCounts = {};
+            terminados.forEach(b => { if (b.ritmoNarrativo) ritmoCounts[b.ritmoNarrativo] = (ritmoCounts[b.ritmoNarrativo]||0)+1; });
+            const moodCounts = {};
+            terminados.forEach(b => { (b.estadosDeAnimo||[]).forEach(m => { moodCounts[m] = (moodCounts[m]||0)+1; }); });
+            const sortedMoods = Object.entries(moodCounts).sort((a,b) => b[1]-a[1]);
+            const RITMO_PALETTE = ['#60A5FA','#5B9B6B','#F59E0B','#EC4899','#9A3B3B'];
+
+            const ritmoCtx = document.getElementById('ritmoChart');
+            const ritmoEmpty = document.getElementById('ritmo-chart-empty');
+            if (Object.keys(ritmoCounts).length && ritmoCtx) {
+                ritmoCtx.style.display = '';
+                if (ritmoEmpty) ritmoEmpty.style.display = 'none';
+                ritmoChartInst = new Chart(ritmoCtx, {
+                    type: 'doughnut',
+                    data: { labels: Object.keys(ritmoCounts), datasets: [{ data: Object.values(ritmoCounts), backgroundColor: RITMO_PALETTE, borderWidth: 0, hoverOffset: 6 }] },
+                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 11 }, padding: 6 } } } }
+                });
+            } else {
+                if (ritmoCtx) ritmoCtx.style.display = 'none';
+                if (ritmoEmpty) ritmoEmpty.style.display = 'block';
+            }
+
+            const moodCtx = document.getElementById('moodChart');
+            const moodEmpty = document.getElementById('mood-chart-empty');
+            if (sortedMoods.length && moodCtx) {
+                moodCtx.style.display = '';
+                if (moodEmpty) moodEmpty.style.display = 'none';
+                moodChartInst = new Chart(moodCtx, {
+                    type: 'bar',
+                    data: { labels: sortedMoods.map(([m]) => m), datasets: [{ data: sortedMoods.map(([,c]) => c), backgroundColor: sortedMoods.map((_,i) => PALETTE[i%PALETTE.length]), borderRadius: 6, borderWidth: 0 }] },
+                    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tc, stepSize: 1 }, grid: { color: gc }, beginAtZero: true }, y: { ticks: { color: tc, font: { size: 11 } }, grid: { display: false } } } }
+                });
+            } else {
+                if (moodCtx) moodCtx.style.display = 'none';
+                if (moodEmpty) moodEmpty.style.display = 'block';
+            }
+
             // === Resumen principal (6 cards) ===
             const summary = document.getElementById('stats-summary');
             if (summary) summary.innerHTML = [
@@ -1330,7 +1379,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const updatedData = {
                 notes: detailNotes.value,
                 cover: detailCover.src,
-                genre: genreVal || book.genre || 'Sin género'
+                genre: genreVal || book.genre || 'Sin género',
+                ritmoNarrativo: bookDetailModal.querySelector('input[name="detail-ritmo"]:checked')?.value || '',
+                estadosDeAnimo: [...bookDetailModal.querySelectorAll('input[name="detail-moods"]:checked')].map(cb => cb.value)
             };
         
             let paginaProgresada = false;
@@ -1567,6 +1618,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
             toggleThemeBtn.textContent = isDark ? '☀️' : '🌙';
+            if (statsModal?.open) renderStats();
         };
 
         // --- LISTENER TIEMPO REAL FIREBASE ---
