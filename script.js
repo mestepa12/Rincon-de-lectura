@@ -114,6 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
         let myFriendIds = new Set();
         let pieChartInst = null;
         let barChartInst = null;
+        let genreChartInst = null;
+        let ratingChartInst = null;
+        let authorsChartInst = null;
         let prevRacha = null;
         let lastUserData = null;
 
@@ -1084,49 +1087,147 @@ onSnapshot(q, (snapshot) => {
         };
 
         const renderStats = () => {
-            if (pieChartInst) { pieChartInst.destroy(); pieChartInst = null; }
-            if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
+            [pieChartInst, barChartInst, genreChartInst, ratingChartInst, authorsChartInst].forEach(c => { if (c) c.destroy(); });
+            pieChartInst = barChartInst = genreChartInst = ratingChartInst = authorsChartInst = null;
+
             const genreFilter = document.getElementById('stats-genre-filter')?.value || '';
             const data = genreFilter ? booksData.filter(b => b.genre === genreFilter) : booksData;
             const isDark = document.body.classList.contains('dark-mode');
             const tc = isDark ? '#E2E8F0' : '#4E443A';
             const gc = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-            const COLORS = ['#9A3B3B','#A1887F','#5B9B6B','#60A5FA','#718096'];
-            // Pie: libros por sección
+            const PALETTE = ['#9A3B3B','#C0786A','#5B9B6B','#60A5FA','#F59E0B','#8B5CF6','#EC4899','#14B8A6','#F97316','#718096'];
+
+            // — Sección counts —
             const counts = {};
             Object.keys(SECTIONS).forEach(k => counts[k] = 0);
             data.forEach(b => { if (counts[b.section] !== undefined) counts[b.section]++; });
-            const pieCtx = document.getElementById('pieChart');
-            if (pieCtx && typeof Chart !== 'undefined') {
-                pieChartInst = new Chart(pieCtx, {
-                    type: 'doughnut',
-                    data: { labels: Object.values(SECTIONS), datasets: [{ data: Object.keys(SECTIONS).map(k => counts[k]), backgroundColor: COLORS, borderWidth: 0, hoverOffset: 6 }] },
-                    options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 11 }, padding: 8 } } } }
-                });
-            }
-            // Bar: páginas leídas
+
+            // — Páginas —
             const pags = {
                 'Leyendo':     data.filter(b => b.section === 'leyendo-ahora').reduce((s,b) => s+(b.currentPage||0), 0),
                 'Terminados':  data.filter(b => b.section === 'libros-terminados').reduce((s,b) => s+(b.totalPages||0), 0),
                 'Abandonados': data.filter(b => b.section === 'libros-abandonados').reduce((s,b) => s+(b.currentPage||0), 0),
             };
-            const barCtx = document.getElementById('barChart');
-            if (barCtx && typeof Chart !== 'undefined') {
-                barChartInst = new Chart(barCtx, {
-                    type: 'bar',
-                    data: { labels: Object.keys(pags), datasets: [{ data: Object.values(pags), backgroundColor: ['#9A3B3B','#5B9B6B','#718096'], borderRadius: 8, borderWidth: 0 }] },
-                    options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks:{color:tc}, grid:{color:gc} }, y: { ticks:{color:tc}, grid:{color:gc}, beginAtZero:true } } }
-                });
-            }
-            // Resumen
             const totalPags = Object.values(pags).reduce((s,v) => s+v, 0);
+
+            // — Géneros —
+            const genreCounts = {};
+            data.forEach(b => { const g = (b.genre && b.genre !== 'Sin género') ? b.genre : null; if (g) genreCounts[g] = (genreCounts[g]||0) + 1; });
+            const sortedGenres = Object.entries(genreCounts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+
+            // — Valoraciones —
+            const ratedBooks = data.filter(b => b.section === 'libros-terminados' && b.rating > 0);
+            const ratingBuckets = {1:0, 2:0, 3:0, 4:0, 5:0};
+            ratedBooks.forEach(b => { const r = Math.round(b.rating); if (ratingBuckets[r] !== undefined) ratingBuckets[r]++; });
+            const avgRating = ratedBooks.length ? (ratedBooks.reduce((s,b) => s+b.rating, 0) / ratedBooks.length).toFixed(1) : '—';
+
+            // — Autores —
+            const authorCounts = {};
+            data.forEach(b => { if (b.author) authorCounts[b.author] = (authorCounts[b.author]||0) + 1; });
+            const sortedAuthors = Object.entries(authorCounts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+
+            // — Extras —
+            const finished = data.filter(b => b.section === 'libros-terminados');
+            const completionRate = data.length ? Math.round((counts['libros-terminados'] / data.length) * 100) : 0;
+            const longestBook = finished.reduce((mx, b) => (b.totalPages||0) > (mx?.totalPages||0) ? b : mx, null);
+            const favGenre = sortedGenres.length ? sortedGenres[0][0] : null;
+            const favAuthor = sortedAuthors.length ? sortedAuthors[0][0] : null;
+            const pagesRemaining = data.filter(b => b.section === 'leyendo-ahora').reduce((s,b) => s + Math.max(0,(b.totalPages||0)-(b.currentPage||0)), 0);
+            const avgPages = finished.length ? Math.round(finished.reduce((s,b) => s+(b.totalPages||0), 0) / finished.length) : 0;
+
+            const chartOpts = (indexAxis = 'x') => ({
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: tc }, grid: { color: indexAxis === 'y' ? 'transparent' : gc }, beginAtZero: true },
+                    y: { ticks: { color: tc }, grid: { color: indexAxis === 'x' ? 'transparent' : gc }, beginAtZero: true }
+                }
+            });
+
+            // === PIE: libros por sección ===
+            const pieCtx = document.getElementById('pieChart');
+            if (pieCtx) pieChartInst = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: { labels: Object.values(SECTIONS), datasets: [{ data: Object.keys(SECTIONS).map(k => counts[k]), backgroundColor: ['#9A3B3B','#A1887F','#5B9B6B','#60A5FA','#718096'], borderWidth: 0, hoverOffset: 6 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: tc, font: { size: 11 }, padding: 8 } } } }
+            });
+
+            // === BAR: páginas ===
+            const barCtx = document.getElementById('barChart');
+            if (barCtx) barChartInst = new Chart(barCtx, {
+                type: 'bar',
+                data: { labels: Object.keys(pags), datasets: [{ data: Object.values(pags), backgroundColor: ['#9A3B3B','#5B9B6B','#718096'], borderRadius: 8, borderWidth: 0 }] },
+                options: { ...chartOpts(), plugins: { legend: { display: false } } }
+            });
+
+            // === HORIZONTAL BAR: géneros ===
+            const genreCtx = document.getElementById('genreChart');
+            const genreEmpty = document.getElementById('genre-chart-empty');
+            if (sortedGenres.length && genreCtx) {
+                if (genreEmpty) genreEmpty.style.display = 'none';
+                genreChartInst = new Chart(genreCtx, {
+                    type: 'bar',
+                    data: { labels: sortedGenres.map(([g]) => g), datasets: [{ data: sortedGenres.map(([,c]) => c), backgroundColor: sortedGenres.map((_,i) => PALETTE[i % PALETTE.length]), borderRadius: 6, borderWidth: 0 }] },
+                    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tc, stepSize: 1 }, grid: { color: gc }, beginAtZero: true }, y: { ticks: { color: tc, font: { size: 11 } }, grid: { display: false } } } }
+                });
+            } else {
+                if (genreCtx) genreCtx.style.display = 'none';
+                if (genreEmpty) genreEmpty.style.display = 'block';
+            }
+
+            // === BAR: valoraciones ===
+            const ratingCtx = document.getElementById('ratingChart');
+            const ratingEmpty = document.getElementById('rating-chart-empty');
+            if (ratedBooks.length && ratingCtx) {
+                if (ratingEmpty) ratingEmpty.style.display = 'none';
+                ratingChartInst = new Chart(ratingCtx, {
+                    type: 'bar',
+                    data: { labels: ['1★','2★','3★','4★','5★'], datasets: [{ data: [1,2,3,4,5].map(r => ratingBuckets[r]), backgroundColor: ['#718096','#A1887F','#F59E0B','#5B9B6B','#9A3B3B'], borderRadius: 6, borderWidth: 0 }] },
+                    options: { ...chartOpts(), plugins: { legend: { display: false } }, scales: { ...chartOpts().scales, y: { ticks: { color: tc, stepSize: 1 }, grid: { color: gc }, beginAtZero: true } } }
+                });
+            } else {
+                if (ratingCtx) ratingCtx.style.display = 'none';
+                if (ratingEmpty) ratingEmpty.style.display = 'block';
+            }
+
+            // === HORIZONTAL BAR: autores ===
+            const authCtx = document.getElementById('authorsChart');
+            const authEmpty = document.getElementById('authors-chart-empty');
+            if (sortedAuthors.length && authCtx) {
+                if (authEmpty) authEmpty.style.display = 'none';
+                authorsChartInst = new Chart(authCtx, {
+                    type: 'bar',
+                    data: { labels: sortedAuthors.map(([a]) => a.length > 25 ? a.slice(0,24)+'…' : a), datasets: [{ data: sortedAuthors.map(([,c]) => c), backgroundColor: '#9A3B3B', borderRadius: 6, borderWidth: 0 }] },
+                    options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: tc, stepSize: 1 }, grid: { color: gc }, beginAtZero: true }, y: { ticks: { color: tc, font: { size: 11 } }, grid: { display: false } } } }
+                });
+            } else {
+                if (authCtx) authCtx.style.display = 'none';
+                if (authEmpty) authEmpty.style.display = 'block';
+            }
+
+            // === Resumen principal (6 cards) ===
             const summary = document.getElementById('stats-summary');
-            if (summary) {
-                summary.innerHTML = [
-                    ['📚', data.length, 'Libros totales'],
-                    ['✅', counts['libros-terminados']||0, 'Terminados'],
-                    ['📖', totalPags.toLocaleString('es'), 'Páginas leídas'],
-                ].map(([ico,val,lbl]) => `<div class="stat-card"><div class="stat-ico">${ico}</div><div class="stat-num">${val}</div><div class="stat-lbl">${lbl}</div></div>`).join('');
+            if (summary) summary.innerHTML = [
+                ['📚', data.length, 'Libros totales'],
+                ['✅', counts['libros-terminados']||0, 'Terminados'],
+                ['📖', totalPags.toLocaleString('es'), 'Páginas leídas'],
+                ['⭐', avgRating, 'Valoración media'],
+                ['🎯', completionRate + '%', 'Finalización'],
+                ['💔', counts['libros-abandonados']||0, 'Abandonados'],
+            ].map(([ico,val,lbl]) => `<div class="stat-card"><div class="stat-ico">${ico}</div><div class="stat-num">${val}</div><div class="stat-lbl">${lbl}</div></div>`).join('');
+
+            // === Cards extra (datos curiosos) ===
+            const extra = document.getElementById('stats-extra');
+            if (extra) {
+                const cards = [
+                    favGenre ? ['🏆', 'Género favorito', favGenre] : null,
+                    favAuthor ? ['✍️', 'Autor favorito', favAuthor] : null,
+                    longestBook ? ['📄', 'Libro más largo', `${longestBook.title?.slice(0,28)||'—'} (${(longestBook.totalPages||0).toLocaleString('es')} págs.)`] : null,
+                    avgPages > 0 ? ['📏', 'Páginas por libro', avgPages.toLocaleString('es') + ' de media'] : null,
+                    pagesRemaining > 0 ? ['🏃', 'Páginas pendientes', pagesRemaining.toLocaleString('es') + ' en lectura'] : null,
+                    counts['proximas-lecturas'] > 0 ? ['📋', 'En tu lista', counts['proximas-lecturas'] + ' próximas lecturas'] : null,
+                ].filter(Boolean);
+                extra.innerHTML = cards.map(([ico,lbl,val]) => `<div class="stat-card-wide"><span class="stat-card-wide-ico">${ico}</span><div><span class="stat-card-wide-lbl">${lbl}</span><span class="stat-card-wide-val">${val}</span></div></div>`).join('');
             }
         };
 

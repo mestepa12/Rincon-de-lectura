@@ -211,36 +211,51 @@
         <div id="logros-grid" class="logros-grid"></div>
     </dialog>
 
-    <dialog id="stats-modal"
-        style="max-width:680px;width:95%;max-height:85vh;overflow:hidden;border-radius:12px;padding:0;border:2px solid var(--border-color);background:var(--card-bg-color);color:var(--text-color);">
-        <div
-            style="display:flex;justify-content:space-between;align-items:center;padding:1.5rem;border-bottom:2px solid var(--border-color);">
-            <h2 style="margin:0;font-family:var(--font-title);">📊 Mis Estadísticas</h2>
-            <button id="close-stats-btn" type="button"
-                style="background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-color);">✕</button>
+    <dialog id="stats-modal" class="stats-modal-dialog">
+        <div class="stats-modal-header">
+            <h2>📊 Mis Estadísticas</h2>
+            <button id="close-stats-btn" type="button">✕</button>
         </div>
-        <div style="padding:1.5rem;overflow-y:auto;max-height:calc(85vh - 85px);">
-            <div style="margin-bottom:1rem;">
-                <select id="stats-genre-filter" style="width:100%;padding:0.6rem 0.8rem;border-radius:8px;border:2px solid var(--border-color);background:var(--bg-color);color:var(--text-color);font-size:0.9rem;cursor:pointer;">
-                    <option value="">Todos los géneros</option>
-                </select>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:center;">
-                <div>
-                    <p
-                        style="text-align:center;font-size:0.8rem;font-weight:700;letter-spacing:.05em;color:var(--accent-color);margin:0 0 .75rem;">
-                        LIBROS POR SECCIÓN</p>
+        <div class="stats-modal-body">
+            <select id="stats-genre-filter" class="stats-genre-select">
+                <option value="">Todos los géneros</option>
+            </select>
+
+            <div id="stats-summary" class="stats-summary-grid"></div>
+
+            <p class="stats-section-title">DISTRIBUCIÓN</p>
+            <div class="stats-charts-row">
+                <div class="stats-chart-cell">
+                    <p class="stats-chart-label">LIBROS POR SECCIÓN</p>
                     <canvas id="pieChart"></canvas>
                 </div>
-                <div>
-                    <p
-                        style="text-align:center;font-size:0.8rem;font-weight:700;letter-spacing:.05em;color:var(--accent-color);margin:0 0 .75rem;">
-                        PÁGINAS LEÍDAS</p>
-                    <canvas id="barChart"></canvas>
+                <div class="stats-chart-cell">
+                    <p class="stats-chart-label">LIBROS POR GÉNERO</p>
+                    <canvas id="genreChart"></canvas>
+                    <p class="stats-chart-empty" id="genre-chart-empty" style="display:none;">Sin datos de género</p>
                 </div>
             </div>
-            <div id="stats-summary"
-                style="margin-top:1.5rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;"></div>
+
+            <p class="stats-section-title">PÁGINAS Y VALORACIONES</p>
+            <div class="stats-charts-row">
+                <div class="stats-chart-cell">
+                    <p class="stats-chart-label">PÁGINAS LEÍDAS</p>
+                    <canvas id="barChart"></canvas>
+                </div>
+                <div class="stats-chart-cell">
+                    <p class="stats-chart-label">DISTRIBUCIÓN DE VALORACIONES</p>
+                    <canvas id="ratingChart"></canvas>
+                    <p class="stats-chart-empty" id="rating-chart-empty" style="display:none;">Sin valoraciones aún</p>
+                </div>
+            </div>
+
+            <p class="stats-section-title">TOP AUTORES</p>
+            <div class="stats-chart-cell-full">
+                <canvas id="authorsChart"></canvas>
+                <p class="stats-chart-empty" id="authors-chart-empty" style="display:none;">Sin datos de autores</p>
+            </div>
+
+            <div id="stats-extra" class="stats-extra-grid"></div>
         </div>
     </dialog>
 
