@@ -908,6 +908,35 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 .stat-num { font-size: 1.9rem; font-weight: 700; color: var(--accent-color-interactive); font-family: var(--font-title); line-height: 1.1; }
 .stat-lbl { font-size: 0.78rem; color: var(--accent-color); }
 
+/* ======== STATS EXPORT CARD (Instagram / TikTok Story 9:16) ======== */
+#export-stats-card {
+    display: none;
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 540px;
+    height: 960px;
+    background: linear-gradient(155deg, #0d0604 0%, #2a0f07 25%, #6b2020 55%, #9A3B3B 80%, #c4875a 100%);
+    color: white;
+    font-family: 'Lora', Georgia, serif;
+    overflow: hidden;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px 50px 40px;
+    box-sizing: border-box;
+}
+.esc-header { text-align: center; margin-bottom: 0; }
+.esc-brand { display: block; font-size: 1.3rem; font-weight: 700; letter-spacing: 1px; opacity: 0.95; margin-bottom: 14px; }
+.esc-subtitle { display: block; font-size: 0.65rem; letter-spacing: 5px; text-transform: uppercase; opacity: 0.55; font-family: 'Lato', sans-serif; }
+.esc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; margin: 48px 0; }
+.esc-big-stat { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 18px; padding: 28px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.esc-big-num { font-size: 3.4rem; font-weight: 700; line-height: 1; color: #FFD580; font-family: 'Lora', serif; }
+.esc-big-lbl { font-size: 0.6rem; letter-spacing: 4px; text-transform: uppercase; opacity: 0.6; font-family: 'Lato', sans-serif; }
+.esc-details { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.esc-detail-row { background: rgba(255,255,255,0.07); border-radius: 12px; padding: 14px 20px; font-size: 0.95rem; font-family: 'Lato', sans-serif; opacity: 0.92; display: flex; align-items: center; gap: 12px; }
+.esc-footer-bar { font-size: 0.65rem; letter-spacing: 4px; text-transform: uppercase; opacity: 0.4; font-family: 'Lato', sans-serif; margin-top: auto; }
+
 /* ======== EXPORT CARD (Instagram / TikTok Story 9:16) ======== */
 #export-card {
     display: none;

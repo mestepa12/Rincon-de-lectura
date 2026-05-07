@@ -214,7 +214,10 @@
     <dialog id="stats-modal" class="stats-modal-dialog">
         <div class="stats-modal-header">
             <h2>📊 Mis Estadísticas</h2>
-            <button id="close-stats-btn" type="button">✕</button>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+                <button id="share-stats-btn" type="button" class="btn-share-ig" style="font-size:0.8rem;padding:0.4rem 0.75rem;">📸 Compartir</button>
+                <button id="close-stats-btn" type="button">✕</button>
+            </div>
         </div>
         <div class="stats-modal-body">
             <select id="stats-genre-filter" class="stats-genre-select">
@@ -296,6 +299,38 @@
             </div>
         </form>
     </dialog>
+
+    <div id="export-stats-card">
+        <div class="esc-header">
+            <span class="esc-brand">📚 Mi Rincón de Lectura</span>
+            <span class="esc-subtitle">MIS ESTADÍSTICAS DE LECTURA</span>
+        </div>
+        <div class="esc-grid">
+            <div class="esc-big-stat">
+                <span id="esc-total" class="esc-big-num">0</span>
+                <span class="esc-big-lbl">LIBROS TOTALES</span>
+            </div>
+            <div class="esc-big-stat">
+                <span id="esc-terminados" class="esc-big-num">0</span>
+                <span class="esc-big-lbl">TERMINADOS</span>
+            </div>
+            <div class="esc-big-stat">
+                <span id="esc-paginas" class="esc-big-num">0</span>
+                <span class="esc-big-lbl">PÁGINAS LEÍDAS</span>
+            </div>
+            <div class="esc-big-stat">
+                <span id="esc-rating" class="esc-big-num">—</span>
+                <span class="esc-big-lbl">VALORACIÓN MEDIA</span>
+            </div>
+        </div>
+        <div class="esc-details">
+            <div id="esc-racha" class="esc-detail-row"></div>
+            <div id="esc-genre" class="esc-detail-row"></div>
+            <div id="esc-author" class="esc-detail-row"></div>
+            <div id="esc-rate" class="esc-detail-row"></div>
+        </div>
+        <div class="esc-footer-bar">rinconlectura.es</div>
+    </div>
 
     <div id="export-card">
         <div class="ec-cover-wrap"><img id="export-cover" src="" alt="" class="ec-cover"></div>

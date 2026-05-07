@@ -1927,6 +1927,58 @@ onSnapshot(q, (snapshot) => {
         const shareIgBtn = document.getElementById('share-ig-btn');
         if (shareIgBtn) shareIgBtn.addEventListener('click', shareAsImage);
 
+        // === COMPARTIR ESTADÍSTICAS ===
+        const shareStatsAsImage = async () => {
+            mostrarToastShare();
+            const genreFilter = document.getElementById('stats-genre-filter')?.value || '';
+            const data = genreFilter ? booksData.filter(b => b.genre === genreFilter) : booksData;
+
+            const finished = data.filter(b => b.section === 'libros-terminados');
+            const totalPags = data.reduce((s,b) => {
+                if (b.section === 'libros-terminados') return s + (b.totalPages||0);
+                return s + (b.currentPage||0);
+            }, 0);
+            const ratedBooks = finished.filter(b => b.rating > 0);
+            const avgRating = ratedBooks.length ? (ratedBooks.reduce((s,b) => s+b.rating,0)/ratedBooks.length).toFixed(1) : '—';
+            const completionRate = data.length ? Math.round((finished.length/data.length)*100) : 0;
+
+            const authorCounts = {};
+            data.forEach(b => { if (b.author) authorCounts[b.author] = (authorCounts[b.author]||0)+1; });
+            const favAuthor = Object.entries(authorCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
+
+            const genreCounts = {};
+            data.forEach(b => { const g = b.genre && b.genre !== 'Sin género' ? b.genre : null; if (g) genreCounts[g] = (genreCounts[g]||0)+1; });
+            const favGenre = Object.entries(genreCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
+
+            const racha = lastUserData?.rachaActual || 0;
+
+            document.getElementById('esc-total').textContent = data.length;
+            document.getElementById('esc-terminados').textContent = finished.length;
+            document.getElementById('esc-paginas').textContent = totalPags >= 1000 ? (totalPags/1000).toFixed(1)+'k' : totalPags;
+            document.getElementById('esc-rating').textContent = avgRating !== '—' ? `${avgRating}★` : '—';
+            document.getElementById('esc-racha').textContent = `🔥 ${racha} días de racha`;
+            document.getElementById('esc-genre').textContent = favGenre ? `🏆 Género favorito: ${favGenre}` : '';
+            document.getElementById('esc-author').textContent = favAuthor ? `✍️ Autor favorito: ${favAuthor}` : '';
+            document.getElementById('esc-rate').textContent = `🎯 ${completionRate}% de libros terminados`;
+
+            const card = document.getElementById('export-stats-card');
+            card.style.display = 'flex';
+            try {
+                const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
+                const link = document.createElement('a');
+                link.download = 'mis_estadisticas_lectura.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                console.error('Error generando imagen stats:', err);
+                alert('No se pudo generar la imagen.');
+            } finally {
+                card.style.display = 'none';
+            }
+        };
+        const shareStatsBtn = document.getElementById('share-stats-btn');
+        if (shareStatsBtn) shareStatsBtn.addEventListener('click', shareStatsAsImage);
+
         // === IMPORTAR DE GOODREADS ===
         const importGoodreadsBtn = document.getElementById('import-goodreads-btn');
         const importCsvInput     = document.getElementById('import-csv');
