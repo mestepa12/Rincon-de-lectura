@@ -1968,7 +1968,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const statsGenreFilter = document.getElementById('stats-genre-filter');
         if (statsGenreFilter) statsGenreFilter.addEventListener('change', renderStats);
         if (statsBtn && statsModal) {
-            statsBtn.addEventListener('click', () => { populateGenreFilter(); renderStats(); statsModal.showModal(); });
+            statsBtn.addEventListener('click', () => {
+                const statsTitle = statsModal.querySelector('h2');
+                if (statsTitle) statsTitle.textContent = viewingFriendLibrary ? `📊 Estadísticas de @${currentFriendName}` : '📊 Mis Estadísticas';
+                const shareStatsBtn2 = document.getElementById('share-stats-btn');
+                if (shareStatsBtn2) shareStatsBtn2.style.display = viewingFriendLibrary ? 'none' : '';
+                populateGenreFilter();
+                renderStats();
+                statsModal.showModal();
+            });
         }
         if (closeStatsBtn && statsModal) {
             closeStatsBtn.addEventListener('click', () => statsModal.close());
