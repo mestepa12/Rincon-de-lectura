@@ -112,7 +112,7 @@ dialog {
     max-width: 500px;
     width: 90%;
 }
-dialog::backdrop { background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); }
+dialog::backdrop { background: rgba(0, 0, 0, 0.6); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 
 form { display: flex; flex-direction: column; gap: 1rem; }
 form h2 { margin: 0 0 1rem; border: none; }
@@ -121,11 +121,12 @@ form input, form select { width: 100%; padding: 0.75rem; border-radius: 5px; bor
 form input:focus, form select:focus { outline: none; border-color: var(--accent-color-interactive); }
 
 /* ======== MODAL DETALLE LIBRO ======== */
-#book-detail-modal { 
-    padding: 0; 
-    max-width: 820px; 
-    width: 95%;       
+#book-detail-modal {
+    padding: 0;
+    max-width: 820px;
+    width: 95%;
     max-height: 88vh;
+    max-height: 88svh; /* iOS: safe viewport — excludes dynamic URL bar */
     overflow: hidden;   /* solo para border-radius */
     border-radius: 12px;
     box-sizing: border-box;
@@ -187,14 +188,14 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 .detail-author { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 0.75rem; }
 .detail-genre-section { margin-bottom: 1.2rem; }
 .detail-genre-section label { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 4px; }
-.detail-genre-section input { width: 100%; padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 0.9rem; font-family: var(--font-body); }
+.detail-genre-section input { width: 100%; padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; font-family: var(--font-body); }
 .detail-progress-section, .detail-notes-section { margin-bottom: 1.5rem; }
 .detail-progress-section label, .detail-notes-section label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
-#detail-notes { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: var(--font-body); resize: vertical; }
+#detail-notes { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: var(--font-body); font-size: 1rem; resize: vertical; }
 
 .detail-page-actions { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-color); }
 .detail-page-actions label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
-#move-book-select { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); }
+#move-book-select { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; }
 
 .progress-inputs { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 #current-page { width: 80px; padding: 0.5rem; text-align: center; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; }
@@ -210,6 +211,7 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
     gap: 0.6rem;
     margin-top: 1.5rem;
     padding-top: 1rem;
+    padding-bottom: env(safe-area-inset-bottom, 0px); /* iPhone home indicator */
     border-top: 1px solid var(--border-color);
 }
 .modal-actions-top {
@@ -219,6 +221,7 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 .modal-actions-top button {
     flex: 1;
     padding: 0.7rem 0.4rem;
+    min-height: 44px; /* iOS HIG touch target minimum */
     border-radius: 5px;
     cursor: pointer;
     border: none;
@@ -363,7 +366,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     .books-container { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
     /* Modal Detalle en Móvil: scroll vertical único, sin scrollers anidados */
-    #book-detail-modal { width: 95%; max-height: 92vh; }
+    #book-detail-modal { width: 95%; max-height: 92vh; max-height: 92svh; }
     .detail-modal-content { 
         flex-direction: column; 
         overflow-y: auto;
@@ -731,7 +734,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 
 /* ======== MODAL RACHA / PÁGINO ======== */
 .racha-modal-dialog { border: none; border-radius: 20px; padding: 0; background: transparent; max-width: 340px; width: 92%; }
-.racha-modal-dialog::backdrop { background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); }
+.racha-modal-dialog::backdrop { background: rgba(0,0,0,0.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
 .racha-modal-inner { background: var(--card-bg-color); border: 2px solid var(--border-color); border-radius: 20px; padding: 2rem 1.5rem 1.5rem; text-align: center; position: relative; }
 .racha-modal-close { position: absolute; top: 0.75rem; right: 0.85rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); opacity: 0.6; line-height: 1; }
 .racha-modal-close:hover { opacity: 1; }
