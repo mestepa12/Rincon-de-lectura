@@ -241,7 +241,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `<div class="book-extra-info"><span>Página ${currentPage} de ${totalPages}</span></div>`;
             }
             if (book.section === 'libros-terminados') {
-                const stars = Array.from({ length: 5 }, (_, i) => `<button class="star ${i < (book.rating || 0) ? 'filled' : ''}" data-value="${i + 1}" aria-label="Valorar con ${i + 1} estrellas">★</button>`).join('');
+                const rating = book.rating || 0;
+                const stars = Array.from({ length: 5 }, (_, i) => {
+                    let cls = 'star';
+                    if (rating >= i + 1) cls += ' filled';
+                    else if (rating > i) cls += ' half';
+                    return `<button class="${cls}" data-value="${i + 1}" aria-label="Valorar con ${i + 1} estrellas">★</button>`;
+                }).join('');
                 return `<div class="book-extra-info"><div class="rating-stars" role="group">${stars}</div></div>`;
             }
             return '';
@@ -1165,7 +1171,9 @@ onSnapshot(q, (snapshot) => {
             document.getElementById('export-author').textContent = book.author || '';
             document.getElementById('export-notes').textContent = book.notes || '';
             const r = book.rating || 0;
-            document.getElementById('export-stars').textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
+            const fullS = Math.floor(r);
+            const halfS = (r % 1) >= 0.5;
+            document.getElementById('export-stars').textContent = '★'.repeat(fullS) + (halfS ? '½' : '') + '☆'.repeat(5 - fullS - (halfS ? 1 : 0));
             card.style.display = 'flex';
             try {
                 const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
@@ -1221,7 +1229,11 @@ onSnapshot(q, (snapshot) => {
             if (!bookElement) return;
 
             if (e.target.matches('.star')) {
-                handleRateBook(bookElement.dataset.id, parseInt(e.target.dataset.value, 10));
+                const btn = e.target;
+                const value = parseInt(btn.dataset.value, 10);
+                const rect = btn.getBoundingClientRect();
+                const isLeftHalf = (e.clientX - rect.left) < rect.width / 2;
+                handleRateBook(bookElement.dataset.id, isLeftHalf ? value - 0.5 : value);
                 return;
             }
             openDetailModal(bookElement.dataset.id);
