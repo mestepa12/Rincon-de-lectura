@@ -1,3 +1,9 @@
 .firebase/
 firebase-debug.log
 .DS_Store
+# Dependencias de Node
+node_modules/
+
+# Archivos autogenerados por Playwright
+playwright-report/
+test-results/

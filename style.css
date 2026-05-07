@@ -125,16 +125,25 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
     padding: 0;
     max-width: 820px;
     width: 95%;
+    /* Explicit height required: iOS Safari flex layout needs definite parent height.
+       Without it, flex:1 children collapse to 0 → dialog renders as a line. */
+    height: 88vh;
+    height: 88svh;
     max-height: 88vh;
-    max-height: 88svh; /* iOS: safe viewport — excludes dynamic URL bar */
+    max-height: 88svh;
     overflow: hidden;   /* solo para border-radius */
     border-radius: 12px;
     box-sizing: border-box;
 }
 
 #book-detail-modal[open] {
-    display: flex;    
+    display: flex;
     flex-direction: column;
+}
+
+/* iOS Safari: ensure flex child fills the dialog height */
+#book-detail-modal .detail-modal-content {
+    min-height: 0;
 }
 
 /* Scrollbar minimalista en PC para la columna de info */
@@ -177,10 +186,11 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 .detail-info { 
     padding: 2rem 2rem 2rem 0; 
     flex: 1;
-    min-width: 0;         /* permite que el flex item se encoja */
-    display: flex; 
-    flex-direction: column; 
-    overflow-y: auto;     /* scroll vertical solo en la columna de texto */
+    min-width: 0;
+    min-height: 0;        /* iOS: flex child must be 0 to allow overflow-y scroll */
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
     overscroll-behavior: contain;
 }
 
@@ -366,13 +376,19 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     .books-container { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
 
     /* Modal Detalle en Móvil: scroll vertical único, sin scrollers anidados */
-    #book-detail-modal { width: 95%; max-height: 92vh; max-height: 92svh; }
-    .detail-modal-content { 
-        flex-direction: column; 
+    #book-detail-modal {
+        width: 95%;
+        height: 92vh;
+        height: 92svh;
+        max-height: 92vh;
+        max-height: 92svh;
+    }
+    .detail-modal-content {
+        flex-direction: column;
         overflow-y: auto;
         overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;  /* scroll suave en iOS */
-        height: auto;
+        -webkit-overflow-scrolling: touch;
+        height: 0;      /* iOS: with flex:1 + height:0 expands correctly */
         flex: 1;
         min-height: 0;
     }
