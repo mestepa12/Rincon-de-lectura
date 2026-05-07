@@ -52,12 +52,7 @@
                 <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
-                <div class="streak-wrapper">
-                    <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
-                    <div id="objetivo-diario-bar" class="objetivo-diario-bar">
-                        <div id="objetivo-diario-fill" class="objetivo-diario-fill"></div>
-                    </div>
-                </div>
+                <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
                 <button id="logout-btn" type="button">Cerrar Sesión</button>
             </div>
         </div>
@@ -234,6 +229,30 @@
     <dialog id="objetivos-modal">
         <form id="objetivos-form">
             <h2>🎯 Objetivos de Lectura</h2>
+
+            <div class="objetivos-progreso">
+                <div class="objetivo-stat">
+                    <div class="objetivo-stat-label">
+                        <span>Diario</span>
+                        <span id="objetivo-diario-txt">0 / — páginas</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="objetivo-diario-fill" style="height:100%;width:0%;background:var(--accent-color-interactive);border-radius:6px;transition:width 0.3s ease;"></div>
+                    </div>
+                </div>
+                <div class="objetivo-stat">
+                    <div class="objetivo-stat-label">
+                        <span>Semanal</span>
+                        <span id="objetivo-semanal-txt">0 / — páginas</span>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div id="objetivo-semanal-fill" style="height:100%;width:0%;background:var(--accent-color-interactive);border-radius:6px;transition:width 0.3s ease;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="separator">
+
             <label for="objetivo-diario-input">Páginas diarias:</label>
             <input type="number" id="objetivo-diario-input" min="0" placeholder="Ej: 30">
             <label for="objetivo-semanal-input">Páginas semanales:</label>

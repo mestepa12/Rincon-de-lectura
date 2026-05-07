@@ -445,19 +445,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             const hoyStrObs = getTodayStr();
+            const semanaStrObs = getWeekStartStr();
             const objetivoDiario = userData.objetivoPaginasDiarias || 0;
+            const objetivoSemanal = userData.objetivoPaginasSemanales || 0;
             const paginasHoyObs = userData.fechaDia === hoyStrObs ? (userData.paginasLeidasHoy || 0) : 0;
-            const fillEl = document.getElementById('objetivo-diario-fill');
-            if (fillEl) {
-                if (objetivoDiario > 0) {
-                    const pct = Math.min(100, Math.round((paginasHoyObs / objetivoDiario) * 100));
-                    fillEl.style.width = `${pct}%`;
-                    const barEl = document.getElementById('objetivo-diario-bar');
-                    if (barEl) barEl.title = `${paginasHoyObs}/${objetivoDiario} páginas hoy (${pct}%)`;
-                } else {
-                    fillEl.style.width = '0%';
-                }
-            }
+            const paginasSemanObs = userData.fechaSemana === semanaStrObs ? (userData.paginasLeidasSemana || 0) : 0;
+
+            const fillDiario = document.getElementById('objetivo-diario-fill');
+            const txtDiario = document.getElementById('objetivo-diario-txt');
+            if (fillDiario) fillDiario.style.width = objetivoDiario > 0 ? `${Math.min(100, Math.round((paginasHoyObs / objetivoDiario) * 100))}%` : '0%';
+            if (txtDiario) txtDiario.textContent = `${paginasHoyObs} / ${objetivoDiario || '—'} páginas`;
+
+            const fillSemanal = document.getElementById('objetivo-semanal-fill');
+            const txtSemanal = document.getElementById('objetivo-semanal-txt');
+            if (fillSemanal) fillSemanal.style.width = objetivoSemanal > 0 ? `${Math.min(100, Math.round((paginasSemanObs / objetivoSemanal) * 100))}%` : '0%';
+            if (txtSemanal) txtSemanal.textContent = `${paginasSemanObs} / ${objetivoSemanal || '—'} páginas`;
             renderLogros(userData.logrosDesbloqueados || []);
         });
 
