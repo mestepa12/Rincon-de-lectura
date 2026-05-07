@@ -1890,6 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (h2) h2.textContent = '🏅 Mis Logros';
                 }
                 logrosModal.showModal();
+            });
         }
         if (closeLogrosBtn && logrosModal) {
             closeLogrosBtn.addEventListener('click', () => logrosModal.close());
