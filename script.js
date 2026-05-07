@@ -115,6 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let pieChartInst = null;
         let barChartInst = null;
         let prevRacha = null;
+        let lastUserData = null;
 
         // --- SELECTORES DOM ---
         const mainContent = document.getElementById('main-content');
@@ -225,7 +226,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById('cover').value = libro.cover;
                     document.getElementById('total-pages').value = libro.totalPages;
                     document.getElementById('googleLink').value = libro.link;
-                    document.getElementById('book-genre').value = libro.genre || 'Sin género';
+                    document.getElementById('book-genre').value = libro.genre || '';
+                    const genreVisible = document.getElementById('book-genre-manual');
+                    if (genreVisible && libro.genre && libro.genre !== 'Sin género') genreVisible.value = libro.genre;
                     
                     // Limpiar búsqueda
                     bookSearchResultsDiv.innerHTML = '';
@@ -419,6 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
             detailCover.alt = `Portada de ${book.title}`;
             detailTitle.textContent = book.title;
             detailAuthor.textContent = book.author;
+            const detailGenreInput = document.getElementById('detail-genre');
+            if (detailGenreInput) detailGenreInput.value = (book.genre && book.genre !== 'Sin género') ? book.genre : '';
             detailNotes.value = book.notes || '';
             
             // Mostrar/Ocultar enlace de Google (Igual que antes)
@@ -567,6 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (prevRacha !== null && racha > prevRacha) mostrarAnimacionRacha(racha);
                 prevRacha = racha;
             }
+            lastUserData = userData;
             if (typeof actualizarDisplayObjetivos === 'function') actualizarDisplayObjetivos(userData);
             renderLogros(userData.logrosDesbloqueados || []);
         });
@@ -1194,9 +1200,11 @@ onSnapshot(q, (snapshot) => {
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
 
+            const genreVal = document.getElementById('detail-genre')?.value?.trim();
             const updatedData = {
                 notes: detailNotes.value,
-                cover: detailCover.src
+                cover: detailCover.src,
+                ...(genreVal && { genre: genreVal })
             };
         
             let paginaProgresada = false;
@@ -1745,6 +1753,63 @@ onSnapshot(q, (snapshot) => {
         if (closeLogrosBtn && logrosModal) {
             closeLogrosBtn.addEventListener('click', () => logrosModal.close());
         }
+
+        // === MODAL RACHA / PÁGINO ===
+        const rachaModal = document.getElementById('racha-modal');
+        const closeRachaModalBtn = document.getElementById('close-racha-modal');
+
+        const MENSAJES_RACHA_HOY = [
+            '¡Págino está bailando de alegría! Cada página te hace más grande.',
+            '¡Lo lograste! Hoy has alimentado tu mente y tu racha sigue viva.',
+            '¡Racha en marcha! Los grandes lectores se forjan día a día.',
+            '¡Págino te saluda con orgullo! Sigue así, campeón.',
+            'Cada día que lees eres un poco más sabio. ¡Hoy lo has conseguido!',
+            '¡Imparable! Págino no puede estar más feliz contigo.',
+            'La constancia es el superpoder del lector. ¡Hoy lo has demostrado!',
+        ];
+        const MENSAJES_RACHA_NO_HOY = [
+            'Págino te echa de menos... ¿tienes 10 minutos para leer hoy?',
+            '¡La racha espera! Abre ese libro y devolverle la sonrisa a Págino.',
+            'Aún estás a tiempo de mantener la racha. ¡Venga, tú puedes!',
+            'Págino confía en ti. Solo unas páginas y la racha sigue viva.',
+            'No dejes que la racha muera hoy. ¡Un capítulo y listo!',
+            'Hasta los mejores lectores tienen días flojos. ¡Hoy no seas uno de ellos!',
+            'Págino tiene el libro abierto esperándote. ¿Qué dices?',
+        ];
+
+        const openRachaModal = () => {
+            if (!rachaModal || !lastUserData) return;
+            const racha = lastUserData.rachaActual || 0;
+            const ultimaTs = lastUserData.ultimaFechaLectura;
+            const hoyStr = getTodayStr();
+            let leidoHoy = false;
+            if (ultimaTs) {
+                const ultima = ultimaTs.toDate();
+                const ultStr = ultima.getFullYear() + '-' +
+                    String(ultima.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(ultima.getDate()).padStart(2, '0');
+                leidoHoy = ultStr === hoyStr;
+            }
+
+            const mascotaEl = document.getElementById('racha-modal-mascota');
+            const numeroEl = document.getElementById('racha-modal-numero');
+            const statusEl = document.getElementById('racha-modal-status');
+            const mensajeEl = document.getElementById('racha-modal-mensaje');
+
+            mascotaEl.textContent = leidoHoy ? '📖' : '😔';
+            mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad');
+            numeroEl.textContent = `🔥 ${racha}`;
+            statusEl.textContent = leidoHoy ? '¡Has leído hoy!' : 'Aún no has leído hoy';
+            statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido');
+            const pool = leidoHoy ? MENSAJES_RACHA_HOY : MENSAJES_RACHA_NO_HOY;
+            mensajeEl.textContent = pool[Math.floor(Math.random() * pool.length)];
+
+            rachaModal.showModal();
+        };
+
+        if (streakCounter) streakCounter.addEventListener('click', openRachaModal);
+        if (closeRachaModalBtn) closeRachaModalBtn.addEventListener('click', () => rachaModal.close());
+        if (rachaModal) closeOnBackdropClick(rachaModal);
 
         // === ESTADÍSTICAS: Botón abrir/cerrar modal ===
         const statsBtn = document.getElementById('stats-btn');

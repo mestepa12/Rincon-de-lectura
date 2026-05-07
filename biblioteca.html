@@ -52,7 +52,7 @@
                 <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
-                <span id="streak-counter" class="streak-counter" title="Tu racha de lectura diaria">🔥 0</span>
+                <button id="streak-counter" class="streak-counter" title="Ver tu racha de lectura" type="button">🔥 0</button>
                 <button id="logout-btn" type="button">Cerrar Sesión</button>
             </div>
         </div>
@@ -116,7 +116,7 @@
                     <input type="number" id="total-pages" name="totalPages" min="1" placeholder="Ej: 350" required>
 
                     <label for="book-genre-manual">Género:</label>
-                    <input type="text" id="book-genre-manual" name="genreManual" placeholder="Ej: Fantasía, Historia, Ciencia Ficción...">
+                    <input list="genre-datalist" id="book-genre-manual" name="genreManual" autocomplete="off" placeholder="Buscar o escribir género...">
                 </div>
             </details>
 
@@ -150,6 +150,10 @@
             <div class="detail-info">
                 <h2 id="detail-title">Título del Libro</h2>
                 <p id="detail-author" class="detail-author">Autor del Libro</p>
+                <div id="detail-genre-section" class="detail-genre-section">
+                    <label for="detail-genre">Género</label>
+                    <input list="genre-datalist" id="detail-genre" autocomplete="off" placeholder="Sin género">
+                </div>
                 <a id="detail-google-link" href="#" target="_blank"
                     style="display:none; color: #4285f4; text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem;">🔗
                     Ver en Google Books</a>
@@ -356,6 +360,19 @@
 
         </div>
     </aside>
+    <!-- Modal de racha / Págino -->
+    <dialog id="racha-modal" class="racha-modal-dialog">
+        <div class="racha-modal-inner">
+            <button id="close-racha-modal" class="racha-modal-close" type="button">✕</button>
+            <div class="racha-modal-mascota" id="racha-modal-mascota">📖</div>
+            <div class="racha-modal-numero" id="racha-modal-numero">🔥 0</div>
+            <p class="racha-modal-dias-label">días de racha</p>
+            <p class="racha-modal-status" id="racha-modal-status"></p>
+            <p class="racha-modal-mensaje" id="racha-modal-mensaje"></p>
+            <p class="racha-modal-nombre">— Págino, tu mascota lectora —</p>
+        </div>
+    </dialog>
+
     <!-- Celebración de racha / Mascota Págino -->
     <div id="racha-celebration" class="racha-celebration" style="display:none;" role="dialog" aria-modal="true">
         <div class="racha-confetti-container" id="racha-confetti"></div>
@@ -374,6 +391,62 @@
     </footer>
 
     <input type="file" id="import-csv" accept=".csv" style="display:none;">
+
+    <datalist id="genre-datalist">
+        <option value="Acción y Aventura">
+        <option value="Arte">
+        <option value="Autoayuda">
+        <option value="Autobiografía">
+        <option value="Bienestar">
+        <option value="Biografía">
+        <option value="Ciencia">
+        <option value="Ciencia Ficción">
+        <option value="Clásicos">
+        <option value="Cómic y Manga">
+        <option value="Contemporáneo">
+        <option value="Crimen">
+        <option value="Cuento">
+        <option value="Deportes">
+        <option value="Desarrollo Personal">
+        <option value="Derecho">
+        <option value="Distopía">
+        <option value="Drama">
+        <option value="Economía">
+        <option value="Educación">
+        <option value="Ensayo">
+        <option value="Erótico">
+        <option value="Fantasía">
+        <option value="Filosofía">
+        <option value="Gastronomía">
+        <option value="Historia">
+        <option value="Histórico">
+        <option value="Horror y Terror">
+        <option value="Humor">
+        <option value="Infantil">
+        <option value="Juvenil">
+        <option value="Literatura Española">
+        <option value="Literatura Latinoamericana">
+        <option value="Medicina">
+        <option value="Misterio">
+        <option value="Mitología">
+        <option value="Música">
+        <option value="Naturaleza">
+        <option value="No Ficción">
+        <option value="Novela Gráfica">
+        <option value="Novela Negra">
+        <option value="Novela Romántica">
+        <option value="Poesía">
+        <option value="Policiaco">
+        <option value="Política">
+        <option value="Psicología">
+        <option value="Realismo Mágico">
+        <option value="Religión y Espiritualidad">
+        <option value="Salud">
+        <option value="Sociología">
+        <option value="Tecnología">
+        <option value="Thriller">
+        <option value="Viajes">
+    </datalist>
 </body>
 
 </html>

@@ -184,7 +184,10 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 }
 
 #detail-title { font-family: var(--font-title); margin: 0 0 0.25rem; border: none; padding: 0; font-size: 2rem; line-height: 1.2; }
-.detail-author { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 1.5rem; }
+.detail-author { font-size: 1.1rem; color: var(--accent-color); margin: 0 0 0.75rem; }
+.detail-genre-section { margin-bottom: 1.2rem; }
+.detail-genre-section label { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent-color); margin-bottom: 4px; }
+.detail-genre-section input { width: 100%; padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 0.9rem; font-family: var(--font-body); }
 .detail-progress-section, .detail-notes-section { margin-bottom: 1.5rem; }
 .detail-progress-section label, .detail-notes-section label { display: block; font-weight: bold; margin-bottom: 0.5rem; }
 #detail-notes { width: 100%; padding: 0.75rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-family: var(--font-body); resize: vertical; }
@@ -724,6 +727,24 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 .logro-toast-icono { font-size: 2.2rem; line-height: 1; }
 .logro-toast-titulo { font-size: 0.72rem; color: var(--accent-color); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .logro-toast-nombre { font-size: 1rem; font-weight: 700; color: var(--text-color); }
+
+/* ======== MODAL RACHA / PÁGINO ======== */
+.racha-modal-dialog { border: none; border-radius: 20px; padding: 0; background: transparent; max-width: 340px; width: 92%; }
+.racha-modal-dialog::backdrop { background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); }
+.racha-modal-inner { background: var(--card-bg-color); border: 2px solid var(--border-color); border-radius: 20px; padding: 2rem 1.5rem 1.5rem; text-align: center; position: relative; }
+.racha-modal-close { position: absolute; top: 0.75rem; right: 0.85rem; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-color); opacity: 0.6; line-height: 1; }
+.racha-modal-close:hover { opacity: 1; }
+.racha-modal-mascota { font-size: 4.5rem; display: block; margin-bottom: 0.25rem; line-height: 1; }
+.racha-modal-mascota.happy { animation: pagino-jump 0.55s ease-in-out infinite alternate; }
+.racha-modal-mascota.sad { animation: pagino-sad 1.8s ease-in-out infinite; }
+.racha-modal-numero { font-family: var(--font-title); font-size: 3.5rem; font-weight: 700; color: var(--accent-color); line-height: 1; margin: 0.5rem 0 0; }
+.racha-modal-dias-label { font-size: 0.85rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-color); opacity: 0.6; margin: 0.25rem 0 1rem; }
+.racha-modal-status { font-weight: 700; font-size: 1rem; margin: 0 0 0.6rem; }
+.racha-modal-status.leido { color: #4caf50; }
+.racha-modal-status.no-leido { color: #e07b39; }
+.racha-modal-mensaje { font-size: 0.92rem; color: var(--text-color); opacity: 0.85; margin: 0 0 1.2rem; line-height: 1.5; font-style: italic; }
+.racha-modal-nombre { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent-color); opacity: 0.7; margin: 0; }
+@keyframes pagino-sad { 0%,100% { transform: rotate(-6deg) scale(0.97); } 50% { transform: rotate(6deg) scale(1.02); } }
 
 /* ======== PÁGINO — MASCOTA DE RACHA ======== */
 .racha-celebration {
