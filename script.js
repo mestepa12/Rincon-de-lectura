@@ -160,18 +160,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function buscarEnOpenLibraryPorISBN(isbn) {
             try {
-                const resp = await fetch(`https://openlibrary.org/search.json?isbn=${isbn}&limit=3`);
+                const resp = await fetch(
+                    `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+                );
                 if (!resp.ok) return [];
                 const data = await resp.json();
-                if (!data.docs?.length) return [];
-                return data.docs.map(doc => ({
-                    title: doc.title || 'Sin título',
-                    author: doc.author_name ? doc.author_name.join(', ') : 'Autor desconocido',
-                    cover: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : '',
-                    totalPages: doc.number_of_pages_median || 0,
-                    link: doc.key ? `https://openlibrary.org${doc.key}` : '',
-                    genre: doc.subject ? doc.subject[0] : 'Sin género'
-                }));
+                const book = data[`ISBN:${isbn}`];
+                if (!book) return [];
+                const cover = book.cover?.large || book.cover?.medium || book.cover?.small
+                    || `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+                return [{
+                    title: book.title || 'Sin título',
+                    author: book.authors?.map(a => a.name).join(', ') || 'Autor desconocido',
+                    cover,
+                    totalPages: book.number_of_pages || 0,
+                    link: book.url || `https://openlibrary.org/isbn/${isbn}`,
+                    genre: book.subjects?.[0]?.name || 'Sin género'
+                }];
             } catch (e) {
                 return [];
             }
