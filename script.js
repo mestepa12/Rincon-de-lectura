@@ -111,6 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let booksData = [];
         let viewingFriendLibrary = false;
+        let currentFriendData = null;
+        let currentFriendName = '';
         let myFriendIds = new Set();
         let pieChartInst = null;
         let barChartInst = null;
@@ -563,6 +565,8 @@ document.addEventListener('DOMContentLoaded', () => {
         onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
             if (!docSnap.exists()) return;
             const userData = docSnap.data();
+            lastUserData = userData;
+            if (viewingFriendLibrary) return; // Don't overwrite friend's UI
             if (streakCounter) {
                 const racha = userData.rachaActual || 0;
                 const prev = streakCounter.textContent;
@@ -575,7 +579,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (prevRacha !== null && racha > prevRacha) mostrarAnimacionRacha(racha);
                 prevRacha = racha;
             }
-            lastUserData = userData;
             if (typeof actualizarDisplayObjetivos === 'function') actualizarDisplayObjetivos(userData);
             renderLogros(userData.logrosDesbloqueados || []);
         });
@@ -909,35 +912,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         // --- FUNCIÓN PARA CARGAR LIBROS DE UN AMIGO (MODO SOLO LECTURA) ---
-        const cargarBibliotecaAmigo = (friendUid, friendName) => {
+        const cargarBibliotecaAmigo = async (friendUid, friendName) => {
 
-            // 0. Cargamos la vista de librería de amigo
             viewingFriendLibrary = true;
+            currentFriendName = friendName;
 
-            // 1. Cambiamos el título de la web para saber dónde estamos
             document.getElementById('site-title').textContent = `Biblioteca de @${friendName}`;
             document.getElementById('site-title').style.color = 'var(--accent-color-interactive)';
-            
-            // 2. Cerramos el sidebar
             toggleSidebar(false);
-
-            // 3. Ocultamos controles de edición (no podemos editar libros de amigos)
             document.getElementById('add-book-btn').style.display = 'none';
-            
-            // 4. Cargamos SUS libros
-            // Nota: Esto funciona gracias a las reglas de seguridad que cambiamos antes
+
+            // Cargar datos del perfil del amigo (racha, logros, objetivos)
+            try {
+                const friendSnap = await getDoc(doc(db, 'users', friendUid));
+                currentFriendData = friendSnap.exists() ? friendSnap.data() : {};
+            } catch {
+                currentFriendData = {};
+            }
+            mostrarDatosAmigo(currentFriendData, friendName);
+
+            // Cargar sus libros
             const q = query(collection(db, 'books'), where("userId", "==", friendUid));
+            onSnapshot(q, (snapshot) => {
+                booksData = [];
+                snapshot.forEach(doc => { booksData.push({ id: doc.id, ...doc.data() }); });
+                booksData.sort((a, b) => a.title.localeCompare(b.title));
+                renderBooks();
+                mostrarBotonVolver();
+            });
+        };
 
-onSnapshot(q, (snapshot) => {
-    booksData = [];
-    snapshot.forEach(doc => {
-        booksData.push({ id: doc.id, ...doc.data() });
-    });
-    booksData.sort((a, b) => a.title.localeCompare(b.title));
-    renderBooks();
-    mostrarBotonVolver();
-});
-
+        const mostrarDatosAmigo = (fd, name) => {
+            // Racha
+            const racha = fd.rachaActual || 0;
+            if (streakCounter) streakCounter.textContent = `🔥 ${racha}`;
+            // Logros
+            renderLogros(fd.logrosDesbloqueados || []);
+            // Objetivos (solo lectura)
+            if (typeof actualizarDisplayObjetivos === 'function') actualizarDisplayObjetivos(fd);
         };
 
         const mostrarBotonVolver = () => {
@@ -1831,11 +1843,29 @@ onSnapshot(q, (snapshot) => {
 
         if (objetivosBtn && objetivosModal) {
             objetivosBtn.addEventListener('click', async () => {
-                const snap = await getDoc(doc(db, 'users', user.uid));
-                const ud = snap.data() || {};
-                document.getElementById('objetivo-diario-input').value = ud.objetivoPaginasDiarias || '';
-                document.getElementById('objetivo-semanal-input').value = ud.objetivoPaginasSemanales || '';
-                actualizarDisplayObjetivos(ud);
+                const inputD = document.getElementById('objetivo-diario-input');
+                const inputS = document.getElementById('objetivo-semanal-input');
+                const saveBtn = document.getElementById('save-objetivos-btn');
+                const formTitle = objetivosModal.querySelector('h2');
+
+                if (viewingFriendLibrary) {
+                    const fd = currentFriendData || {};
+                    if (inputD) { inputD.value = fd.objetivoPaginasDiarias || ''; inputD.disabled = true; }
+                    if (inputS) { inputS.value = fd.objetivoPaginasSemanales || ''; inputS.disabled = true; }
+                    if (saveBtn) saveBtn.style.display = 'none';
+                    if (formTitle) formTitle.textContent = `🎯 Objetivos de @${currentFriendName}`;
+                    actualizarDisplayObjetivos(fd);
+                } else {
+                    if (inputD) inputD.disabled = false;
+                    if (inputS) inputS.disabled = false;
+                    if (saveBtn) saveBtn.style.display = '';
+                    if (formTitle) formTitle.textContent = '🎯 Objetivos de Lectura';
+                    const snap = await getDoc(doc(db, 'users', user.uid));
+                    const ud = snap.data() || {};
+                    if (inputD) inputD.value = ud.objetivoPaginasDiarias || '';
+                    if (inputS) inputS.value = ud.objetivoPaginasSemanales || '';
+                    actualizarDisplayObjetivos(ud);
+                }
                 objetivosModal.showModal();
             });
         }
@@ -1849,7 +1879,17 @@ onSnapshot(q, (snapshot) => {
         const logrosModal = document.getElementById('logros-modal');
         const closeLogrosBtn = document.getElementById('close-logros-btn');
         if (logrosBtn && logrosModal) {
-            logrosBtn.addEventListener('click', () => logrosModal.showModal());
+            logrosBtn.addEventListener('click', () => {
+                if (viewingFriendLibrary && currentFriendData) {
+                    renderLogros(currentFriendData.logrosDesbloqueados || []);
+                    const h2 = logrosModal.querySelector('h2');
+                    if (h2) h2.textContent = `🏅 Logros de @${currentFriendName}`;
+                } else {
+                    if (lastUserData) renderLogros(lastUserData.logrosDesbloqueados || []);
+                    const h2 = logrosModal.querySelector('h2');
+                    if (h2) h2.textContent = '🏅 Mis Logros';
+                }
+                logrosModal.showModal();
         }
         if (closeLogrosBtn && logrosModal) {
             closeLogrosBtn.addEventListener('click', () => logrosModal.close());
@@ -1880,7 +1920,7 @@ onSnapshot(q, (snapshot) => {
 
         const openRachaModal = () => {
             if (!rachaModal) return;
-            const ud = lastUserData || {};
+            const ud = (viewingFriendLibrary ? currentFriendData : lastUserData) || {};
             const racha = ud.rachaActual || 0;
             const ultimaTs = ud.ultimaFechaLectura;
             const hoyStr = getTodayStr();
@@ -1898,10 +1938,20 @@ onSnapshot(q, (snapshot) => {
             const statusEl = document.getElementById('racha-modal-status');
             const mensajeEl = document.getElementById('racha-modal-mensaje');
 
-            if (mascotaEl) { mascotaEl.textContent = leidoHoy ? '📖' : '😔'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
-            if (numeroEl) numeroEl.textContent = `🔥 ${racha}`;
-            if (statusEl) { statusEl.textContent = leidoHoy ? '¡Has leído hoy!' : 'Aún no has leído hoy'; statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido'); }
-            if (mensajeEl) { const pool = leidoHoy ? MENSAJES_RACHA_HOY : MENSAJES_RACHA_NO_HOY; mensajeEl.textContent = pool[Math.floor(Math.random() * pool.length)]; }
+            const nombreEl = document.getElementById('racha-modal-nombre');
+            if (viewingFriendLibrary) {
+                if (mascotaEl) { mascotaEl.textContent = leidoHoy ? '📖' : '😔'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
+                if (numeroEl) numeroEl.textContent = `🔥 ${racha}`;
+                if (statusEl) { statusEl.textContent = leidoHoy ? `@${currentFriendName} ha leído hoy` : `@${currentFriendName} no ha leído hoy`; statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido'); }
+                if (mensajeEl) mensajeEl.textContent = '';
+                if (nombreEl) nombreEl.textContent = `— Racha de @${currentFriendName} —`;
+            } else {
+                if (mascotaEl) { mascotaEl.textContent = leidoHoy ? '📖' : '😔'; mascotaEl.className = 'racha-modal-mascota ' + (leidoHoy ? 'happy' : 'sad'); }
+                if (numeroEl) numeroEl.textContent = `🔥 ${racha}`;
+                if (statusEl) { statusEl.textContent = leidoHoy ? '¡Has leído hoy!' : 'Aún no has leído hoy'; statusEl.className = 'racha-modal-status ' + (leidoHoy ? 'leido' : 'no-leido'); }
+                if (mensajeEl) { const pool = leidoHoy ? MENSAJES_RACHA_HOY : MENSAJES_RACHA_NO_HOY; mensajeEl.textContent = pool[Math.floor(Math.random() * pool.length)]; }
+                if (nombreEl) nombreEl.textContent = '— Págino, tu mascota lectora —';
+            }
 
             rachaModal.showModal();
         };
