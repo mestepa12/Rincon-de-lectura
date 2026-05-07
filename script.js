@@ -76,13 +76,37 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const LOGROS = [
-            { id: 'primer_libro',     icono: '📖', nombre: 'Rompehielos',     descripcion: 'Añade tu primer libro.' },
-            { id: 'primer_terminado', icono: '✅', nombre: 'Primera Victoria', descripcion: 'Termina tu primer libro.' },
-            { id: 'cinco_libros',     icono: '📚', nombre: 'Coleccionista',    descripcion: 'Acumula 5 libros.' },
-            { id: 'maraton',          icono: '🏃', nombre: 'Maratón Lector',   descripcion: 'Lee más de 1.000 páginas en total.' },
-            { id: 'critico',          icono: '⭐', nombre: 'Crítico Literario', descripcion: 'Valóra 3 libros terminados.' },
-            { id: 'racha_7',          icono: '🔥', nombre: 'Una Semana',       descripcion: 'Mantén una racha de 7 días.' },
-            { id: 'racha_30',         icono: '💥', nombre: 'Imparable',        descripcion: 'Mantén una racha de 30 días.' },
+            // — Biblioteca —
+            { id: 'primer_libro',           icono: '📖', nombre: 'Rompehielos',        descripcion: 'Añade tu primer libro.' },
+            { id: 'cinco_libros',           icono: '📚', nombre: 'Coleccionista',       descripcion: 'Acumula 5 libros.' },
+            { id: 'diez_libros',            icono: '🗂️',  nombre: 'Bibliófilo',          descripcion: 'Acumula 10 libros.' },
+            { id: 'veinticinco_libros',     icono: '🏛️',  nombre: 'Gran Biblioteca',    descripcion: 'Acumula 25 libros.' },
+            { id: 'cincuenta_libros',       icono: '🌐',  nombre: 'Archivo Personal',   descripcion: 'Acumula 50 libros.' },
+            // — Libros terminados —
+            { id: 'primer_terminado',       icono: '✅', nombre: 'Primera Victoria',   descripcion: 'Termina tu primer libro.' },
+            { id: 'cinco_terminados',       icono: '🎖️',  nombre: 'Lector Constante',  descripcion: 'Termina 5 libros.' },
+            { id: 'diez_terminados',        icono: '🏆', nombre: 'Devorador de Libros',descripcion: 'Termina 10 libros.' },
+            { id: 'veinticinco_terminados', icono: '👑', nombre: 'Gran Lector',         descripcion: 'Termina 25 libros.' },
+            // — Páginas —
+            { id: 'maraton',                icono: '🏃', nombre: 'Maratón Lector',      descripcion: 'Lee más de 1.000 páginas en total.' },
+            { id: 'paginas_2000',           icono: '📜', nombre: 'Expedición Literaria',descripcion: 'Lee más de 2.000 páginas en total.' },
+            { id: 'paginas_5000',           icono: '🗺️',  nombre: 'Lector Épico',       descripcion: 'Lee más de 5.000 páginas en total.' },
+            { id: 'paginas_10000',          icono: '🌟', nombre: 'Leyenda Lectora',     descripcion: 'Lee más de 10.000 páginas en total.' },
+            { id: 'lector_voraz',           icono: '⚡', nombre: 'Lector Voraz',        descripcion: 'Lee más de 100 páginas en un solo día.' },
+            // — Objetivos —
+            { id: 'objetivo_diario',        icono: '🎯', nombre: 'Meta Cumplida',       descripcion: 'Alcanza tu objetivo diario de páginas.' },
+            // — Valoraciones —
+            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.' },
+            { id: 'critico_pro',            icono: '🎭', nombre: 'Crítico Pro',          descripcion: 'Valora 10 libros terminados.' },
+            { id: 'perfeccionista',         icono: '✨', nombre: 'Perfeccionista',       descripcion: 'Valora 3 libros con 5 estrellas.' },
+            // — Notas y lista de deseos —
+            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.' },
+            { id: 'deseos_10',              icono: '💭', nombre: 'Soñador de Libros',   descripcion: 'Añade 10 libros a tu lista de deseos.' },
+            // — Racha —
+            { id: 'racha_7',                icono: '🔥', nombre: 'Una Semana',           descripcion: 'Mantén una racha de 7 días.' },
+            { id: 'racha_14',               icono: '🗓️',  nombre: 'Dos Semanas',        descripcion: 'Mantén una racha de 14 días.' },
+            { id: 'racha_30',               icono: '💥', nombre: 'Imparable',            descripcion: 'Mantén una racha de 30 días.' },
+            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.' },
         ];
 
         let booksData = []; 
@@ -919,16 +943,55 @@ onSnapshot(q, (snapshot) => {
                 const ud = snap.data();
                 const desbloqueados = new Set(ud.logrosDesbloqueados || []);
                 const racha = ud.rachaActual || 0;
+                const totalPaginasLeidas = ud.totalPaginasLeidas || 0;
                 const nuevos = [];
-                if (!desbloqueados.has('primer_libro')     && booksData.length >= 1) nuevos.push('primer_libro');
-                if (!desbloqueados.has('primer_terminado') && booksData.some(b => b.section === 'libros-terminados')) nuevos.push('primer_terminado');
-                if (!desbloqueados.has('cinco_libros')     && booksData.length >= 5) nuevos.push('cinco_libros');
+
+                // — Biblioteca —
+                if (!desbloqueados.has('primer_libro')           && booksData.length >= 1)  nuevos.push('primer_libro');
+                if (!desbloqueados.has('cinco_libros')           && booksData.length >= 5)  nuevos.push('cinco_libros');
+                if (!desbloqueados.has('diez_libros')            && booksData.length >= 10) nuevos.push('diez_libros');
+                if (!desbloqueados.has('veinticinco_libros')     && booksData.length >= 25) nuevos.push('veinticinco_libros');
+                if (!desbloqueados.has('cincuenta_libros')       && booksData.length >= 50) nuevos.push('cincuenta_libros');
+
+                // — Libros terminados —
+                const terminados = booksData.filter(b => b.section === 'libros-terminados');
+                if (!desbloqueados.has('primer_terminado')       && terminados.length >= 1)  nuevos.push('primer_terminado');
+                if (!desbloqueados.has('cinco_terminados')       && terminados.length >= 5)  nuevos.push('cinco_terminados');
+                if (!desbloqueados.has('diez_terminados')        && terminados.length >= 10) nuevos.push('diez_terminados');
+                if (!desbloqueados.has('veinticinco_terminados') && terminados.length >= 25) nuevos.push('veinticinco_terminados');
+
+                // — Páginas —
                 const totalPags = booksData.reduce((s, b) => s + (b.currentPage || 0), 0);
-                if (!desbloqueados.has('maraton')          && totalPags >= 1000) nuevos.push('maraton');
+                if (!desbloqueados.has('maraton')                && totalPags >= 1000)                nuevos.push('maraton');
+                if (!desbloqueados.has('paginas_2000')           && totalPaginasLeidas >= 2000)       nuevos.push('paginas_2000');
+                if (!desbloqueados.has('paginas_5000')           && totalPaginasLeidas >= 5000)       nuevos.push('paginas_5000');
+                if (!desbloqueados.has('paginas_10000')          && totalPaginasLeidas >= 10000)      nuevos.push('paginas_10000');
+                const hoyStrL = getTodayStr();
+                const paginasHoyL = ud.fechaDia === hoyStrL ? (ud.paginasLeidasHoy || 0) : 0;
+                if (!desbloqueados.has('lector_voraz')           && paginasHoyL >= 100)               nuevos.push('lector_voraz');
+
+                // — Objetivo diario —
+                const objD = ud.objetivoPaginasDiarias || 0;
+                if (!desbloqueados.has('objetivo_diario')        && objD > 0 && paginasHoyL >= objD) nuevos.push('objetivo_diario');
+
+                // — Valoraciones —
                 const valorados = booksData.filter(b => b.section === 'libros-terminados' && b.rating > 0);
-                if (!desbloqueados.has('critico')          && valorados.length >= 3) nuevos.push('critico');
-                if (!desbloqueados.has('racha_7')          && racha >= 7)  nuevos.push('racha_7');
-                if (!desbloqueados.has('racha_30')         && racha >= 30) nuevos.push('racha_30');
+                if (!desbloqueados.has('critico')                && valorados.length >= 3)  nuevos.push('critico');
+                if (!desbloqueados.has('critico_pro')            && valorados.length >= 10) nuevos.push('critico_pro');
+                const cincoEstrellas = booksData.filter(b => b.rating === 5);
+                if (!desbloqueados.has('perfeccionista')         && cincoEstrellas.length >= 3) nuevos.push('perfeccionista');
+
+                // — Notas y lista de deseos —
+                const conNotas = booksData.filter(b => b.notes && b.notes.trim().length > 30);
+                if (!desbloqueados.has('anotador')               && conNotas.length >= 5) nuevos.push('anotador');
+                const enDeseos = booksData.filter(b => b.section === 'lista-deseos');
+                if (!desbloqueados.has('deseos_10')              && enDeseos.length >= 10) nuevos.push('deseos_10');
+
+                // — Racha —
+                if (!desbloqueados.has('racha_7')                && racha >= 7)   nuevos.push('racha_7');
+                if (!desbloqueados.has('racha_14')               && racha >= 14)  nuevos.push('racha_14');
+                if (!desbloqueados.has('racha_30')               && racha >= 30)  nuevos.push('racha_30');
+                if (!desbloqueados.has('racha_100')              && racha >= 100) nuevos.push('racha_100');
                 if (nuevos.length > 0) {
                     await updateDoc(userRef, { logrosDesbloqueados: [...desbloqueados, ...nuevos] });
                     nuevos.forEach(id => { const l = LOGROS.find(x => x.id === id); if (l) mostrarToastLogro(l); });
