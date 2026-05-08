@@ -1,6 +1,11 @@
-import { 
-    initializeApp 
+import {
+    initializeApp
 } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+
+import {
+    initializeAppCheck,
+    ReCaptchaV3Provider
+} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app-check.js";
 
 import { 
     getAuth, 
@@ -36,6 +41,15 @@ export const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// App Check con reCAPTCHA v3 — bloquea peticiones no autorizadas.
+// Obtén tu site key en: https://www.google.com/recaptcha/admin
+// y regístrala en Firebase Console → App Check → Apps.
+initializeAppCheck(app, {
+    provider: new ReCaptchaV3Provider('REEMPLAZA_CON_TU_SITE_KEY_RECAPTCHA_V3'),
+    isTokenAutoRefreshEnabled: true
+});
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -110,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         uid: userCred.user.uid
                     });
                 }
+                localStorage.setItem('rincon_logged_in', '1');
                 window.location.href = 'biblioteca.html';
             })
             .catch(err => console.error("Error Google:", err));
@@ -132,6 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // 2. GUARDAMOS EL TESTIGO DE EMERGENCIA
                         localStorage.setItem('rincon_user_email', email);
                         localStorage.setItem('rincon_user_pass', pass);
+                        localStorage.setItem('rincon_logged_in', '1');
                         window.location.href = 'biblioteca.html';
                     } else {
                         loginError.textContent = 'Verifica tu correo antes de entrar.';

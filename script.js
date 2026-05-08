@@ -1858,6 +1858,7 @@ document.addEventListener('DOMContentLoaded', () => {
         signOut(auth).then(() => {
             localStorage.removeItem('rincon_user_email');
             localStorage.removeItem('rincon_user_pass');
+            localStorage.removeItem('rincon_logged_in');
             // Esto obliga a ir a index y evita que el usuario pueda volver atrás
             window.location.replace('index.html');
         }).catch((error) => {
