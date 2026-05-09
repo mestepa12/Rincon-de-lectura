@@ -41,6 +41,8 @@ jobs:
           echo "VITE_RECAPTCHA_SITE_KEY=${{ secrets.VITE_RECAPTCHA_SITE_KEY }}" >> .env
 
       - run: npm run build
+        env:
+          VITE_BASE: /Rincon-de-lectura/
 
       - uses: actions/configure-pages@v4
 

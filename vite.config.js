@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/Rincon-de-lectura/',
+  base: process.env.VITE_BASE || '/',
   build: {
     rollupOptions: {
       input: {
