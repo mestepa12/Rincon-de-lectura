@@ -9,7 +9,10 @@
       "Bash(ls firestore.rules)",
       "Bash(Remove-Item firestore.rules)",
       "Bash(npx vite *)",
-      "Bash(not exist *)"
+      "Bash(not exist *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npx cap *)"
     ]
   }
 }

@@ -1,0 +1,8 @@
+{
+  "appId": "es.rinconlectura.app",
+  "appName": "Rincón de Lectura",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
