@@ -8,7 +8,8 @@
       "Bash(ls firebase.json)",
       "Bash(ls firestore.rules)",
       "Bash(Remove-Item firestore.rules)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(not exist *)"
     ]
   }
 }

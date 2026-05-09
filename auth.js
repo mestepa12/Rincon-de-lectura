@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
+import { initializeAppCheck } from "firebase/app-check";
 import {
     getAuth,
     onAuthStateChanged,
@@ -26,11 +26,6 @@ import { firebaseConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 
-// App Check con reCAPTCHA v3 — bloquea peticiones no autorizadas.
-initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
-    isTokenAutoRefreshEnabled: true
-});
 
 const auth = getAuth(app);
 const db = getFirestore(app);
