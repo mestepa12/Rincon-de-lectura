@@ -4,6 +4,14 @@ firebase-debug.log
 # Dependencias de Node
 node_modules/
 
+# Variables de entorno (credenciales)
+.env
+.env.local
+.env.*.local
+
+# Build de Vite
+dist/
+
 # Archivos autogenerados por Playwright
 playwright-report/
 test-results/

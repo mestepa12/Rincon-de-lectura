@@ -1,9 +1,7 @@
-import { firebaseConfig } from './auth.js';
-import { googleBooksApiKey } from './config.js';
-
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+import { firebaseConfig, googleBooksApiKey } from './config.js';
+import { initializeApp } from "firebase/app";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit } from "firebase/firestore";
 
 // 1. Inicialización (Igual que en auth.js)
 const app = initializeApp(firebaseConfig);

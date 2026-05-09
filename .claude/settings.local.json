@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(ls *.rules)",
+      "Bash(ls firebase.json)",
+      "Bash(ls firestore.rules)",
+      "Bash(Remove-Item firestore.rules)",
+      "Bash(npx vite *)"
+    ]
+  }
+}

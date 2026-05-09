@@ -1,52 +1,34 @@
+import { initializeApp } from "firebase/app";
+import { initializeAppCheck, ReCaptchaV3Provider } from "firebase/app-check";
 import {
-    initializeApp
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
-
-import {
-    initializeAppCheck,
-    ReCaptchaV3Provider
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app-check.js";
-
-import { 
-    getAuth, 
-    onAuthStateChanged, 
-    sendEmailVerification, 
-    signInWithPopup, 
-    GoogleAuthProvider, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword, 
-    signOut, 
+    getAuth,
+    onAuthStateChanged,
+    sendEmailVerification,
+    signInWithPopup,
+    GoogleAuthProvider,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+    signOut,
     sendPasswordResetEmail,
     setPersistence,
     browserLocalPersistence
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-auth.js";
-
-import { 
-    getFirestore, 
-    doc, 
+} from "firebase/auth";
+import {
+    getFirestore,
+    doc,
     setDoc,
-    collection, 
-    query, 
-    where, 
+    collection,
+    query,
+    where,
     getDocs
-} from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
-
-export const firebaseConfig = {
-  apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc",
-  authDomain: "mi-rincon-de-lectura.firebaseapp.com",
-  projectId: "mi-rincon-de-lectura",
-  storageBucket: "mi-rincon-de-lectura.appspot.com",
-  messagingSenderId: "333643518949",
-  appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
-};
+} from "firebase/firestore";
+import { firebaseConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 
 // App Check con reCAPTCHA v3 — bloquea peticiones no autorizadas.
-// Obtén tu site key en: https://www.google.com/recaptcha/admin
-// y regístrala en Firebase Console → App Check → Apps.
 initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('REEMPLAZA_CON_TU_SITE_KEY_RECAPTCHA_V3'),
+    provider: new ReCaptchaV3Provider(import.meta.env.VITE_RECAPTCHA_SITE_KEY),
     isTokenAutoRefreshEnabled: true
 });
 

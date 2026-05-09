@@ -1,10 +1,10 @@
-const firebaseConfig = {
-  apiKey: "AIzaSyDGgrJwBRmz5hAqkgx3A6CnNRZuR_YtLfc", // Pega aquí tu última clave de API
-  authDomain:"mi-rincon-de-lectura.firebaseapp.com",
-  projectId: "mi-rincon-de-lectura",
-  storageBucket: "mi-rincon-de-lectura.appspot.com",
-  messagingSenderId: "333643518949",
-  appId: "1:333643518949:web:322ec9b7ab1c3bc267d50c"
+export const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export const googleBooksApiKey = "AIzaSyA1OYofX855ZxA7lnLqgTFyBiaf6GwDvHw";
+export const googleBooksApiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
