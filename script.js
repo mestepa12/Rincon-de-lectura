@@ -1336,6 +1336,28 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        const checkStreakBreakOnLogin = async () => {
+            const userRef = doc(db, 'users', user.uid);
+            try {
+                const userSnap = await getDoc(userRef);
+                if (!userSnap.exists()) return;
+                const userData = userSnap.data();
+                const ultimaFechaTimestamp = userData.ultimaFechaLectura;
+                if (!ultimaFechaTimestamp) return;
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+                const ultima = ultimaFechaTimestamp.toDate();
+                ultima.setHours(0, 0, 0, 0);
+                const diffDias = Math.round((hoy - ultima) / (1000 * 60 * 60 * 24));
+                if (diffDias >= 2) {
+                    await updateDoc(userRef, { rachaActual: 0 });
+                }
+            } catch (error) {
+                console.error('Error chequeando racha al inicio:', error);
+            }
+        };
+        checkStreakBreakOnLogin();
+
         const getTodayStr = () => new Date().toISOString().split('T')[0];
         const getWeekStartStr = () => {
             const d = new Date();
@@ -1808,7 +1830,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         addBookForm.addEventListener('submit', handleAddBook);
-        toggleViewBtn.addEventListener('click', () => mainContent.classList.toggle('list-view'));
+        toggleViewBtn.addEventListener('click', () => {
+            mainContent.classList.toggle('list-view');
+            toggleViewBtn.textContent = mainContent.classList.contains('list-view') ? '⊞' : '☰';
+        });
         toggleThemeBtn.addEventListener('click', toggleTheme);
         mainContent.addEventListener('click', handleMainContentClick);
         searchBar.addEventListener('input', handleSearch);
