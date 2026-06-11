@@ -12,7 +12,21 @@
       "Bash(not exist *)",
       "Bash(npm install *)",
       "Bash(npm run *)",
-      "Bash(npx cap *)"
+      "Bash(npx cap *)",
+      "Bash(node -e *)",
+      "Bash(npx capacitor-assets *)",
+      "Bash(cp *)",
+      "Bash(npx firebase *)",
+      "PowerShell(npm view *)",
+      "PowerShell(npm *)",
+      "PowerShell(firebase functions:artifacts:setpolicy *)",
+      "PowerShell(firebase deploy *)",
+      "PowerShell(firebase functions:list *)",
+      "PowerShell(firebase functions:delete *)",
+      "PowerShell(gcloud functions delete checkStreakAtRisk *)",
+      "PowerShell($cfg = Get-Content \"$env:APPDATA\\\\configstore\\\\firebase-tools.json\" -Raw | ConvertFrom-Json; if \\($cfg.tokens.refresh_token\\) { \"refresh token found\" } else { \"no token\" })",
+      "PowerShell($cfg = Get-Content \"C:\\\\Users\\\\meste\\\\.config\\\\configstore\\\\firebase-tools.json\" -Raw | ConvertFrom-Json; if \\($cfg.tokens.refresh_token\\) { \"refresh token found\" } else { \"no token\" })",
+      "PowerShell(ConvertTo-Json *)"
     ]
   }
 }

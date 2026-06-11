@@ -1,5 +1,4 @@
 import { initializeApp } from "firebase/app";
-import { initializeAppCheck } from "firebase/app-check";
 import {
     getAuth,
     onAuthStateChanged,
@@ -24,6 +23,8 @@ import {
 } from "firebase/firestore";
 import { firebaseConfig } from "./config.js";
 
+console.log('auth.js cargado');
+
 const app = initializeApp(firebaseConfig);
 
 
@@ -46,7 +47,9 @@ if (savedEmail && savedPass && !auth.currentUser) {
 
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOMContentLoaded disparado');
     const loginForm = document.getElementById('login-form');
+    console.log('loginForm encontrado:', loginForm);
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
     const loginError = document.getElementById('login-error');
@@ -114,14 +117,16 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = emailInput.value;
             const pass = passwordInput.value;
-            
+            console.log('Login submit — email:', email);
+
             setPersistence(auth, browserLocalPersistence)
                 .then(() => {
+                    console.log('Persistence OK, llamando signIn...');
                     return signInWithEmailAndPassword(auth, email, pass);
                 })
                 .then(userCred => {
+                    console.log('Login OK:', userCred.user.email);
                     if (userCred.user.emailVerified) {
-                        // 2. GUARDAMOS EL TESTIGO DE EMERGENCIA
                         localStorage.setItem('rincon_user_email', email);
                         localStorage.setItem('rincon_user_pass', pass);
                         localStorage.setItem('rincon_logged_in', '1');
@@ -131,6 +136,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 })
                 .catch(err => {
+                    console.error('Login error code:', err.code);
+                    console.error('Login error msg:', err.message);
                     loginError.textContent = 'Correo o contraseña incorrectos.';
                 });
         });
@@ -146,7 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (user && !user.emailVerified) {
             if (divAviso) divAviso.style.display = 'block'; 
         } else {
-            if (divAviso) divAviso.style.display = 'none'; 
+            if (divAviso) divAviso.style.display = 'none';
+            const path = window.location.pathname;
+            if (path.includes('biblioteca.html')) {
+                window.location.href = 'index.html';
+            }
         }
     });
 

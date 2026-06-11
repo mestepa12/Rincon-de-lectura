@@ -438,7 +438,11 @@ function openModal(id) {
         const isDark = document.body.classList.toggle('dark-mode');
         document.getElementById('toggle-theme').textContent = isDark ? '☀️' : '🌙';
     };
-    document.getElementById('toggle-view').onclick = () => mainContent.classList.toggle('list-view');
+    document.getElementById('toggle-view').onclick = () => {
+        mainContent.classList.toggle('list-view');
+        const btn = document.getElementById('toggle-view');
+        btn.textContent = mainContent.classList.contains('list-view') ? '⊞' : '☰';
+    };
 
     // Lanzamos el primer render para mostrar el libro de Miguel
     renderBooks();

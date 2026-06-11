@@ -8,3 +8,5 @@ export const firebaseConfig = {
 };
 
 export const googleBooksApiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY;
+
+export const fcmVapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;

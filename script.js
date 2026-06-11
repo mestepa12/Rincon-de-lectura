@@ -1,7 +1,8 @@
-import { firebaseConfig, googleBooksApiKey } from './config.js';
+import { firebaseConfig, googleBooksApiKey, fcmVapidKey } from './config.js';
 import { initializeApp } from "firebase/app";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit } from "firebase/firestore";
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
+import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "firebase/messaging";
 
 // 1. Inicialización (Igual que en auth.js)
 const app = initializeApp(firebaseConfig);
@@ -1302,6 +1303,51 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // === NOTIFICACIONES PUSH (FCM) ===
+        const setupPushNotifications = async () => {
+            try {
+                if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+                if (!(await isMessagingSupported())) return;
+                if (!fcmVapidKey || fcmVapidKey.startsWith('PEGA_AQUI')) {
+                    console.warn('FCM: falta VITE_FIREBASE_VAPID_KEY en .env');
+                    return;
+                }
+
+                // Pedir permiso si aún no se ha decidido
+                let permission = Notification.permission;
+                if (permission === 'default') {
+                    permission = await Notification.requestPermission();
+                }
+                if (permission !== 'granted') return;
+
+                const swRegistration = await navigator.serviceWorker.register(
+                    `${import.meta.env.BASE_URL}firebase-messaging-sw.js`
+                );
+
+                const messaging = getMessaging(app);
+                const token = await getToken(messaging, {
+                    vapidKey: fcmVapidKey,
+                    serviceWorkerRegistration: swRegistration
+                });
+                if (!token) return;
+
+                // Guardar token (array: soporta varios dispositivos por usuario)
+                await updateDoc(doc(db, 'users', user.uid), {
+                    fcmTokens: arrayUnion(token)
+                });
+
+                // Notificaciones recibidas con la app abierta (primer plano)
+                onMessage(messaging, (payload) => {
+                    const title = payload.notification?.title || 'Rincón de Lectura';
+                    const body = payload.notification?.body || '';
+                    new Notification(title, { body, icon: '/favicon.png' });
+                });
+            } catch (error) {
+                console.error('Error configurando notificaciones push:', error);
+            }
+        };
+        setupPushNotifications();
+
         // === RACHA DIARIA DE LECTURA ===
         const updateStreak = async () => {
             const userRef = doc(db, 'users', user.uid);
@@ -1437,7 +1483,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (b.section === 'libros-terminados') return total + (b.totalPages || 0);
                     return total + (b.currentPage || 0);
                 }, 0);
-                await updateDoc(doc(db, 'users', user.uid), { totalPaginasLeidas });
+                const userUpdates = { totalPaginasLeidas };
+                if (paginaProgresada) userUpdates.lastReadTimestamp = serverTimestamp();
+                await updateDoc(doc(db, 'users', user.uid), userUpdates);
 
                 await evaluarLogros();
                 console.log('Detalles actualizados');
