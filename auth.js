@@ -1,6 +1,4 @@
-import { initializeApp } from "firebase/app";
 import {
-    getAuth,
     onAuthStateChanged,
     sendEmailVerification,
     signInWithPopup,
@@ -13,7 +11,6 @@ import {
     browserLocalPersistence
 } from "firebase/auth";
 import {
-    getFirestore,
     doc,
     setDoc,
     collection,
@@ -21,15 +18,9 @@ import {
     where,
     getDocs
 } from "firebase/firestore";
-import { firebaseConfig } from "./config.js";
+import { app, auth, db } from "./firebase-init.js";
 
 console.log('auth.js cargado');
-
-const app = initializeApp(firebaseConfig);
-
-
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 // 1. INTENTO DE RECUPERACIÓN MANUAL (El salvavidas)
 // Si el usuario guardó su sesión localmente pero Firebase se olvidó

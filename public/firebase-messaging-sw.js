@@ -1,6 +1,7 @@
 /* eslint-env serviceworker */
-// Service Worker de Firebase Cloud Messaging.
-// Maneja las notificaciones push cuando la PWA está en segundo plano o cerrada.
+// Service Worker de "Mi Rincón de Lectura".
+// 1) Notificaciones push de Firebase Cloud Messaging (segundo plano).
+// 2) Caché del App Shell para que la PWA funcione offline.
 // Nota: los service workers no pasan por Vite, por lo que la configuración
 // va inline (son credenciales públicas de cliente, las mismas del bundle).
 
@@ -17,6 +18,107 @@ firebase.initializeApp({
 });
 
 const messaging = firebase.messaging();
+
+// ============================================================
+// CACHÉ OFFLINE (App Shell)
+// ============================================================
+const CACHE_NAME = 'rincon-shell-v1';
+
+// App Shell: páginas y estáticos con nombre fijo. Los bundles de Vite
+// (/assets/*.js, *.css) llevan hash en el nombre y se cachean en runtime.
+const APP_SHELL = [
+    '/',
+    '/index.html',
+    '/biblioteca.html',
+    '/login.html',
+    '/register.html',
+    '/cookies.js',
+    '/favicon.png',
+    '/google-logo.png',
+    '/mascota_racha.png'
+];
+
+// CDNs de librerías estáticas que la app necesita offline.
+const CDN_HOSTS = [
+    'cdn.jsdelivr.net',
+    'html2canvas.hertzen.com',
+    'www.gstatic.com'
+];
+
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then((cache) => cache.addAll(APP_SHELL))
+            .then(() => self.skipWaiting())
+    );
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys()
+            .then((keys) => Promise.all(
+                keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k))
+            ))
+            .then(() => self.clients.claim())
+    );
+});
+
+// Navegación (HTML): red primero, caché si no hay conexión.
+async function handleNavigation(request) {
+    try {
+        const fresh = await fetch(request);
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(request, fresh.clone());
+        return fresh;
+    } catch (err) {
+        const cached = await caches.match(request);
+        if (cached) return cached;
+        // Fallback: shell principal de la app
+        return (await caches.match('/biblioteca.html')) ||
+               (await caches.match('/')) ||
+               Response.error();
+    }
+}
+
+// Estáticos: stale-while-revalidate (sirve caché al instante y
+// actualiza en segundo plano para la próxima visita).
+async function handleStatic(request) {
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
+    const networkFetch = fetch(request)
+        .then((fresh) => {
+            if (fresh && (fresh.ok || fresh.type === 'opaque')) {
+                cache.put(request, fresh.clone());
+            }
+            return fresh;
+        })
+        .catch(() => null);
+    return cached || (await networkFetch) || Response.error();
+}
+
+self.addEventListener('fetch', (event) => {
+    const request = event.request;
+    if (request.method !== 'GET') return;
+
+    const url = new URL(request.url);
+    const sameOrigin = url.origin === self.location.origin;
+
+    // APIs dinámicas (Firestore, Auth, FCM, analytics, Google Books...):
+    // no interceptar — Firestore ya tiene su propia persistencia local.
+    if (!sameOrigin && !CDN_HOSTS.includes(url.hostname)) return;
+
+    if (request.mode === 'navigate') {
+        event.respondWith(handleNavigation(request));
+        return;
+    }
+
+    // Bundles de Vite, CSS, JS, imágenes y CDNs de librerías.
+    event.respondWith(handleStatic(request));
+});
+
+// ============================================================
+// NOTIFICACIONES PUSH (FCM)
+// ============================================================
 
 // Notificaciones recibidas con la app en segundo plano.
 messaging.onBackgroundMessage((payload) => {

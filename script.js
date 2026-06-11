@@ -1,13 +1,10 @@
-import { firebaseConfig, googleBooksApiKey, fcmVapidKey } from './config.js';
-import { initializeApp } from "firebase/app";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { getFirestore, collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
+import { googleBooksApiKey, fcmVapidKey } from './config.js';
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
 import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "firebase/messaging";
 
-// 1. Inicialización (Igual que en auth.js)
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// 1. Inicialización compartida (app, auth y Firestore con caché persistente)
+import { app, auth, db } from './firebase-init.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
