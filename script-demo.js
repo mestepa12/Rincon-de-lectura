@@ -1,18 +1,80 @@
 import { googleBooksApiKey } from './config.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Datos iniciales (Demo)
+    // 1. Datos iniciales (Demo): biblioteca precargada para que la demo
+    // se sienta viva desde el primer segundo.
     let booksData = [
-        { 
-            id: 'demo-1', 
-            title: 'Mi Rincón de Lectura', 
-            author: 'Miguel', 
-            section: 'leyendo-ahora', 
-            totalPages: 500, 
-            currentPage: 125, 
-            // Usamos HTTPS para que no salga el icono de imagen rota
-            cover: 'portada-demo.jfif', 
-            notes: 'Este es tu libro de ejemplo. ¡Prueba el buscador de arriba!' 
+        // — Leyendo ahora (progreso a la mitad) —
+        {
+            id: 'demo-1',
+            title: 'El Nombre del Viento',
+            author: 'Patrick Rothfuss',
+            section: 'leyendo-ahora',
+            totalPages: 880,
+            currentPage: 440,
+            cover: 'https://covers.openlibrary.org/b/isbn/9780756404741-M.jpg',
+            genre: 'Fantasía',
+            notes: '¡Este es un libro de ejemplo! Prueba a actualizar tu progreso o usa el buscador de arriba para añadir los tuyos.'
+        },
+        {
+            id: 'demo-2',
+            title: 'Los Pilares de la Tierra',
+            author: 'Ken Follett',
+            section: 'leyendo-ahora',
+            totalPages: 1040,
+            currentPage: 520,
+            cover: 'https://covers.openlibrary.org/b/isbn/9780451166890-M.jpg',
+            genre: 'Novela histórica',
+            notes: ''
+        },
+        // — Terminados (con valoración, género y reseña) —
+        {
+            id: 'demo-3',
+            title: 'Cien Años de Soledad',
+            author: 'Gabriel García Márquez',
+            section: 'libros-terminados',
+            totalPages: 496,
+            currentPage: 496,
+            rating: 5,
+            genre: 'Realismo mágico',
+            cover: 'https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg',
+            notes: 'Obra maestra absoluta. Macondo y los Buendía se quedan contigo para siempre.'
+        },
+        {
+            id: 'demo-4',
+            title: '1984',
+            author: 'George Orwell',
+            section: 'libros-terminados',
+            totalPages: 328,
+            currentPage: 328,
+            rating: 4,
+            genre: 'Distopía',
+            cover: 'https://covers.openlibrary.org/b/isbn/9780451524935-M.jpg',
+            notes: 'Inquietante y más vigente que nunca. Imposible no subrayar frases.'
+        },
+        {
+            id: 'demo-5',
+            title: 'Orgullo y Prejuicio',
+            author: 'Jane Austen',
+            section: 'libros-terminados',
+            totalPages: 416,
+            currentPage: 416,
+            rating: 4,
+            genre: 'Clásico romántico',
+            cover: 'https://covers.openlibrary.org/b/isbn/9780141439518-M.jpg',
+            notes: 'Elizabeth Bennet es uno de los mejores personajes de la literatura.'
+        },
+        // — Lista de deseos —
+        {
+            id: 'demo-6',
+            title: 'Proyecto Hail Mary',
+            author: 'Andy Weir',
+            section: 'lista-deseos',
+            totalPages: 496,
+            currentPage: 0,
+            genre: 'Ciencia ficción',
+            cover: 'https://covers.openlibrary.org/b/isbn/9780593135204-M.jpg',
+            notes: ''
         }
     ];
 
@@ -46,6 +108,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const streakCounter = document.getElementById('streak-counter');
     let pieChartInst = null;
     let barChartInst = null;
+
+    // === SEMILLA DEMO: estado de usuario rico en la primera visita ===
+    // Solo si no hay estado previo, para no pisar el progreso de quien
+    // ya haya jugado con la demo.
+    if (!localStorage.getItem('demo_racha')) {
+        localStorage.setItem('demo_racha', '14');
+        localStorage.setItem('demo_ultima_lectura', new Date().toISOString().split('T')[0]);
+        localStorage.setItem('demo_logros', JSON.stringify([
+            'primer_libro', 'primer_terminado', 'cinco_libros',
+            'maraton', 'critico', 'racha_7'
+        ]));
+    }
 
     // === RACHA DEMO: inicializar desde localStorage ===
     if (streakCounter) {
@@ -179,13 +253,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (container) {
                 const art = document.createElement('article');
                 art.className = 'book';
-                art.innerHTML = `
-                    <img src="${book.cover || 'https://via.placeholder.com/150x225?text=Sin+Portada'}" class="book-cover">
-                    <div class="book-info">
-                        <h3>${book.title}</h3>
-                        <p class="author">${book.author}</p>
-                    </div>
-                `;
+                // DOM directo: título/autor pueden venir de Google Books
+                const img = document.createElement('img');
+                img.className = 'book-cover';
+                img.loading = 'lazy';
+                img.alt = `Portada de ${book.title}`;
+                img.src = book.cover || 'https://via.placeholder.com/150x225?text=Sin+Portada';
+                const info = document.createElement('div');
+                info.className = 'book-info';
+                const h3 = document.createElement('h3');
+                h3.textContent = book.title;
+                const pa = document.createElement('p');
+                pa.className = 'author';
+                pa.textContent = book.author;
+                info.append(h3, pa);
+                art.append(img, info);
                 art.onclick = () => openModal(book.id);
                 container.appendChild(art);
             }
@@ -213,25 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("❌ ERROR: No se encontró el elemento con ID 'search-bar'");
     }
 
-    if (bookSearchInput) {
-        bookSearchInput.addEventListener('input', async (e) => {
-            const query = e.target.value;
-            if (query.length > 2) {
-                const libros = await buscarEnGoogle(query);
-                bookSearchResultsDiv.innerHTML = libros.map(item => {
-                    const info = item.volumeInfo;
-                    const cover = info.imageLinks ? info.imageLinks.thumbnail.replace('http://', 'https://') : '';
-                    return `
-                        <div class="result-item" onclick="seleccionarLibro('${info.title.replace(/'/g, "\\'")}', '${(info.authors?.[0] || 'Desconocido').replace(/'/g, "\\'")}', '${cover}', ${info.pageCount || 0})">
-                            <p><b>${info.title}</b> - ${info.authors?.[0] || 'Desconocido'}</p>
-                        </div>
-                    `;
-                }).join('');
-            }
-        });
-    }
-
-    window.seleccionarLibro = (t, a, c, p) => {
+    const seleccionarLibro = (t, a, c, p) => {
         document.getElementById('title').value = t;
         document.getElementById('author').value = a;
         document.getElementById('cover').value = c;
@@ -239,6 +303,33 @@ document.addEventListener('DOMContentLoaded', () => {
         bookSearchResultsDiv.innerHTML = '';
         document.getElementById('manual-data-details').open = true;
     };
+
+    if (bookSearchInput) {
+        bookSearchInput.addEventListener('input', async (e) => {
+            const query = e.target.value;
+            if (query.length > 2) {
+                const libros = await buscarEnGoogle(query);
+                // Construcción vía DOM (sin innerHTML ni onclick inline) para
+                // que títulos/autores de la API no puedan inyectar HTML
+                bookSearchResultsDiv.innerHTML = '';
+                libros.forEach(item => {
+                    const info = item.volumeInfo;
+                    const cover = info.imageLinks ? info.imageLinks.thumbnail.replace('http://', 'https://') : '';
+                    const title = info.title || '';
+                    const author = info.authors?.[0] || 'Desconocido';
+                    const div = document.createElement('div');
+                    div.className = 'result-item';
+                    const p = document.createElement('p');
+                    const b = document.createElement('b');
+                    b.textContent = title;
+                    p.append(b, ` - ${author}`);
+                    div.appendChild(p);
+                    div.addEventListener('click', () => seleccionarLibro(title, author, cover, info.pageCount || 0));
+                    bookSearchResultsDiv.appendChild(div);
+                });
+            }
+        });
+    }
 
     // 6. Acciones de Formulario
     addBookForm.onsubmit = (e) => {

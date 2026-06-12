@@ -6,18 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mi Rincón de Lectura</title>
 
+    <!-- Página privada (requiere sesión): fuera del índice de Google.
+         El canonical apunta a la landing, que es la página pública equivalente. -->
+    <meta name="robots" content="noindex, follow">
     <link rel="canonical" href="https://rinconlectura.es/">
     <meta name="description"
         content="Organiza tu biblioteca personal, lleva el control de tus lecturas y descubre nuevos libros en Mi Rincón de Lectura. ¡Únete a nuestra comunidad de lectores!">
-    <meta name="keywords" content="leer, libros, biblioteca virtual, seguimiento de lectura, rincon lectura">
     <link rel="icon" type="image/png" href="favicon.png">
     <meta property="og:title" content="Mi Rincón de Lectura">
     <meta property="og:description" content="Tu biblioteca personal en la palma de tu mano.">
-    <meta property="og:image" content="https://rinconlectura.es/favicon.png">
-    <meta property="og:url" content="https://rinconlectura.es">
+    <meta property="og:image" content="https://rinconlectura.es/og-image.png">
+    <meta property="og:url" content="https://rinconlectura.es/">
 
-    <link rel="apple-touch-icon" href="favicon.png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="manifest" href="/manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,6 +51,7 @@
                 <button id="toggle-view" type="button" title="Cambiar vista">☰</button>
                 <button id="toggle-friends-btn" type="button" title="Amigos">👥</button>
                 <button id="toggle-theme" type="button">🌙</button>
+                <button id="recommend-btn" type="button" title="¿Qué leo ahora? Págino te recomienda">🦕</button>
                 <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
@@ -83,6 +86,23 @@
             <div class="books-container" data-section="libros-abandonados"></div>
         </section>
     </main>
+
+    <dialog id="chat-modal">
+        <div class="chat-header">
+            <h2 id="chat-title">💬 Chat</h2>
+            <button id="close-chat-btn" type="button" aria-label="Cerrar chat">✕</button>
+        </div>
+        <div id="chat-messages" class="chat-messages"></div>
+        <div id="chat-book-picker" class="chat-book-picker" style="display:none;">
+            <select id="chat-book-select"></select>
+            <button type="button" id="chat-book-send-btn">Enviar libro</button>
+        </div>
+        <div class="chat-input-row">
+            <button type="button" id="chat-share-book-btn" title="Compartir un libro de tu biblioteca">📖</button>
+            <input type="text" id="chat-input" maxlength="1000" placeholder="Escribe un mensaje..." autocomplete="off">
+            <button type="button" id="chat-send-btn" title="Enviar mensaje">➤</button>
+        </div>
+    </dialog>
 
     <dialog id="add-book-modal">
         <form id="add-book-form">
@@ -173,7 +193,10 @@
                 </div>
             </div>
             <div class="detail-info">
-                <h2 id="detail-title">Título del Libro</h2>
+                <div class="detail-title-row">
+                    <h2 id="detail-title">Título del Libro</h2>
+                    <button type="button" id="edit-book-btn" class="btn-edit-book" title="Editar detalles del libro" aria-label="Editar detalles del libro">✏️</button>
+                </div>
                 <p id="detail-author" class="detail-author">Autor del Libro</p>
                 <div id="detail-genre-section" class="detail-genre-section">
                     <label for="detail-genre">Género</label>
@@ -197,12 +220,42 @@
                         <div id="progress-bar-fill"></div>
                     </div>
                     <span id="progress-percentage">0%</span>
+
+                    <div id="session-section" class="session-section">
+                        <button type="button" id="session-toggle-btn" class="btn-session">▶ Empezar sesión de lectura</button>
+                        <div id="session-end-form" class="session-end-form" style="display:none;">
+                            <label for="session-end-page">¿En qué página te has quedado?</label>
+                            <div class="session-end-row">
+                                <input type="number" id="session-end-page" min="0">
+                                <button type="button" id="session-save-btn" class="btn-primary">Guardar</button>
+                                <button type="button" id="session-discard-btn" class="btn-cancel" title="Descartar sesión">🗑️</button>
+                            </div>
+                        </div>
+                        <p id="session-prediction" class="session-prediction"></p>
+                    </div>
                 </div>
 
                 <div class="detail-notes-section">
                     <label for="detail-notes">Mis Notas</label>
                     <textarea id="detail-notes" rows="6"
                         placeholder="Añade tus notas, citas favoritas o reflexiones aquí..."></textarea>
+                </div>
+
+                <div id="detail-comments-section" class="detail-comments-section">
+                    <label>💬 Club de Lectura</label>
+                    <p class="comments-hint">Comentarios de tus amigos en este libro. Solo verás los de páginas que ya hayas leído: cero spoilers.</p>
+                    <div id="comments-list" class="comments-list"></div>
+                    <div class="comment-input-row">
+                        <input type="text" id="comment-input" maxlength="280"
+                            placeholder="Deja un comentario en tu página actual...">
+                        <button type="button" id="send-comment-btn" class="btn-send-comment" title="Enviar comentario">➤</button>
+                    </div>
+                    <p class="comment-page-hint" id="comment-page-hint"></p>
+                </div>
+
+                <div id="buddy-section" class="buddy-section">
+                    <label>🤝 Leemos Juntos</label>
+                    <div id="buddy-content"></div>
                 </div>
 
                 <div id="detail-vibes-section" class="book-vibes-section detail-vibes-section">
@@ -247,6 +300,46 @@
                 </div>
             </div>
         </div>
+    </dialog>
+
+    <button type="button" id="session-pill" class="session-pill" style="display:none;" title="Sesión de lectura en curso">📖 00:00</button>
+
+    <dialog id="recommend-modal">
+        <div class="recommend-header">
+            <img src="mascota_racha.png" alt="Págino, la mascota lectora" class="recommend-mascota">
+            <div class="recommend-header-text">
+                <h2>¿Qué leo ahora?</h2>
+                <p id="recommend-intro">Págino está husmeando en tu biblioteca y en las de tus amigos...</p>
+            </div>
+            <button type="button" id="close-recommend-btn" class="recommend-close" aria-label="Cerrar">✕</button>
+        </div>
+        <div id="recommend-list" class="recommend-list"></div>
+        <div class="recommend-footer">
+            <button type="button" id="reshuffle-recommend-btn" class="btn-primary">🎲 Dame otras ideas</button>
+        </div>
+    </dialog>
+
+    <dialog id="edit-book-modal">
+        <form id="edit-book-form">
+            <h2>✏️ Editar Libro</h2>
+
+            <label for="edit-title">Título:</label>
+            <input type="text" id="edit-title" name="title" maxlength="300" required>
+
+            <label for="edit-author">Autor:</label>
+            <input type="text" id="edit-author" name="author" maxlength="200">
+
+            <label for="edit-cover">URL de la Portada:</label>
+            <input type="url" id="edit-cover" name="cover" maxlength="1000" placeholder="https://ejemplo.com/portada.jpg">
+
+            <label for="edit-total-pages">Número total de páginas:</label>
+            <input type="number" id="edit-total-pages" name="totalPages" min="0" max="100000" placeholder="Ej: 350">
+
+            <div class="modal-actions">
+                <button type="submit" class="btn-primary btn-save-full">Guardar Cambios</button>
+                <button type="button" id="cancel-edit-book" class="btn-cancel">Cancelar</button>
+            </div>
+        </form>
     </dialog>
 
     <dialog id="logros-modal"

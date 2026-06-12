@@ -4,43 +4,81 @@
     <script>if(localStorage.getItem('rincon_logged_in')==='1'){location.replace('biblioteca.html');}</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Rincón de Lectura | La mejor alternativa a Goodreads en español</title>
+    <title>Mi Rincón de Lectura | Convierte la lectura en tu mejor hábito</title>
 
     <link rel="canonical" href="https://rinconlectura.es/">
-    <meta name="description" content="Rastreador de lectura sin anuncios, con exportar datos de Goodreads, calificaciones de media estrella y red social de libros. La mejor app para organizar libros en español.">
-    <meta name="keywords" content="leer, libros, biblioteca virtual, seguimiento de lectura, rincon lectura">    <link rel="icon" type="image/png" href="favicon.png">
+    <meta name="description" content="Convierte la lectura en tu mejor hábito: estadísticas visuales, rachas diarias, logros, amigos y modo offline. La alternativa a Goodreads en español, sin anuncios y gratis.">
+    <meta name="keywords" content="seguimiento de lectura, registro de libros, biblioteca virtual, hábito de lectura, racha de lectura, alternativa a Goodreads en español, app para leer más, reseñas de libros, club de lectura">
+    <meta name="robots" content="index, follow">
+    <meta name="author" content="Mi Rincón de Lectura">
+    <meta name="theme-color" content="#8c6f5a">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="manifest" href="/manifest.json">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mi Rincón de Lectura">
     <meta property="og:title" content="Mi Rincón de Lectura | La mejor alternativa a Goodreads en español">
-    <meta property="og:description" content="Rastreador de lectura sin anuncios. Exporta tus datos de Goodreads, usa calificaciones de media estrella y conecta con una red social de libros en español.">
+    <meta property="og:description" content="Rastreador de lectura sin anuncios. Estadísticas visuales, rachas diarias, logros y una red social de libros en español. Gratis y con modo offline.">
     <meta property="og:image" content="https://rinconlectura.es/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:url" content="https://rinconlectura.es">
+    <meta property="og:image:alt" content="Mi Rincón de Lectura: tu biblioteca personal con estadísticas, rachas y logros">
+    <meta property="og:url" content="https://rinconlectura.es/">
     <meta property="og:locale" content="es_ES">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Mi Rincón de Lectura | La mejor alternativa a Goodreads en español">
-    <meta name="twitter:description" content="Rastreador de lectura sin anuncios. Exporta tus datos de Goodreads, usa calificaciones de media estrella y conecta con una red social de libros en español.">
+    <meta name="twitter:description" content="Rastreador de lectura sin anuncios. Estadísticas visuales, rachas diarias, logros y una red social de libros en español. Gratis y con modo offline.">
     <meta name="twitter:image" content="https://rinconlectura.es/og-image.png">
+    <meta name="twitter:image:alt" content="Mi Rincón de Lectura: tu biblioteca personal con estadísticas, rachas y logros">
+
+    <!-- Datos estructurados (Schema.org) para resultados enriquecidos de Google -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "@id": "https://rinconlectura.es/#website",
+          "url": "https://rinconlectura.es/",
+          "name": "Mi Rincón de Lectura",
+          "description": "Rastreador de lectura en español: estadísticas, rachas diarias, logros y amigos lectores.",
+          "inLanguage": "es"
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://rinconlectura.es/#app",
+          "name": "Mi Rincón de Lectura",
+          "url": "https://rinconlectura.es/",
+          "description": "Aplicación web gratuita para registrar tus lecturas: organiza tu biblioteca, sigue tu progreso página a página, mantén rachas diarias, desbloquea logros y comparte reseñas con amigos. Funciona offline y no tiene anuncios.",
+          "applicationCategory": "LifestyleApplication",
+          "applicationSubCategory": "Seguimiento de lectura",
+          "operatingSystem": "Web, Android, iOS",
+          "browserRequirements": "Requiere un navegador moderno con JavaScript",
+          "inLanguage": "es",
+          "image": "https://rinconlectura.es/og-image.png",
+          "screenshot": "https://rinconlectura.es/og-image.png",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR"
+          },
+          "featureList": [
+            "Estadísticas visuales de lectura",
+            "Rachas y logros diarios",
+            "Biblioteca personal por secciones",
+            "Club de lectura con comentarios anti-spoiler",
+            "Mensajes directos entre amigos",
+            "Modo offline total (PWA)"
+          ]
+        }
+      ]
+    }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     
-    <style>
-        /* Banner informativo superior */
-        .demo-alert {
-            background-color: var(--accent-color-interactive);
-            color: white;
-            text-align: center;
-            padding: 0.5rem;
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 2000;
-        }
-        .demo-alert a { color: white; text-decoration: underline; margin-left: 10px; }
-        .site-header { top: 35px; } /* Ajuste por el banner */
-    </style>
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
 <script>
@@ -53,14 +91,84 @@
 </head>
 <body> 
 
-    <div class="demo-alert">
-        🚀 Modo Demo: Los cambios no se guardarán al cerrar la pestaña. Al iniciar sesión se desbloquea la opción de añadir amigos, ver su biblioteca y más funciones...
-        <a href="register.html">¡Crea tu cuenta real aquí!</a>
+    <!-- ==================== LANDING: NAV FIJA ==================== -->
+    <nav class="landing-nav" id="landing-nav" aria-label="Navegación principal">
+        <a href="#" class="nav-brand">📚 Mi Rincón de Lectura</a>
+        <div class="nav-actions">
+            <a href="login.html" class="nav-btn nav-btn-ghost" aria-label="Iniciar Sesión">
+                <span class="nav-btn-icon" aria-hidden="true">👤</span><span class="nav-btn-text">Iniciar Sesión</span>
+            </a>
+            <a href="register.html" class="nav-btn nav-btn-primary">Crear Cuenta</a>
+        </div>
+    </nav>
+
+    <!-- ==================== LANDING: HERO ==================== -->
+    <section class="landing-hero">
+        <p class="hero-eyebrow">📚 Tu biblioteca personal, sin anuncios y en español</p>
+        <h1 class="hero-title">Convierte la lectura en tu mejor hábito.</h1>
+        <p class="hero-sub">Tus libros, tus estadísticas, tus reglas. Registra lo que lees, mantén tu racha encendida y comparte tus reseñas con el mundo.</p>
+        <div class="hero-ctas">
+            <a href="register.html" class="cta-btn cta-primary">Crear Cuenta Gratis</a>
+            <a href="#demo" class="cta-btn cta-secondary">Probar Demo Interactiva</a>
+        </div>
+    </section>
+
+    <!-- ==================== LANDING: BENEFICIOS ==================== -->
+    <section class="landing-features">
+        <h2 class="landing-section-title">Todo lo que necesitas para leer más</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Estadísticas visuales de tu progreso</h3>
+                <p>Gráficos claros de tus páginas, géneros y libros terminados. Mira cuánto has crecido como lector de un vistazo.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔥</div>
+                <h3>Rachas y logros diarios</h3>
+                <p>Cada día que lees, tu racha crece. Desbloquea medallas, supera tus objetivos y deja que la constancia haga el resto.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Conecta con amigos</h3>
+                <p>Añade a tus amigos, cotillea sus bibliotecas y compite en el ranking de páginas leídas. Leer acompañado motiva el doble.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✈️</div>
+                <h3>Modo Offline total</h3>
+                <p>Lee en el metro o en modo avión: tu biblioteca funciona sin conexión y se sincroniza sola cuando vuelves a tener internet.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== LANDING: COMPARTE TUS RESEÑAS ==================== -->
+    <section class="landing-social">
+        <div class="social-text">
+            <h2 class="landing-section-title">Comparte tus reseñas en segundos</h2>
+            <p class="social-sub">Exporta tarjetas perfectas para tus Stories de Instagram o TikTok con un solo clic.</p>
+            <a href="register.html" class="cta-btn cta-primary">Empezar a leer ahora</a>
+        </div>
+        <div class="story-card-mock" aria-hidden="true">
+            <div class="ec-cover-wrap"><img src="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg" alt="" class="ec-cover"></div>
+            <div class="ec-content">
+                <div class="ec-stars">★★★★★</div>
+                <p class="ec-title">Cien Años de Soledad</p>
+                <p class="ec-author">Gabriel García Márquez</p>
+                <div class="ec-divider"></div>
+                <p class="ec-notes">Obra maestra absoluta. Macondo y los Buendía se quedan contigo para siempre.</p>
+            </div>
+            <div class="ec-footer">📚 Mi Rincón de Lectura</div>
+        </div>
+    </section>
+
+    <!-- ==================== DEMO INTERACTIVA ==================== -->
+    <div class="demo-banner" id="demo">
+        🚀 Esto de aquí abajo es la demo: tócalo todo, añade libros, suma páginas... Los cambios no se guardan al cerrar la pestaña.
+        <a href="register.html">Crea tu cuenta para guardarlo todo</a>
     </div>
 
     <header class="site-header">
         <div class="header-main">
-            <h1 id="site-title">Mi Rincón de Lectura</h1>
+            <h2 id="site-title">Mi Rincón de Lectura</h2>
             <div class="header-controls">
                 <button id="add-book-btn" type="button">Añadir Libro</button>
                 <button id="toggle-view" type="button" title="Cambiar vista">☰</button>
@@ -207,7 +315,7 @@
     <div class="ec-cover-wrap"><img id="export-cover" src="" alt="" class="ec-cover"></div>
     <div class="ec-content">
         <div id="export-stars" class="ec-stars"></div>
-        <h2 id="export-title" class="ec-title"></h2>
+        <p id="export-title" class="ec-title"></p>
         <p id="export-author" class="ec-author"></p>
         <div class="ec-divider"></div>
         <p id="export-notes" class="ec-notes"></p>
@@ -218,6 +326,18 @@
     <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a></p>
 </footer>
 
+<script>
+    // Sombra/fondo de la nav fija al hacer scroll
+    (function () {
+        var lnav = document.getElementById('landing-nav');
+        if (!lnav) return;
+        var onScroll = function () {
+            lnav.classList.toggle('nav-scrolled', window.scrollY > 8);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    })();
+</script>
 <script type="module" src="auth.js"></script>
 <script type="module" src="script-demo.js"></script>
 <script type="module" src="./config.js"></script>

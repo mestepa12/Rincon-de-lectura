@@ -1,7 +1,8 @@
 {
   "name": "Mi Rincón de Lectura",
   "short_name": "Lecturas",
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F5EFE6",
   "theme_color": "#9A3B3B",

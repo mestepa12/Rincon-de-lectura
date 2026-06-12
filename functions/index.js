@@ -1,5 +1,8 @@
 const {setGlobalOptions} = require("firebase-functions");
-const {onDocumentUpdated} = require("firebase-functions/v2/firestore");
+const {
+  onDocumentUpdated,
+  onDocumentCreated,
+} = require("firebase-functions/v2/firestore");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const {initializeApp} = require("firebase-admin/app");
@@ -27,19 +30,42 @@ function timestampToIso(ts) {
 }
 
 /**
+ * Coerción defensiva: devuelve el valor solo si es un número finito.
+ * @param {*} v Valor de origen (no confiable: lo escribe el cliente).
+ * @return {number} El número, o 0 si no es válido.
+ */
+function asNumber(v) {
+  return (typeof v === "number" && isFinite(v)) ? v : 0;
+}
+
+/**
+ * Coerción defensiva: devuelve el valor solo si es string (recortado).
+ * @param {*} v Valor de origen (no confiable: lo escribe el cliente).
+ * @param {number} maxLen Longitud máxima permitida.
+ * @return {string|null} El string acotado, o null si no es válido.
+ */
+function asString(v, maxLen = 100) {
+  return typeof v === "string" ? v.slice(0, maxLen) : null;
+}
+
+/**
  * Devuelve los tokens FCM registrados en un documento de usuario.
  * Acepta tanto el array `fcmTokens` como el campo simple `fcmToken`.
+ * Valida tipo y longitud de cada token y acota a 500 (límite multicast).
  * @param {object} userData Datos del documento del usuario.
  * @return {string[]} Lista de tokens (puede estar vacía).
  */
 function getUserTokens(userData) {
+  if (!userData || typeof userData !== "object") return [];
+  let tokens = [];
   if (Array.isArray(userData.fcmTokens)) {
-    return userData.fcmTokens.filter(Boolean);
+    tokens = userData.fcmTokens;
+  } else if (userData.fcmToken) {
+    tokens = [userData.fcmToken];
   }
-  if (typeof userData.fcmToken === "string" && userData.fcmToken) {
-    return [userData.fcmToken];
-  }
-  return [];
+  return tokens
+      .filter((t) => typeof t === "string" && t.length > 0 && t.length < 4096)
+      .slice(0, 500);
 }
 
 /**
@@ -54,12 +80,18 @@ function getUserTokens(userData) {
 async function sendPushToUser(uid, tokens, title, body) {
   if (tokens.length === 0) return;
 
+  // Payload híbrido: `notification` es imprescindible para iOS (Safari no
+  // entrega push solo-data a PWAs); el SDK del SW lo auto-muestra. `data`
+  // lleva la URL para el click. El SW NO debe llamar a showNotification
+  // cuando hay payload `notification` (duplicaría en escritorio).
   const response = await messaging.sendEachForMulticast({
     tokens,
     notification: {title, body},
+    data: {url: "/biblioteca.html"},
     webpush: {
-      notification: {icon: "/favicon.png"},
-      fcmOptions: {link: "/"},
+      headers: {Urgency: "high"},
+      notification: {icon: "/favicon.png", badge: "/favicon.png"},
+      fcmOptions: {link: "/biblioteca.html"},
     },
   });
 
@@ -94,18 +126,20 @@ async function sendPushToUser(uid, tokens, title, body) {
  * `streak` por compatibilidad.
  */
 exports.onStreakLost = onDocumentUpdated("users/{uid}", (event) => {
-  const before = event.data.before.data();
-  const after = event.data.after.data();
+  // Payload defensivo: en borrados/estados raros los snapshots pueden faltar
+  if (!event.data || !event.data.before || !event.data.after) return null;
+  const before = event.data.before.data() || {};
+  const after = event.data.after.data() || {};
 
-  const previousStreak = before.streak ?? before.rachaActual ?? 0;
-  const currentStreak = after.streak ?? after.rachaActual ?? 0;
+  const previousStreak = asNumber(before.streak ?? before.rachaActual);
+  const currentStreak = asNumber(after.streak ?? after.rachaActual);
 
   if (previousStreak > 0 && currentStreak === 0) {
     const lastRead = before.lastReadTimestamp ?? before.ultimaFechaLectura;
 
     logger.info("Racha finalizada", {
       uid: event.params.uid,
-      username: after.username || null,
+      username: asString(after.username),
       previousStreak: previousStreak,
       lastReadDate: timestampToIso(lastRead),
       streakLostDate: event.time,
@@ -122,16 +156,19 @@ exports.onStreakLost = onDocumentUpdated("users/{uid}", (event) => {
  * comparando `paginasLeidasHoy` antes y después de la actualización.
  */
 exports.onReadingGoalMet = onDocumentUpdated("users/{uid}", async (event) => {
-  const before = event.data.before.data();
-  const after = event.data.after.data();
+  // Payload defensivo: snapshots y tipos no son de fiar (cliente)
+  if (!event.data || !event.data.before || !event.data.after) return null;
+  const before = event.data.before.data() || {};
+  const after = event.data.after.data() || {};
 
-  const objetivo = after.objetivoPaginasDiarias || 0;
+  const objetivo = asNumber(after.objetivoPaginasDiarias);
   if (objetivo <= 0) return null;
 
   // Si el día cambió entre escrituras, el contador anterior no cuenta.
-  const sameDay = before.fechaDia === after.fechaDia;
-  const beforePages = sameDay ? (before.paginasLeidasHoy || 0) : 0;
-  const afterPages = after.paginasLeidasHoy || 0;
+  const sameDay = typeof after.fechaDia === "string" &&
+      before.fechaDia === after.fechaDia;
+  const beforePages = sameDay ? asNumber(before.paginasLeidasHoy) : 0;
+  const afterPages = asNumber(after.paginasLeidasHoy);
 
   const justMet = beforePages < objetivo && afterPages >= objetivo;
   if (!justMet) return null;
@@ -150,7 +187,7 @@ exports.onReadingGoalMet = onDocumentUpdated("users/{uid}", async (event) => {
 
   logger.info("Notificación de objetivo cumplido enviada", {
     uid,
-    username: after.username || null,
+    username: asString(after.username),
     objetivo,
     paginasLeidasHoy: afterPages,
   });
@@ -181,26 +218,36 @@ exports.checkStreakAtRisk = onSchedule(
 
       let notified = 0;
       const sends = snapshot.docs.map(async (docSnap) => {
-        const userData = docSnap.data();
-        const lastRead =
-            userData.lastReadTimestamp ?? userData.ultimaFechaLectura;
-        const lastReadDay = timestampToIso(lastRead)?.split("T")[0];
+        // try/catch por usuario: un documento malformado no debe abortar
+        // el aviso al resto de usuarios.
+        try {
+          const userData = docSnap.data() || {};
+          const lastRead =
+              userData.lastReadTimestamp ?? userData.ultimaFechaLectura;
+          const lastReadDay = timestampToIso(lastRead)?.split("T")[0];
 
-        // Ya ha leído hoy: racha a salvo.
-        if (lastReadDay === todayUtc) return;
+          // Ya ha leído hoy: racha a salvo.
+          if (lastReadDay === todayUtc) return;
 
-        const tokens = getUserTokens(userData);
-        if (tokens.length === 0) return;
+          const tokens = getUserTokens(userData);
+          if (tokens.length === 0) return;
 
-        await sendPushToUser(
-            docSnap.id,
-            tokens,
-            "🔥 ¡Cuidado! Tu racha está en peligro",
-            `Llevas ${userData.rachaActual} días seguidos leyendo y hoy ` +
-            "todavía no has leído. ¡Unas páginas antes de dormir y " +
-            "racha salvada!",
-        );
-        notified++;
+          const racha = asNumber(userData.rachaActual);
+          await sendPushToUser(
+              docSnap.id,
+              tokens,
+              "🔥 ¡Cuidado! Tu racha está en peligro",
+              `Llevas ${racha} días seguidos leyendo y hoy ` +
+              "todavía no has leído. ¡Unas páginas antes de dormir y " +
+              "racha salvada!",
+          );
+          notified++;
+        } catch (error) {
+          logger.error("Error procesando usuario en checkStreakAtRisk", {
+            uid: docSnap.id,
+            error: error.message,
+          });
+        }
       });
 
       await Promise.all(sends);
@@ -208,5 +255,236 @@ exports.checkStreakAtRisk = onSchedule(
         usuariosConRacha: snapshot.size,
         notificados: notified,
       });
+    },
+);
+
+/**
+ * Felicita por push al dueño cuando termina un libro (la sección del
+ * libro pasa a 'libros-terminados'). Le anima a valorarlo.
+ */
+exports.onBookFinished = onDocumentUpdated("books/{bookId}", async (event) => {
+  if (!event.data || !event.data.before || !event.data.after) return null;
+  const before = event.data.before.data() || {};
+  const after = event.data.after.data() || {};
+
+  const justFinished = before.section !== "libros-terminados" &&
+      after.section === "libros-terminados";
+  if (!justFinished) return null;
+
+  const uid = asString(after.userId, 128);
+  if (!uid) return null;
+
+  const userSnap = await db.collection("users").doc(uid).get();
+  if (!userSnap.exists) return null;
+  const tokens = getUserTokens(userSnap.data() || {});
+  if (tokens.length === 0) return null;
+
+  const title = asString(after.title, 80) || "tu libro";
+  await sendPushToUser(
+      uid,
+      tokens,
+      "🎉 ¡Libro terminado!",
+      `Has acabado "${title}". Págino está dando saltos de alegría. ` +
+      "Entra y ponle nota mientras lo tienes fresco.",
+  );
+
+  logger.info("Notificación de libro terminado enviada", {uid});
+  return null;
+});
+
+/**
+ * Notifica por push cuando llega una solicitud de amistad nueva.
+ * Trigger: creación en users/{uid}/friend_requests/{requesterId}.
+ */
+exports.onFriendRequestCreated = onDocumentCreated(
+    "users/{uid}/friend_requests/{requesterId}",
+    async (event) => {
+      if (!event.data) return null;
+      const req = event.data.data() || {};
+      const uid = event.params.uid;
+      if (uid === event.params.requesterId) return null;
+
+      const userSnap = await db.collection("users").doc(uid).get();
+      if (!userSnap.exists) return null;
+      const tokens = getUserTokens(userSnap.data() || {});
+      if (tokens.length === 0) return null;
+
+      const fromName = asString(req.fromUsername, 30) || "Alguien";
+      await sendPushToUser(
+          uid,
+          tokens,
+          "🤝 Nueva solicitud de amistad",
+          `@${fromName} quiere ser tu amigo. ¡Échale un ojo a su biblioteca!`,
+      );
+
+      logger.info("Notificación de solicitud de amistad enviada", {uid});
+      return null;
+    },
+);
+
+/**
+ * Coerción defensiva: devuelve el valor solo si es un objeto/mapa.
+ * @param {*} v Valor de origen (no confiable: lo escribe el cliente).
+ * @return {object} El objeto, o {} si no es válido.
+ */
+function asMap(v) {
+  return (v && typeof v === "object" && !Array.isArray(v)) ? v : {};
+}
+
+/**
+ * Devuelve los tokens FCM de un usuario leyendo su documento.
+ * @param {string} uid UID del usuario.
+ * @return {Promise<string[]>} Tokens (vacío si no hay usuario/tokens).
+ */
+async function fetchTokens(uid) {
+  if (!uid) return [];
+  const snap = await db.collection("users").doc(uid).get();
+  if (!snap.exists) return [];
+  return getUserTokens(snap.data() || {});
+}
+
+/**
+ * Notifica al amigo invitado cuando alguien crea una lectura compartida
+ * ("Leemos Juntos"). Trigger: creación en /buddy_reads.
+ */
+exports.onBuddyReadCreated = onDocumentCreated(
+    "buddy_reads/{buddyId}",
+    async (event) => {
+      if (!event.data) return null;
+      const br = event.data.data() || {};
+      const participants = Array.isArray(br.participants) ?
+          br.participants : [];
+      const creator = asString(br.createdBy, 128);
+      const invited = participants.find((p) => p !== creator);
+      if (!creator || !invited) return null;
+
+      const tokens = await fetchTokens(invited);
+      if (tokens.length === 0) return null;
+
+      const usernames = asMap(br.usernames);
+      const creatorName = asString(usernames[creator], 30) || "un amigo";
+      const title = asString(br.title, 80) || "un libro";
+
+      await sendPushToUser(
+          invited,
+          tokens,
+          "🤝 ¡Reto de lectura!",
+          `@${creatorName} te propone leer "${title}" a la vez. ` +
+          "Veréis el progreso del otro. ¿Aceptas?",
+      );
+
+      logger.info("Notificación de lectura compartida enviada", {invited});
+      return null;
+    },
+);
+
+/**
+ * Avisa por push en las lecturas compartidas cuando tu compañero te
+ * adelanta o termina el libro. Solo notifica transiciones (no cada
+ * actualización) para no hacer spam.
+ */
+exports.onBuddyReadUpdated = onDocumentUpdated(
+    "buddy_reads/{buddyId}",
+    async (event) => {
+      if (!event.data || !event.data.before || !event.data.after) return null;
+      const before = event.data.before.data() || {};
+      const after = event.data.after.data() || {};
+
+      const participants = Array.isArray(after.participants) ?
+          after.participants : [];
+      if (participants.length !== 2) return null;
+      const usernames = asMap(after.usernames);
+      const progBefore = asMap(before.progress);
+      const progAfter = asMap(after.progress);
+      const finBefore = asMap(before.finished);
+      const finAfter = asMap(after.finished);
+      const title = asString(after.title, 80) || "vuestro libro";
+
+      const sends = [];
+      for (const p of participants) {
+        const other = participants.find((x) => x !== p);
+        if (!other) continue;
+        const pName = asString(usernames[p], 30) || "Tu compañero";
+
+        const justFinished = !finBefore[p] && finAfter[p] === true;
+        const overtook = !justFinished && !finAfter[p] &&
+            asNumber(progBefore[p]) <= asNumber(progBefore[other]) &&
+            asNumber(progAfter[p]) > asNumber(progAfter[other]);
+
+        // El otro ya terminó: no hay carrera que avisar
+        if (finAfter[other] === true) continue;
+
+        if (justFinished) {
+          sends.push((async () => {
+            const tokens = await fetchTokens(other);
+            if (tokens.length === 0) return;
+            await sendPushToUser(
+                other,
+                tokens,
+                `🏁 @${pName} ha terminado "${title}"`,
+                "¡No te quedes atrás! Unas páginas hoy y cruzas " +
+                "tú también la meta.",
+            );
+          })());
+        } else if (overtook) {
+          sends.push((async () => {
+            const tokens = await fetchTokens(other);
+            if (tokens.length === 0) return;
+            await sendPushToUser(
+                other,
+                tokens,
+                `👀 @${pName} te ha adelantado`,
+                `Va por la página ${asNumber(progAfter[p])} de "${title}". ` +
+                "¿Unas paginitas para recuperar el liderato?",
+            );
+          })());
+        }
+      }
+
+      await Promise.all(sends);
+      return null;
+    },
+);
+
+/**
+ * Notifica por push al receptor cuando llega un mensaje nuevo de chat.
+ * Trigger: creación de documentos en chats/{chatId}/messages.
+ * Los tokens inválidos del receptor se eliminan automáticamente
+ * (lo hace sendPushToUser).
+ */
+exports.onNewChatMessage = onDocumentCreated(
+    "chats/{chatId}/messages/{messageId}",
+    async (event) => {
+      if (!event.data) return null;
+      const msg = event.data.data() || {};
+
+      const to = asString(msg.to, 128);
+      const from = asString(msg.from, 128);
+      if (!to || !from || to === from) return null;
+
+      const [toSnap, fromSnap] = await Promise.all([
+        db.collection("users").doc(to).get(),
+        db.collection("users").doc(from).get(),
+      ]);
+      if (!toSnap.exists) return null;
+
+      const tokens = getUserTokens(toSnap.data() || {});
+      if (tokens.length === 0) return null;
+
+      const senderName =
+          asString((fromSnap.data() || {}).username, 30) || "un amigo";
+      const body = msg.type === "book" ?
+          "Te ha enviado un libro 📖" :
+          (asString(msg.text, 120) || "Nuevo mensaje");
+
+      await sendPushToUser(
+          to,
+          tokens,
+          `💬 Nuevo mensaje de @${senderName}`,
+          body,
+      );
+
+      logger.info("Notificación de chat enviada", {to, from});
+      return null;
     },
 );

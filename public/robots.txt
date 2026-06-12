@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Páginas privadas o sin valor SEO: requieren sesión o son utilidades
+Disallow: /biblioteca
+Disallow: /biblioteca.html
+Disallow: /404
+Disallow: /404.html
+
+Sitemap: https://rinconlectura.es/sitemap.xml

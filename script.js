@@ -71,38 +71,61 @@ document.addEventListener('DOMContentLoaded', () => {
             'libros-abandonados': 'Libros Abandonados'
         };
 
+        // isSecret: true  → si está bloqueado, el requisito se oculta ("???")
+        // isSecret: false → el requisito es visible aunque esté bloqueado,
+        //                   para que el usuario sepa qué meta perseguir.
         const LOGROS = [
             // — Biblioteca —
-            { id: 'primer_libro',           icono: '📖', nombre: 'Rompehielos',        descripcion: 'Añade tu primer libro.' },
-            { id: 'cinco_libros',           icono: '📚', nombre: 'Coleccionista',       descripcion: 'Acumula 5 libros.' },
-            { id: 'diez_libros',            icono: '🗂️',  nombre: 'Bibliófilo',          descripcion: 'Acumula 10 libros.' },
-            { id: 'veinticinco_libros',     icono: '🏛️',  nombre: 'Gran Biblioteca',    descripcion: 'Acumula 25 libros.' },
-            { id: 'cincuenta_libros',       icono: '🌐',  nombre: 'Archivo Personal',   descripcion: 'Acumula 50 libros.' },
+            { id: 'primer_libro',           icono: '📖', nombre: 'Rompehielos',        descripcion: 'Añade tu primer libro.', isSecret: false },
+            { id: 'cinco_libros',           icono: '📚', nombre: 'Coleccionista',       descripcion: 'Acumula 5 libros.', isSecret: false },
+            { id: 'diez_libros',            icono: '🗂️',  nombre: 'Bibliófilo',          descripcion: 'Acumula 10 libros.', isSecret: false },
+            { id: 'veinticinco_libros',     icono: '🏛️',  nombre: 'Gran Biblioteca',    descripcion: 'Acumula 25 libros.', isSecret: false },
+            { id: 'cincuenta_libros',       icono: '🌐',  nombre: 'Archivo Personal',   descripcion: 'Acumula 50 libros.', isSecret: false },
             // — Libros terminados —
-            { id: 'primer_terminado',       icono: '✅', nombre: 'Primera Victoria',   descripcion: 'Termina tu primer libro.' },
-            { id: 'cinco_terminados',       icono: '🎖️',  nombre: 'Lector Constante',  descripcion: 'Termina 5 libros.' },
-            { id: 'diez_terminados',        icono: '🏆', nombre: 'Devorador de Libros',descripcion: 'Termina 10 libros.' },
-            { id: 'veinticinco_terminados', icono: '👑', nombre: 'Gran Lector',         descripcion: 'Termina 25 libros.' },
+            { id: 'primer_terminado',       icono: '✅', nombre: 'Primera Victoria',   descripcion: 'Termina tu primer libro.', isSecret: false },
+            { id: 'cinco_terminados',       icono: '🎖️',  nombre: 'Lector Constante',  descripcion: 'Termina 5 libros.', isSecret: false },
+            { id: 'diez_terminados',        icono: '🏆', nombre: 'Devorador de Libros',descripcion: 'Termina 10 libros.', isSecret: false },
+            { id: 'veinticinco_terminados', icono: '👑', nombre: 'Gran Lector',         descripcion: 'Termina 25 libros.', isSecret: false },
             // — Páginas —
-            { id: 'maraton',                icono: '🏃', nombre: 'Maratón Lector',      descripcion: 'Lee más de 1.000 páginas en total.' },
-            { id: 'paginas_2000',           icono: '📜', nombre: 'Expedición Literaria',descripcion: 'Lee más de 2.000 páginas en total.' },
-            { id: 'paginas_5000',           icono: '🗺️',  nombre: 'Lector Épico',       descripcion: 'Lee más de 5.000 páginas en total.' },
-            { id: 'paginas_10000',          icono: '🌟', nombre: 'Leyenda Lectora',     descripcion: 'Lee más de 10.000 páginas en total.' },
-            { id: 'lector_voraz',           icono: '⚡', nombre: 'Lector Voraz',        descripcion: 'Lee más de 100 páginas en un solo día.' },
+            { id: 'maraton',                icono: '🏃', nombre: 'Maratón Lector',      descripcion: 'Lee más de 1.000 páginas en total.', isSecret: false },
+            { id: 'paginas_2000',           icono: '📜', nombre: 'Expedición Literaria',descripcion: 'Lee más de 2.000 páginas en total.', isSecret: false },
+            { id: 'paginas_5000',           icono: '🗺️',  nombre: 'Lector Épico',       descripcion: 'Lee más de 5.000 páginas en total.', isSecret: false },
+            { id: 'paginas_10000',          icono: '🌟', nombre: 'Leyenda Lectora',     descripcion: 'Lee más de 10.000 páginas en total.', isSecret: false },
+            { id: 'lector_voraz',           icono: '⚡', nombre: 'Lector Voraz',        descripcion: 'Lee más de 100 páginas en un solo día.', isSecret: true },
             // — Objetivos —
-            { id: 'objetivo_diario',        icono: '🎯', nombre: 'Meta Cumplida',       descripcion: 'Alcanza tu objetivo diario de páginas.' },
+            { id: 'objetivo_diario',        icono: '🎯', nombre: 'Meta Cumplida',       descripcion: 'Alcanza tu objetivo diario de páginas.', isSecret: false },
             // — Valoraciones —
-            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.' },
-            { id: 'critico_pro',            icono: '🎭', nombre: 'Crítico Pro',          descripcion: 'Valora 10 libros terminados.' },
-            { id: 'perfeccionista',         icono: '✨', nombre: 'Perfeccionista',       descripcion: 'Valora 3 libros con 5 estrellas.' },
+            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.', isSecret: false },
+            { id: 'critico_pro',            icono: '🎭', nombre: 'Crítico Pro',          descripcion: 'Valora 10 libros terminados.', isSecret: false },
+            { id: 'perfeccionista',         icono: '✨', nombre: 'Perfeccionista',       descripcion: 'Valora 3 libros con 5 estrellas.', isSecret: false },
             // — Notas y lista de deseos —
-            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.' },
-            { id: 'deseos_10',              icono: '💭', nombre: 'Soñador de Libros',   descripcion: 'Añade 10 libros a tu lista de deseos.' },
+            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.', isSecret: false },
+            { id: 'deseos_10',              icono: '💭', nombre: 'Soñador de Libros',   descripcion: 'Añade 10 libros a tu lista de deseos.', isSecret: false },
             // — Racha —
-            { id: 'racha_7',                icono: '🔥', nombre: 'Una Semana',           descripcion: 'Mantén una racha de 7 días.' },
-            { id: 'racha_14',               icono: '🗓️',  nombre: 'Dos Semanas',        descripcion: 'Mantén una racha de 14 días.' },
-            { id: 'racha_30',               icono: '💥', nombre: 'Imparable',            descripcion: 'Mantén una racha de 30 días.' },
-            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.' },
+            { id: 'racha_7',                icono: '🔥', nombre: 'Una Semana',           descripcion: 'Mantén una racha de 7 días.', isSecret: false },
+            { id: 'racha_14',               icono: '🗓️',  nombre: 'Dos Semanas',        descripcion: 'Mantén una racha de 14 días.', isSecret: false },
+            { id: 'racha_30',               icono: '💥', nombre: 'Imparable',            descripcion: 'Mantén una racha de 30 días.', isSecret: false },
+            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.', isSecret: false },
+            { id: 'racha_365',              icono: '🏆', nombre: 'Año Legendario',       descripcion: 'Mantén una racha de 365 días. Un año entero leyendo.', isSecret: false },
+            // — Club de Lectura —
+            { id: 'primer_comentario',      icono: '💬', nombre: 'Tertulia Iniciada',    descripcion: 'Deja tu primer comentario en el Club de Lectura.', isSecret: false },
+            { id: 'comentarista_10',        icono: '📣', nombre: 'Alma del Club',        descripcion: 'Deja 10 comentarios en el Club de Lectura.', isSecret: false },
+            // — Amigos —
+            { id: 'primer_amigo',           icono: '🤝', nombre: 'Mejor Acompañado',     descripcion: 'Añade a tu primer amigo.', isSecret: false },
+            { id: 'circulo_lector',         icono: '👥', nombre: 'Círculo Lector',       descripcion: 'Forma un círculo de 5 amigos.', isSecret: false },
+            // — Exploración —
+            { id: 'explorador_generos',     icono: '🧭', nombre: 'Explorador de Géneros',descripcion: 'Ten libros de 5 géneros distintos en tu biblioteca.', isSecret: false },
+            { id: 'autor_fiel',             icono: '🖋️',  nombre: 'Fan Incondicional',  descripcion: 'Acumula 3 libros del mismo autor.', isSecret: false },
+            { id: 'biblioteca_completa',    icono: '🗃️',  nombre: 'Orden Total',        descripcion: 'Ten al menos un libro en cada una de las 5 secciones.', isSecret: false },
+            // — Hazañas (secretas: la sorpresa es parte del premio) —
+            { id: 'mata_tochos',            icono: '🧱', nombre: 'Mata-Tochos',          descripcion: 'Termina un libro de más de 800 páginas.', isSecret: true },
+            { id: 'semana_500',             icono: '📆', nombre: 'Semana de Vicio',      descripcion: 'Lee 500 páginas en una misma semana.', isSecret: true },
+            { id: 'buho_nocturno',          icono: '🦉', nombre: 'Búho Nocturno',        descripcion: 'Registra lectura entre medianoche y las 6 de la mañana.', isSecret: true },
+            { id: 'paginas_25000',          icono: '🌌', nombre: 'Universo de Páginas',  descripcion: 'Lee más de 25.000 páginas en total.', isSecret: true },
+            // — Crítica fina (secretas) —
+            { id: 'media_estrella',         icono: '✂️',  nombre: 'Precisión Quirúrgica',descripcion: 'Valora un libro usando media estrella.', isSecret: true },
+            { id: 'sin_piedad',             icono: '🧐', nombre: 'Sin Piedad',           descripcion: 'Valora un libro con 1 estrella o menos.', isSecret: true },
+            { id: 'cazador_vibes',          icono: '🎭', nombre: 'Cazador de Vibes',     descripcion: 'Asigna ritmo narrativo o estados de ánimo a 5 libros.', isSecret: true },
         ];
 
         let booksData = [];
@@ -110,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentFriendData = null;
         let currentFriendName = '';
         let myFriendIds = new Set();
+        let myFriendsInfo = [];   // [{uid, username}] para el recomendador
         let pieChartInst = null;
         let barChartInst = null;
         let genreChartInst = null;
@@ -119,6 +143,17 @@ document.addEventListener('DOMContentLoaded', () => {
         let moodChartInst = null;
         let prevRacha = null;
         let lastUserData = null;
+
+        // — Saneamiento anti-XSS —
+        // Todo dato de usuario o de API externa que se interpole en innerHTML
+        // debe pasar por escapeHtml (texto y atributos) o safeUrl (URLs).
+        const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, ch => (
+            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+        ));
+        const safeUrl = (u) => {
+            const s = String(u ?? '').trim();
+            return /^(https?:\/\/|data:image\/)/i.test(s) ? escapeHtml(s) : '';
+        };
 
         // --- SELECTORES DOM ---
         const mainContent = document.getElementById('main-content');
@@ -147,6 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const cancelDetailModalBtn = document.getElementById('cancel-detail-modal');
         const logoutBtn = document.getElementById('logout-btn');
         const detailCoverContainer = document.getElementById('detail-cover-container');
+        const editBookModal = document.getElementById('edit-book-modal');
+        const editBookForm = document.getElementById('edit-book-form');
+        const editBookBtn = document.getElementById('edit-book-btn');
+        const cancelEditBookBtn = document.getElementById('cancel-edit-book');
         
         
         // ===============================================
@@ -228,10 +267,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemDiv.className = 'result-item';
                 // Estilo inline temporal o usar clase CSS .result-item
                 itemDiv.innerHTML = `
-                    <img src="${libro.cover || 'https://placehold.co/40x60?text=No+Img'}" alt="Portada de ${libro.title}" style="width:40px; height:60px; object-fit:cover; border-radius:3px;">
+                    <img src="${safeUrl(libro.cover) || 'https://placehold.co/40x60?text=No+Img'}" alt="Portada de ${escapeHtml(libro.title)}" style="width:40px; height:60px; object-fit:cover; border-radius:3px;">
                     <div style="margin-left: 10px;">
-                        <h4 style="margin:0; font-size:0.9rem;">${libro.title}</h4>
-                        <p style="margin:0; font-size:0.8rem; color:var(--accent-color);">${libro.author}</p>
+                        <h4 style="margin:0; font-size:0.9rem;">${escapeHtml(libro.title)}</h4>
+                        <p style="margin:0; font-size:0.8rem; color:var(--accent-color);">${escapeHtml(libro.author)}</p>
                     </div>
                 `;
                 
@@ -318,8 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const infoDiv = document.createElement('div');
             infoDiv.className = 'book-info';
             infoDiv.innerHTML = `
-                <h3>${book.title}</h3>
-                <p class="author">${book.author}</p>
+                <h3>${escapeHtml(book.title)}</h3>
+                <p class="author">${escapeHtml(book.author)}</p>
                 ${createExtraInfoHTML(book)}
             `;
 
@@ -429,6 +468,157 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDetailRatingStars(btn.parentElement, rating);
         });
 
+        // ===============================================
+        // === CLUB DE LECTURA (comentarios anti-spoiler) ===
+        // ===============================================
+
+        // Identificador universal de libro: mismo título+autor => mismo slug
+        // entre distintos usuarios (minúsculas, sin tildes, sin espacios).
+        const generateBookSlug = (title, author) => {
+            const normalize = (s) => (s || '')
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')  // quitar tildes/diacríticos
+                .replace(/[^a-z0-9]/g, '');       // quitar espacios y símbolos
+            return `${normalize(title)}-${normalize(author)}`;
+        };
+
+        let unsubscribeComments = null;
+
+        // Hasta qué página puede "ver" el usuario sin spoilers
+        const getSpoilerSafePage = (book) => {
+            if (book.section === 'libros-terminados') return Infinity;
+            return book.currentPage || 0;
+        };
+
+        const renderComment = (c, isOwn) => {
+            const bubble = document.createElement('div');
+            bubble.className = `comment-bubble${isOwn ? ' comment-own' : ''}`;
+            const meta = document.createElement('div');
+            meta.className = 'comment-meta';
+            const userSpan = document.createElement('span');
+            userSpan.className = 'comment-user';
+            userSpan.textContent = isOwn ? 'Tú' : `@${c.username || '?'}`;
+            const pageSpan = document.createElement('span');
+            pageSpan.className = 'comment-page';
+            pageSpan.textContent = `pág. ${c.page}`;
+            meta.append(userSpan, pageSpan);
+            if (isOwn && c.id) {
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'comment-delete-btn';
+                delBtn.title = 'Eliminar comentario';
+                delBtn.setAttribute('aria-label', 'Eliminar comentario');
+                delBtn.textContent = '🗑️';
+                delBtn.onclick = async () => {
+                    if (!confirm('¿Eliminar este comentario? Tus amigos dejarán de verlo.')) return;
+                    try {
+                        await deleteDoc(doc(db, 'book_comments', c.id));
+                        // El onSnapshot en tiempo real lo quita de pantalla solo
+                    } catch (error) {
+                        console.error('Error eliminando comentario:', error);
+                        alert('No se pudo eliminar el comentario.');
+                    }
+                };
+                meta.appendChild(delBtn);
+            }
+            const text = document.createElement('p');
+            text.className = 'comment-text';
+            text.textContent = c.text;
+            bubble.append(meta, text);
+            return bubble;
+        };
+
+        const setupCommentsSection = (book) => {
+            const section = document.getElementById('detail-comments-section');
+            const list = document.getElementById('comments-list');
+            const input = document.getElementById('comment-input');
+            const sendBtn = document.getElementById('send-comment-btn');
+            const pageHint = document.getElementById('comment-page-hint');
+            if (!section || !list) return;
+
+            if (unsubscribeComments) { unsubscribeComments(); unsubscribeComments = null; }
+
+            // Solo en la biblioteca propia (en la de un amigo no hay progreso propio)
+            if (viewingFriendLibrary) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+
+            const slug = generateBookSlug(book.title, book.author);
+            const safePage = getSpoilerSafePage(book);
+            const myPage = book.section === 'libros-terminados' ? (book.totalPages || 0) : (book.currentPage || 0);
+            if (pageHint) {
+                pageHint.textContent = book.section === 'libros-terminados'
+                    ? 'Libro terminado: ves todos los comentarios.'
+                    : `Comentarás en la página ${myPage}. Verás comentarios hasta la página ${safePage}.`;
+            }
+
+            list.innerHTML = '<p class="comments-empty">Cargando comentarios…</p>';
+
+            // Solo igualdad en la query (sin índice compuesto); el filtro de
+            // página y de amigos se aplica en el cliente.
+            const qComments = query(collection(db, 'book_comments'), where('bookSlug', '==', slug));
+            unsubscribeComments = onSnapshot(qComments, (snapshot) => {
+                const visibles = [];
+                snapshot.forEach(docSnap => {
+                    const c = docSnap.data();
+                    const isOwn = c.uid === user.uid;
+                    if (!isOwn && !myFriendIds.has(c.uid)) return;  // solo yo y mis amigos
+                    if ((c.page || 0) > safePage) return;           // anti-spoiler
+                    visibles.push({ ...c, id: docSnap.id, isOwn });
+                });
+                visibles.sort((a, b) => (a.page - b.page) ||
+                    ((a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0)));
+
+                list.innerHTML = '';
+                if (visibles.length === 0) {
+                    list.innerHTML = '<p class="comments-empty">Nadie ha comentado todavía en las páginas que llevas. ¡Sé el primero!</p>';
+                } else {
+                    visibles.forEach(c => list.appendChild(renderComment(c, c.isOwn)));
+                    list.scrollTop = list.scrollHeight;
+                }
+            }, (error) => {
+                console.error('Error cargando comentarios:', error);
+                list.innerHTML = '<p class="comments-empty">No se pudieron cargar los comentarios.</p>';
+            });
+
+            const sendComment = async () => {
+                const text = input.value.trim();
+                if (!text) return;
+                // Página actual real: si el usuario ha tocado el input de progreso
+                // sin guardar, usamos lo que ve en pantalla
+                let page = myPage;
+                if (book.section === 'leyendo-ahora') {
+                    const liveVal = parseInt(currentPageInput.value, 10);
+                    if (!isNaN(liveVal)) page = Math.min(liveVal, book.totalPages || liveVal);
+                }
+                sendBtn.disabled = true;
+                try {
+                    await addDoc(collection(db, 'book_comments'), {
+                        bookSlug: slug,
+                        uid: user.uid,
+                        username: lastUserData?.username || user.email?.split('@')[0] || '?',
+                        page,
+                        text,
+                        timestamp: serverTimestamp()
+                    });
+                    input.value = '';
+                    evaluarLogros();  // p. ej. "Tertulia Iniciada" / "Alma del Club"
+                } catch (error) {
+                    console.error('Error enviando comentario:', error);
+                    alert('No se pudo enviar el comentario.');
+                } finally {
+                    sendBtn.disabled = false;
+                }
+            };
+            sendBtn.onclick = sendComment;
+            input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); sendComment(); } };
+        };
+
+        // Al cerrar el modal (por cualquier vía), soltar el listener de comentarios
+        bookDetailModal.addEventListener('close', () => {
+            if (unsubscribeComments) { unsubscribeComments(); unsubscribeComments = null; }
+        });
+
         const openDetailModal = (bookId) => {
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
@@ -499,10 +689,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (viewingFriendLibrary) {
                 // MODO SOLO LECTURA (AMIGO)
-                
+
                 // 1. Ocultar botones de acción destructiva
                 deleteBookModalBtn.style.display = 'none';
                 saveDetailsBtn.style.display = 'none';
+                if (editBookBtn) editBookBtn.style.display = 'none';
                 
                 // 2. Desactivar inputs para que no parezca que se pueden editar
                 detailNotes.disabled = true;
@@ -517,6 +708,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 1. Mostrar botones
                 deleteBookModalBtn.style.display = 'block';
                 saveDetailsBtn.style.display = 'block';
+                if (editBookBtn) editBookBtn.style.display = '';
                 
                 // 2. Reactivar inputs
                 detailNotes.disabled = false;
@@ -526,8 +718,88 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('#detail-ritmo-options input, #detail-mood-options input').forEach(i => { i.disabled = false; });
             }
 
+            // Club de Lectura: comentarios anti-spoiler de amigos
+            setupCommentsSection(book);
+
+            // Sesiones de lectura: cronómetro y predicción de fin
+            refreshSessionUI(book);
+
+            // Leemos Juntos: progreso compartido con un amigo
+            renderBuddySection(book);
+
             bookDetailModal.showModal();
         };
+
+        // ===============================================
+        // === EDICIÓN DE DETALLES DEL LIBRO =============
+        // (título, autor, portada y total de páginas)
+        // ===============================================
+
+        const openEditModal = () => {
+            const bookId = bookDetailModal.dataset.bookId;
+            const book = booksData.find(b => b.id === bookId);
+            if (!book || viewingFriendLibrary) return;
+
+            editBookModal.dataset.bookId = book.id;
+            document.getElementById('edit-title').value = book.title || '';
+            document.getElementById('edit-author').value = book.author || '';
+            document.getElementById('edit-cover').value = book.cover || '';
+            document.getElementById('edit-total-pages').value = book.totalPages || '';
+            editBookModal.showModal();
+        };
+
+        if (editBookBtn) editBookBtn.addEventListener('click', openEditModal);
+        if (cancelEditBookBtn) cancelEditBookBtn.addEventListener('click', () => editBookModal.close());
+
+        const handleEditBookSubmit = async (e) => {
+            e.preventDefault();
+            const bookId = editBookModal.dataset.bookId;
+            const book = booksData.find(b => b.id === bookId);
+            if (!book) return;
+
+            const title = document.getElementById('edit-title').value.trim();
+            const author = document.getElementById('edit-author').value.trim();
+            const cover = document.getElementById('edit-cover').value.trim();
+            let totalPages = parseInt(document.getElementById('edit-total-pages').value, 10);
+            if (isNaN(totalPages) || totalPages < 0) totalPages = 0;
+
+            if (!title) return; // el required del form ya lo impide, doble seguro
+
+            const updatedData = { title, author, cover, totalPages };
+            // Si el total baja, el progreso no puede superar el nuevo total
+            if (totalPages > 0 && (book.currentPage || 0) > totalPages) {
+                updatedData.currentPage = totalPages;
+            }
+
+            const submitBtn = editBookForm.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            try {
+                await updateDoc(doc(db, 'books', bookId), updatedData);
+
+                // Refresco inmediato del DOM (onSnapshot lo confirmará después)
+                Object.assign(book, updatedData);
+                renderBooks();
+                detailTitle.textContent = book.title;
+                detailAuthor.textContent = book.author;
+                detailCover.src = book.cover || '';
+                detailCover.alt = `Portada de ${book.title}`;
+                if (book.section === 'leyendo-ahora') {
+                    currentPageInput.value = book.currentPage || 0;
+                    currentPageInput.max = book.totalPages || 0;
+                    totalPagesDisplay.textContent = `/ ${book.totalPages || 0} páginas`;
+                    updateProgressVisuals(book.currentPage || 0, book.totalPages || 0);
+                }
+
+                editBookModal.close();
+            } catch (error) {
+                console.error('Error al editar el libro:', error);
+                alert('No se pudieron guardar los cambios.');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        };
+
+        if (editBookForm) editBookForm.addEventListener('submit', handleEditBookSubmit);
 
 
         // ===============================================
@@ -655,9 +927,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     userItem.innerHTML = `
                         <div style="display:flex; align-items:center; gap:10px;">
                             <div class="user-avatar-placeholder" style="width:30px; height:30px; font-size:0.8rem;">👤</div>
-                            <span style="font-weight:bold;">@${userData.username}</span>
+                            <span style="font-weight:bold;">@${escapeHtml(userData.username)}</span>
                         </div>
-                        <button class="btn-add-friend" data-uid="${userData.uid}" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">Añadir</button>
+                        <button class="btn-add-friend" data-uid="${escapeHtml(userData.uid)}" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">Añadir</button>
                     `;
                     
                     const addBtn = userItem.querySelector('.btn-add-friend');
@@ -723,7 +995,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         
                         div.innerHTML = `
                             <div style="font-size:0.9rem;">
-                                <span>@${req.fromUsername}</span>
+                                <span>@${escapeHtml(req.fromUsername)}</span>
                                 <div style="font-size:0.7rem; color:grey;">quiere ser tu amigo</div>
                             </div>
                             <div style="display:flex; gap:5px;">
@@ -875,6 +1147,184 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // ===============================================
+        // === CHAT EN TIEMPO REAL ENTRE AMIGOS ==========
+        // ===============================================
+        const chatModal = document.getElementById('chat-modal');
+        const chatMessagesEl = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const chatSendBtn = document.getElementById('chat-send-btn');
+        const chatShareBookBtn = document.getElementById('chat-share-book-btn');
+        const chatBookPicker = document.getElementById('chat-book-picker');
+        const chatBookSelect = document.getElementById('chat-book-select');
+        const chatBookSendBtn = document.getElementById('chat-book-send-btn');
+
+        let unsubscribeChat = null;
+        let currentChatFriend = null;
+
+        // ID determinista: ambos participantes calculan el mismo chat
+        const getChatId = (uidA, uidB) => [uidA, uidB].sort().join('_');
+
+        const renderChatMessage = (m) => {
+            const own = m.from === user.uid;
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble${own ? ' chat-own' : ''}`;
+
+            if (m.type === 'book' && m.book && typeof m.book === 'object') {
+                // Mensaje especial: minitarjeta de libro
+                const label = document.createElement('p');
+                label.className = 'chat-book-label';
+                label.textContent = own ? '📖 Has compartido un libro' : '📖 Te ha enviado un libro';
+                const card = document.createElement('div');
+                card.className = 'chat-book-card';
+                const img = document.createElement('img');
+                const coverOk = typeof m.book.cover === 'string' && /^https?:\/\//i.test(m.book.cover);
+                img.src = coverOk ? m.book.cover : COVER_PLACEHOLDER;
+                img.onerror = () => { img.onerror = null; img.src = COVER_PLACEHOLDER; };
+                img.alt = '';
+                const info = document.createElement('div');
+                info.className = 'chat-book-info';
+                const t = document.createElement('strong');
+                t.textContent = m.book.title || 'Libro';
+                const a = document.createElement('span');
+                a.textContent = m.book.author || '';
+                info.append(t, a);
+                if (m.book.totalPages) {
+                    const pg = document.createElement('small');
+                    pg.textContent = `${m.book.totalPages} págs.`;
+                    info.appendChild(pg);
+                }
+                card.append(img, info);
+                bubble.append(label, card);
+            } else {
+                const p = document.createElement('p');
+                p.className = 'chat-text';
+                p.textContent = m.text || '';
+                bubble.appendChild(p);
+            }
+
+            const time = document.createElement('span');
+            time.className = 'chat-time';
+            const d = m.timestamp?.toDate?.();
+            time.textContent = d ? d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' }) : '';
+            bubble.appendChild(time);
+            return bubble;
+        };
+
+        const openChat = async (friendUid, friendUsername) => {
+            currentChatFriend = { uid: friendUid, username: friendUsername };
+            document.getElementById('chat-title').textContent = `💬 @${friendUsername}`;
+            chatMessagesEl.innerHTML = '<p class="comments-empty">Cargando…</p>';
+            chatBookPicker.style.display = 'none';
+
+            const chatId = getChatId(user.uid, friendUid);
+            try {
+                // Doc padre con los participantes (las reglas exigen coherencia con el ID)
+                await setDoc(doc(db, 'chats', chatId), {
+                    participants: [user.uid, friendUid].sort()
+                }, { merge: true });
+            } catch (e) {
+                console.error('Error inicializando chat:', e);
+            }
+
+            if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
+            const qMsgs = query(
+                collection(db, 'chats', chatId, 'messages'),
+                orderBy('timestamp', 'asc'),
+                limit(200)
+            );
+            unsubscribeChat = onSnapshot(qMsgs, (snap) => {
+                chatMessagesEl.innerHTML = '';
+                if (snap.empty) {
+                    chatMessagesEl.innerHTML = '<p class="comments-empty">Aún no hay mensajes. ¡Di hola! 👋</p>';
+                    return;
+                }
+                snap.forEach(d => chatMessagesEl.appendChild(renderChatMessage(d.data())));
+                chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+            }, (error) => {
+                console.error('Error cargando chat:', error);
+                chatMessagesEl.innerHTML = '<p class="comments-empty">No se pudo cargar el chat.</p>';
+            });
+
+            toggleSidebar(false);
+            chatModal.showModal();
+            chatInput.focus();
+        };
+
+        const sendChatPayload = async (payload) => {
+            if (!currentChatFriend) return;
+            const chatId = getChatId(user.uid, currentChatFriend.uid);
+            await addDoc(collection(db, 'chats', chatId, 'messages'), {
+                from: user.uid,
+                to: currentChatFriend.uid,
+                timestamp: serverTimestamp(),
+                ...payload
+            });
+        };
+
+        const sendChatText = async () => {
+            const text = chatInput.value.trim();
+            if (!text) return;
+            chatSendBtn.disabled = true;
+            try {
+                await sendChatPayload({ type: 'text', text });
+                chatInput.value = '';
+            } catch (error) {
+                console.error('Error enviando mensaje:', error);
+                alert('No se pudo enviar el mensaje.');
+            } finally {
+                chatSendBtn.disabled = false;
+                chatInput.focus();
+            }
+        };
+
+        const sendChatBook = async () => {
+            const book = booksData.find(b => b.id === chatBookSelect.value);
+            if (!book) return;
+            chatBookSendBtn.disabled = true;
+            try {
+                await sendChatPayload({
+                    type: 'book',
+                    book: {
+                        title: (book.title || '').slice(0, 300),
+                        author: (book.author || '').slice(0, 200),
+                        cover: (book.cover || '').slice(0, 1000),
+                        totalPages: book.totalPages || 0
+                    }
+                });
+                chatBookPicker.style.display = 'none';
+            } catch (error) {
+                console.error('Error compartiendo libro:', error);
+                alert('No se pudo compartir el libro.');
+            } finally {
+                chatBookSendBtn.disabled = false;
+            }
+        };
+
+        chatSendBtn.addEventListener('click', sendChatText);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); sendChatText(); }
+        });
+        chatShareBookBtn.addEventListener('click', () => {
+            const visible = chatBookPicker.style.display !== 'none';
+            if (visible) { chatBookPicker.style.display = 'none'; return; }
+            chatBookSelect.innerHTML = '';
+            booksData.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = `${b.title} — ${b.author}`;
+                chatBookSelect.appendChild(opt);
+            });
+            chatBookPicker.style.display = booksData.length ? 'flex' : 'none';
+            if (!booksData.length) alert('No tienes libros en tu biblioteca para compartir.');
+        });
+        chatBookSendBtn.addEventListener('click', sendChatBook);
+        document.getElementById('close-chat-btn').addEventListener('click', () => chatModal.close());
+        chatModal.addEventListener('close', () => {
+            if (unsubscribeChat) { unsubscribeChat(); unsubscribeChat = null; }
+            currentChatFriend = null;
+        });
+
+        // ===============================================
         // === 5. LISTA DE AMIGOS ========================
         // ===============================================
         const friendsList = document.getElementById('friends-list');
@@ -885,6 +1335,10 @@ document.addEventListener('DOMContentLoaded', () => {
         onSnapshot(qFriends, (snapshot) => {
             myFriendIds.clear();
             snapshot.forEach(docSnap => myFriendIds.add(docSnap.id));
+            myFriendsInfo = snapshot.docs.map(d => ({
+                uid: d.data().friendUid || d.id,
+                username: d.data().friendUsername || '?'
+            }));
 
             if (snapshot.empty) {
                 friendsList.innerHTML = '<p class="empty-msg">Aún no tienes amigos agregados.</p>';
@@ -905,13 +1359,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     div.innerHTML = `
                         <div style="font-size:0.9rem; display:flex; align-items:center; gap:8px; overflow:hidden;">
                             <span style="font-size:1.2rem;">👤</span>
-                            <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">@${friendData.friendUsername}</b>
+                            <b style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 120px;">@${escapeHtml(friendData.friendUsername)}</b>
                         </div>
                         <div style="display:flex; gap:5px;">
+                            <button class="btn-chat" style="background:transparent; border:1px solid var(--accent-color); padding:5px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;" title="Enviar mensaje">💬</button>
                             <button class="btn-view" style="background:var(--accent-color); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:0.8rem;">Ver</button>
                             <button class="btn-delete-friend" style="background:transparent; border:1px solid #E53E3E; color:#E53E3E; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:0.8rem;" title="Eliminar amigo">🗑️</button>
                         </div>
                     `;
+
+                    div.querySelector('.btn-chat').addEventListener('click', () => {
+                        openChat(friendData.friendUid, friendData.friendUsername);
+                    });
 
                     div.querySelector('.btn-view').addEventListener('click', () => {
                         cargarBibliotecaAmigo(friendData.friendUid, friendData.friendUsername);
@@ -938,6 +1397,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('site-title').style.color = 'var(--accent-color-interactive)';
             toggleSidebar(false);
             document.getElementById('add-book-btn').style.display = 'none';
+            const recommendBtnEl = document.getElementById('recommend-btn');
+            if (recommendBtnEl) recommendBtnEl.style.display = 'none';
 
             // Cargar datos del perfil del amigo (racha, logros, objetivos)
             try {
@@ -1030,9 +1491,15 @@ document.addEventListener('DOMContentLoaded', () => {
             grid.innerHTML = '';
             LOGROS.forEach(logro => {
                 const ok = desbloqueados.includes(logro.id);
+                // Bloqueado + secreto: requisito oculto para mantener la intriga.
+                // Bloqueado + público: requisito visible, es una meta a perseguir.
+                let desc = logro.descripcion;
+                if (!ok && logro.isSecret) {
+                    desc = '??? Logro secreto. ¡Sigue leyendo para descubrirlo!';
+                }
                 const div = document.createElement('div');
                 div.className = `logro-card ${ok ? 'logro-desbloqueado' : 'logro-bloqueado'}`;
-                div.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-nombre">${logro.nombre}</div><div class="logro-desc">${logro.descripcion}</div><div class="logro-estado">${ok ? '✓ Obtenido' : '🔒'}</div>`;
+                div.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-nombre">${logro.nombre}</div><div class="logro-desc">${desc}</div><div class="logro-estado">${ok ? '✓ Obtenido' : '🔒'}</div>`;
                 grid.appendChild(div);
             });
         };
@@ -1094,6 +1561,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!desbloqueados.has('racha_14')               && racha >= 14)  nuevos.push('racha_14');
                 if (!desbloqueados.has('racha_30')               && racha >= 30)  nuevos.push('racha_30');
                 if (!desbloqueados.has('racha_100')              && racha >= 100) nuevos.push('racha_100');
+                if (!desbloqueados.has('racha_365')              && racha >= 365) nuevos.push('racha_365');
+
+                // — Club de Lectura (solo consulta si queda alguno por desbloquear) —
+                if (!desbloqueados.has('primer_comentario') || !desbloqueados.has('comentarista_10')) {
+                    try {
+                        const misComentarios = await getDocs(query(collection(db, 'book_comments'), where('uid', '==', user.uid)));
+                        if (!desbloqueados.has('primer_comentario') && misComentarios.size >= 1)  nuevos.push('primer_comentario');
+                        if (!desbloqueados.has('comentarista_10')   && misComentarios.size >= 10) nuevos.push('comentarista_10');
+                    } catch { /* sin permiso o sin red: se reintenta en la próxima evaluación */ }
+                }
+
+                // — Amigos —
+                if (!desbloqueados.has('primer_amigo')           && myFriendIds.size >= 1) nuevos.push('primer_amigo');
+                if (!desbloqueados.has('circulo_lector')         && myFriendIds.size >= 5) nuevos.push('circulo_lector');
+
+                // — Exploración —
+                const generosUnicos = new Set(booksData.map(b => b.genre).filter(g => g && g !== 'Sin género'));
+                if (!desbloqueados.has('explorador_generos')     && generosUnicos.size >= 5) nuevos.push('explorador_generos');
+                const porAutor = {};
+                booksData.forEach(b => { const a = (b.author || '').trim().toLowerCase(); if (a) porAutor[a] = (porAutor[a] || 0) + 1; });
+                if (!desbloqueados.has('autor_fiel')             && Object.values(porAutor).some(n => n >= 3)) nuevos.push('autor_fiel');
+                const seccionesUsadas = new Set(booksData.map(b => b.section));
+                if (!desbloqueados.has('biblioteca_completa')    && Object.keys(SECTIONS).every(s => seccionesUsadas.has(s))) nuevos.push('biblioteca_completa');
+
+                // — Hazañas —
+                if (!desbloqueados.has('mata_tochos')            && terminados.some(b => (b.totalPages || 0) > 800)) nuevos.push('mata_tochos');
+                const semanaActual = getWeekStartStr();
+                const paginasSemana = ud.fechaSemana === semanaActual ? (ud.paginasLeidasSemana || 0) : 0;
+                if (!desbloqueados.has('semana_500')             && paginasSemana >= 500) nuevos.push('semana_500');
+                const horaActual = new Date().getHours();
+                if (!desbloqueados.has('buho_nocturno')          && horaActual < 6 && paginasHoyL > 0) nuevos.push('buho_nocturno');
+                if (!desbloqueados.has('paginas_25000')          && totalPaginasLeidas >= 25000) nuevos.push('paginas_25000');
+
+                // — Crítica fina —
+                if (!desbloqueados.has('media_estrella')         && booksData.some(b => b.rating > 0 && b.rating % 1 !== 0)) nuevos.push('media_estrella');
+                if (!desbloqueados.has('sin_piedad')             && booksData.some(b => b.rating > 0 && b.rating <= 1)) nuevos.push('sin_piedad');
+                const conVibes = booksData.filter(b => b.ritmoNarrativo || (b.estadosDeAnimo && b.estadosDeAnimo.length > 0));
+                if (!desbloqueados.has('cazador_vibes')          && conVibes.length >= 5) nuevos.push('cazador_vibes');
+
                 if (nuevos.length > 0) {
                     await updateDoc(userRef, { logrosDesbloqueados: [...desbloqueados, ...nuevos] });
                     nuevos.forEach(id => { const l = LOGROS.find(x => x.id === id); if (l) mostrarToastLogro(l); });
@@ -1289,9 +1795,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const extra = document.getElementById('stats-extra');
             if (extra) {
                 const cards = [
-                    favGenre ? ['🏆', 'Género favorito', favGenre] : null,
-                    favAuthor ? ['✍️', 'Autor favorito', favAuthor] : null,
-                    longestBook ? ['📄', 'Libro más largo', `${longestBook.title?.slice(0,28)||'—'} (${(longestBook.totalPages||0).toLocaleString('es')} págs.)`] : null,
+                    favGenre ? ['🏆', 'Género favorito', escapeHtml(favGenre)] : null,
+                    favAuthor ? ['✍️', 'Autor favorito', escapeHtml(favAuthor)] : null,
+                    longestBook ? ['📄', 'Libro más largo', `${escapeHtml(longestBook.title?.slice(0,28))||'—'} (${(longestBook.totalPages||0).toLocaleString('es')} págs.)`] : null,
                     avgPages > 0 ? ['📏', 'Páginas por libro', avgPages.toLocaleString('es') + ' de media'] : null,
                     pagesRemaining > 0 ? ['🏃', 'Páginas pendientes', pagesRemaining.toLocaleString('es') + ' en lectura'] : null,
                     counts['proximas-lecturas'] > 0 ? ['📋', 'En tu lista', counts['proximas-lecturas'] + ' próximas lecturas'] : null,
@@ -1301,22 +1807,13 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // === NOTIFICACIONES PUSH (FCM) ===
-        const setupPushNotifications = async () => {
+        // iOS (16.4+, PWA instalada) exige que requestPermission() se llame
+        // dentro de un gesto del usuario; la petición automática al cargar se
+        // ignora en silencio. Por eso: con permiso ya concedido renovamos el
+        // token en silencio; con permiso pendiente mostramos un banner y
+        // pedimos el permiso en el click.
+        const obtainPushToken = async () => {
             try {
-                if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-                if (!(await isMessagingSupported())) return;
-                if (!fcmVapidKey || fcmVapidKey.startsWith('PEGA_AQUI')) {
-                    console.warn('FCM: falta VITE_FIREBASE_VAPID_KEY en .env');
-                    return;
-                }
-
-                // Pedir permiso si aún no se ha decidido
-                let permission = Notification.permission;
-                if (permission === 'default') {
-                    permission = await Notification.requestPermission();
-                }
-                if (permission !== 'granted') return;
-
                 const swRegistration = await navigator.serviceWorker.register(
                     `${import.meta.env.BASE_URL}firebase-messaging-sw.js`
                 );
@@ -1326,19 +1823,73 @@ document.addEventListener('DOMContentLoaded', () => {
                     vapidKey: fcmVapidKey,
                     serviceWorkerRegistration: swRegistration
                 });
-                if (!token) return;
+                if (!token) return false;
 
                 // Guardar token (array: soporta varios dispositivos por usuario)
                 await updateDoc(doc(db, 'users', user.uid), {
                     fcmTokens: arrayUnion(token)
                 });
 
-                // Notificaciones recibidas con la app abierta (primer plano)
+                // Notificaciones recibidas con la app abierta (primer plano).
+                // showNotification del SW, no `new Notification()`: en Android
+                // Chrome el constructor lanza "Illegal constructor".
                 onMessage(messaging, (payload) => {
-                    const title = payload.notification?.title || 'Rincón de Lectura';
-                    const body = payload.notification?.body || '';
-                    new Notification(title, { body, icon: '/favicon.png' });
+                    const title = payload.data?.title || payload.notification?.title || 'Rincón de Lectura';
+                    const body = payload.data?.body || payload.notification?.body || '';
+                    swRegistration.showNotification(title, { body, icon: '/favicon.png' });
                 });
+                return true;
+            } catch (error) {
+                console.error('Error obteniendo token FCM:', error);
+                return false;
+            }
+        };
+
+        const showPushBanner = () => {
+            if (document.getElementById('push-banner')) return;
+            const banner = document.createElement('div');
+            banner.id = 'push-banner';
+            banner.className = 'push-banner';
+            banner.innerHTML = `
+                <span class="push-banner-text">🔔 Activa las notificaciones y no pierdas tu racha</span>
+                <div class="push-banner-actions">
+                    <button type="button" id="push-banner-enable">Activar</button>
+                    <button type="button" id="push-banner-dismiss" aria-label="Ahora no">✕</button>
+                </div>`;
+            document.body.appendChild(banner);
+
+            document.getElementById('push-banner-enable').onclick = async () => {
+                banner.remove();
+                // DEBE ejecutarse dentro del gesto del usuario (requisito iOS)
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const ok = await obtainPushToken();
+                    if (!ok) alert('No se pudieron activar las notificaciones. Inténtalo más tarde.');
+                }
+            };
+            document.getElementById('push-banner-dismiss').onclick = () => {
+                localStorage.setItem('push_banner_dismissed', Date.now().toString());
+                banner.remove();
+            };
+        };
+
+        const setupPushNotifications = async () => {
+            try {
+                if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+                if (!(await isMessagingSupported())) return;
+                if (!fcmVapidKey || fcmVapidKey.startsWith('PEGA_AQUI')) {
+                    console.warn('FCM: falta VITE_FIREBASE_VAPID_KEY en .env');
+                    return;
+                }
+
+                if (Notification.permission === 'granted') {
+                    obtainPushToken();  // ya autorizado: registrar/renovar en silencio
+                } else if (Notification.permission === 'default') {
+                    // No insistir si el usuario cerró el banner hace < 7 días
+                    const dismissed = parseInt(localStorage.getItem('push_banner_dismissed') || '0', 10);
+                    if (Date.now() - dismissed > 7 * 24 * 60 * 60 * 1000) showPushBanner();
+                }
+                // 'denied': no molestar
             } catch (error) {
                 console.error('Error configurando notificaciones push:', error);
             }
@@ -1484,6 +2035,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (paginaProgresada) userUpdates.lastReadTimestamp = serverTimestamp();
                 await updateDoc(doc(db, 'users', user.uid), userUpdates);
 
+                // Leemos Juntos: reflejar mi nuevo progreso/estado en el doc compartido
+                syncBuddyProgress({
+                    ...book,
+                    section: updatedData.section || book.section,
+                    currentPage: updatedData.currentPage !== undefined ? updatedData.currentPage : (book.currentPage || 0)
+                });
+
                 await evaluarLogros();
                 console.log('Detalles actualizados');
                 bookDetailModal.close();
@@ -1491,6 +2049,610 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error al guardar:', error);
             }
         };
+
+        // ===============================================
+        // === SESIONES DE LECTURA (cronómetro) ==========
+        // La sesión activa vive en localStorage: sobrevive a cerrar la
+        // PWA y solo escribe en Firestore al terminar (1 doc por sesión).
+        // ===============================================
+
+        // ===============================================
+        // === LEEMOS JUNTOS (lecturas compartidas) ======
+        // Doc en /buddy_reads/{uidA_uidB_slug} con el progreso de ambos.
+        // El listener mantiene la lista en tiempo real: las barras del
+        // modal se mueven solas cuando tu compañero avanza.
+        // ===============================================
+
+        let myBuddyReads = [];
+
+        onSnapshot(
+            query(collection(db, 'buddy_reads'), where('participants', 'array-contains', user.uid)),
+            (snap) => {
+                myBuddyReads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
+                if (bookDetailModal.open && book) renderBuddySection(book);
+            },
+            (error) => console.error('Error cargando lecturas compartidas:', error)
+        );
+
+        const getBuddyForBook = (book) =>
+            myBuddyReads.find(br => br.bookSlug === generateBookSlug(book.title, book.author));
+
+        // Sube mi página/estado al doc compartido (si existe para este libro)
+        const syncBuddyProgress = async (book) => {
+            try {
+                const br = getBuddyForBook(book);
+                if (!br) return;
+                const total = book.totalPages || br.totalPages || 0;
+                const fin = book.section === 'libros-terminados' ||
+                    (total > 0 && (book.currentPage || 0) >= total);
+                const page = fin ? total : (book.currentPage || 0);
+                await updateDoc(doc(db, 'buddy_reads', br.id), {
+                    [`progress.${user.uid}`]: page,
+                    [`finished.${user.uid}`]: fin,
+                    updatedAt: serverTimestamp()
+                });
+            } catch (error) {
+                console.error('Error sincronizando lectura compartida:', error);
+            }
+        };
+
+        const buddyBarHTML = (nombre, page, total, fin, esYo) => {
+            const pct = total > 0 ? Math.min(100, Math.round((page / total) * 100)) : 0;
+            const estado = fin ? '🏁 ¡Terminado!' : `pág. ${page}${total ? ` de ${total}` : ''}`;
+            return `
+                <div class="buddy-row${esYo ? ' buddy-me' : ''}">
+                    <div class="buddy-row-top">
+                        <span class="buddy-name">${esYo ? 'Tú' : '@' + escapeHtml(nombre)}</span>
+                        <span class="buddy-state">${estado}</span>
+                    </div>
+                    <div class="buddy-bar"><div class="buddy-bar-fill${fin ? ' buddy-bar-done' : ''}" style="width:${pct}%"></div></div>
+                </div>`;
+        };
+
+        const renderBuddySection = (book) => {
+            const section = document.getElementById('buddy-section');
+            const content = document.getElementById('buddy-content');
+            if (!section || !content) return;
+
+            if (viewingFriendLibrary) { section.style.display = 'none'; return; }
+            section.style.display = '';
+            content.innerHTML = '';
+
+            const br = getBuddyForBook(book);
+
+            if (br) {
+                const otherUid = (br.participants || []).find(p => p !== user.uid) || '';
+                const otherName = (br.usernames || {})[otherUid] || 'amigo';
+                const total = br.totalPages || book.totalPages || 0;
+                const myPage = (br.progress || {})[user.uid] || 0;
+                const otherPage = (br.progress || {})[otherUid] || 0;
+                const myFin = !!(br.finished || {})[user.uid];
+                const otherFin = !!(br.finished || {})[otherUid];
+
+                let pique;
+                if (myFin && otherFin) pique = '🎉 ¡Los dos lo habéis terminado! Hora de comentarlo en el Club.';
+                else if (myFin) pique = `Esperando a @${escapeHtml(otherName)}... tú ya has cruzado la meta. 😎`;
+                else if (otherFin) pique = `@${escapeHtml(otherName)} ya lo ha terminado. ¡Sprint final! 🏃`;
+                else if (myPage > otherPage) pique = `Vas ${myPage - otherPage} páginas por delante. 🔥`;
+                else if (otherPage > myPage) pique = `@${escapeHtml(otherName)} te saca ${otherPage - myPage} páginas. 👀`;
+                else pique = 'Codo con codo. ¡Que no te adelante! 🤜🤛';
+
+                content.innerHTML = `
+                    ${buddyBarHTML('', myPage, total, myFin, true)}
+                    ${buddyBarHTML(otherName, otherPage, total, otherFin, false)}
+                    <p class="buddy-pique">${pique}</p>
+                    <button type="button" id="buddy-leave-btn" class="buddy-leave">Abandonar lectura compartida</button>
+                `;
+                content.querySelector('#buddy-leave-btn').onclick = async () => {
+                    if (!confirm('¿Abandonar esta lectura compartida? El progreso conjunto se borrará para los dos.')) return;
+                    try { await deleteDoc(doc(db, 'buddy_reads', br.id)); } catch (error) {
+                        console.error('Error abandonando lectura compartida:', error);
+                    }
+                };
+                return;
+            }
+
+            // Sin lectura compartida: proponer a un amigo
+            if (myFriendsInfo.length === 0) {
+                content.innerHTML = '<p class="buddy-hint">Añade amigos para leer este libro a la vez que ellos y picaros con el progreso.</p>';
+                return;
+            }
+            content.innerHTML = `
+                <p class="buddy-hint">Reta a un amigo a leer este libro a la vez: veréis el progreso del otro aquí mismo.</p>
+                <div class="buddy-invite-row">
+                    <select id="buddy-friend-select">
+                        ${myFriendsInfo.map(f => `<option value="${escapeHtml(f.uid)}">@${escapeHtml(f.username)}</option>`).join('')}
+                    </select>
+                    <button type="button" id="buddy-invite-btn" class="btn-primary">🤝 Proponer</button>
+                </div>`;
+            content.querySelector('#buddy-invite-btn').onclick = async () => {
+                const sel = content.querySelector('#buddy-friend-select');
+                const friend = myFriendsInfo.find(f => f.uid === sel.value);
+                if (!friend) return;
+                const btn = content.querySelector('#buddy-invite-btn');
+                btn.disabled = true;
+                try {
+                    const slug = generateBookSlug(book.title, book.author);
+                    const participants = [user.uid, friend.uid].sort();
+                    const id = `${participants[0]}_${participants[1]}_${slug}`;
+                    const myName = lastUserData?.username || user.email?.split('@')[0] || 'yo';
+                    const fin = book.section === 'libros-terminados';
+                    await setDoc(doc(db, 'buddy_reads', id), {
+                        participants,
+                        bookSlug: slug,
+                        title: book.title,
+                        totalPages: book.totalPages || 0,
+                        createdBy: user.uid,
+                        progress: { [user.uid]: fin ? (book.totalPages || 0) : (book.currentPage || 0), [friend.uid]: 0 },
+                        finished: { [user.uid]: fin, [friend.uid]: false },
+                        usernames: { [user.uid]: myName, [friend.uid]: friend.username },
+                        updatedAt: serverTimestamp()
+                    });
+                    // El onSnapshot repinta la sección con las barras
+                } catch (error) {
+                    console.error('Error creando lectura compartida:', error);
+                    btn.disabled = false;
+                    alert('No se pudo crear la lectura compartida.');
+                }
+            };
+        };
+
+        // ===============================================
+        // === SESIONES DE LECTURA (cronómetro) ==========
+        // La sesión activa vive en localStorage: sobrevive a cerrar la
+        // PWA y solo escribe en Firestore al terminar (1 doc por sesión).
+        // ===============================================
+
+        const SESSION_KEY = 'rincon_session_v1';
+        const sessionToggleBtn = document.getElementById('session-toggle-btn');
+        const sessionEndForm = document.getElementById('session-end-form');
+        const sessionEndPage = document.getElementById('session-end-page');
+        const sessionSaveBtn = document.getElementById('session-save-btn');
+        const sessionDiscardBtn = document.getElementById('session-discard-btn');
+        const sessionPrediction = document.getElementById('session-prediction');
+        const sessionPill = document.getElementById('session-pill');
+        let sessionTickId = null;
+
+        const getActiveSession = () => {
+            try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+        };
+
+        const fmtDuracion = (ms) => {
+            const total = Math.max(0, Math.floor(ms / 1000));
+            const h = Math.floor(total / 3600);
+            const m = Math.floor((total % 3600) / 60);
+            const s = total % 60;
+            const mm = String(m).padStart(2, '0');
+            const ss = String(s).padStart(2, '0');
+            return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+        };
+
+        const tickSession = () => {
+            const s = getActiveSession();
+            if (!s) { stopSessionTicker(); return; }
+            const elapsed = fmtDuracion(Date.now() - s.startAt);
+            sessionPill.textContent = `📖 ${elapsed}`;
+            sessionPill.style.display = '';
+            // Si el modal abierto es el del libro de la sesión, refrescar botón
+            if (bookDetailModal.open && bookDetailModal.dataset.bookId === s.bookId) {
+                sessionToggleBtn.textContent = `⏹ Terminar sesión · ${elapsed}`;
+            }
+        };
+
+        const startSessionTicker = () => {
+            if (sessionTickId) return;
+            tickSession();
+            sessionTickId = setInterval(tickSession, 1000);
+        };
+        const stopSessionTicker = () => {
+            if (sessionTickId) { clearInterval(sessionTickId); sessionTickId = null; }
+            sessionPill.style.display = 'none';
+        };
+
+        // Estado de la sección de sesión dentro del modal de detalle
+        const refreshSessionUI = (book) => {
+            if (!sessionToggleBtn) return;
+            const s = getActiveSession();
+            sessionEndForm.style.display = 'none';
+            if (viewingFriendLibrary || book.section !== 'leyendo-ahora') {
+                document.getElementById('session-section').style.display = 'none';
+                return;
+            }
+            document.getElementById('session-section').style.display = '';
+            if (s && s.bookId === book.id) {
+                sessionToggleBtn.textContent = `⏹ Terminar sesión · ${fmtDuracion(Date.now() - s.startAt)}`;
+                sessionToggleBtn.classList.add('session-active');
+            } else if (s) {
+                // Hay sesión activa pero de otro libro
+                sessionToggleBtn.textContent = '⏳ Tienes otra sesión en curso';
+                sessionToggleBtn.classList.remove('session-active');
+            } else {
+                sessionToggleBtn.textContent = '▶ Empezar sesión de lectura';
+                sessionToggleBtn.classList.remove('session-active');
+            }
+            renderPrediction(book);
+        };
+
+        const startSession = (book) => {
+            localStorage.setItem(SESSION_KEY, JSON.stringify({
+                bookId: book.id,
+                startAt: Date.now(),
+                startPage: book.currentPage || 0
+            }));
+            startSessionTicker();
+            refreshSessionUI(book);
+        };
+
+        const endSessionPrompt = (book) => {
+            const s = getActiveSession();
+            if (!s) return;
+            sessionEndForm.style.display = '';
+            sessionEndPage.value = parseInt(currentPageInput.value, 10) || s.startPage || 0;
+            sessionEndPage.max = book.totalPages || 100000;
+            sessionEndPage.focus();
+        };
+
+        const discardSession = () => {
+            localStorage.removeItem(SESSION_KEY);
+            stopSessionTicker();
+            const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
+            if (book) refreshSessionUI(book);
+        };
+
+        const saveSession = async () => {
+            const s = getActiveSession();
+            const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
+            if (!s || !book || s.bookId !== book.id) return;
+
+            let endPage = parseInt(sessionEndPage.value, 10);
+            if (isNaN(endPage) || endPage < 0) endPage = s.startPage;
+            if (book.totalPages > 0 && endPage > book.totalPages) endPage = book.totalPages;
+
+            const durationMin = Math.max(1, Math.round((Date.now() - s.startAt) / 60000));
+            const pagesRead = Math.max(0, endPage - (s.startPage || 0));
+
+            sessionSaveBtn.disabled = true;
+            try {
+                await addDoc(collection(db, 'users', user.uid, 'sessions'), {
+                    bookId: book.id,
+                    startAtMs: s.startAt,
+                    durationMin,
+                    pageStart: s.startPage || 0,
+                    pageEnd: endPage,
+                    pagesRead,
+                    endAt: serverTimestamp()
+                });
+
+                if (endPage > (book.currentPage || 0)) {
+                    await updateDoc(doc(db, 'books', book.id), { currentPage: endPage });
+                    await updateStreak();
+                    await updatePaginasObjetivo(pagesRead);
+                    await updateDoc(doc(db, 'users', user.uid), { lastReadTimestamp: serverTimestamp() });
+                    book.currentPage = endPage;
+                    currentPageInput.value = endPage;
+                    updateProgressVisuals(endPage, book.totalPages || 0);
+                    syncBuddyProgress(book);
+                    evaluarLogros();
+                }
+
+                localStorage.removeItem(SESSION_KEY);
+                stopSessionTicker();
+                refreshSessionUI(book);
+            } catch (error) {
+                console.error('Error guardando la sesión:', error);
+                alert('No se pudo guardar la sesión.');
+            } finally {
+                sessionSaveBtn.disabled = false;
+            }
+        };
+
+        // Predicción de fin: velocidad media de tus últimas sesiones del libro
+        const renderPrediction = async (book) => {
+            if (!sessionPrediction) return;
+            sessionPrediction.textContent = '';
+            if (book.section !== 'leyendo-ahora' || !book.totalPages) return;
+            try {
+                const snap = await getDocs(query(
+                    collection(db, 'users', user.uid, 'sessions'),
+                    where('bookId', '==', book.id)
+                ));
+                const sessions = [];
+                snap.forEach(d => sessions.push(d.data()));
+                sessions.sort((a, b) => (b.startAtMs || 0) - (a.startAtMs || 0));
+                const recientes = sessions.slice(0, 8);
+
+                const totPages = recientes.reduce((t, x) => t + (x.pagesRead || 0), 0);
+                const totMin = recientes.reduce((t, x) => t + (x.durationMin || 0), 0);
+                if (totPages < 5 || totMin < 5) return;  // poca señal todavía
+
+                const speed = totPages / (totMin / 60);  // págs/hora
+                const pagesLeft = Math.max(0, book.totalPages - (book.currentPage || 0));
+                if (pagesLeft === 0) return;
+                const hoursLeft = pagesLeft / speed;
+
+                // Páginas por día de lectura real (días distintos con sesión)
+                const dias = new Set(recientes.map(x => new Date(x.startAtMs || 0).toDateString())).size || 1;
+                const pagsPorDia = totPages / dias;
+                const diasRestantes = Math.max(1, Math.ceil(pagesLeft / pagsPorDia));
+                const fechaFin = new Date(Date.now() + diasRestantes * 86400000);
+                const fechaTxt = fechaFin.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+
+                const horasTxt = hoursLeft >= 1
+                    ? `~${Math.round(hoursLeft)} h de lectura`
+                    : `~${Math.max(5, Math.round(hoursLeft * 60))} min de lectura`;
+                sessionPrediction.textContent =
+                    `⏱️ Tu ritmo: ~${Math.round(speed)} págs/hora · Te quedan ${horasTxt} · A este ritmo lo terminas el ${fechaTxt} 🦕`;
+            } catch (error) {
+                console.error('Error calculando predicción:', error);
+            }
+        };
+
+        if (sessionToggleBtn) sessionToggleBtn.addEventListener('click', () => {
+            const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
+            if (!book) return;
+            const s = getActiveSession();
+            if (s && s.bookId === book.id) {
+                endSessionPrompt(book);
+            } else if (!s) {
+                startSession(book);
+            }
+            // Sesión activa de otro libro: no hacer nada (botón informativo)
+        });
+        if (sessionSaveBtn) sessionSaveBtn.addEventListener('click', saveSession);
+        if (sessionDiscardBtn) sessionDiscardBtn.addEventListener('click', discardSession);
+        if (sessionPill) sessionPill.addEventListener('click', () => {
+            const s = getActiveSession();
+            if (s && booksData.some(b => b.id === s.bookId)) openDetailModal(s.bookId);
+        });
+
+        // Si quedó una sesión activa de una visita anterior, retomar el contador
+        if (getActiveSession()) startSessionTicker();
+
+        // ===============================================
+        // === RECOMENDADOR "¿QUÉ LEO AHORA?" ============
+        // Cruza tu perfil de gustos (vibes, géneros, ritmo de tus libros
+        // mejor valorados) con tu propia pila de pendientes y con los
+        // favoritos de tus amigos. Todo client-side: cero Functions.
+        // ===============================================
+
+        const recommendModal = document.getElementById('recommend-modal');
+        const recommendBtn = document.getElementById('recommend-btn');
+        const recommendList = document.getElementById('recommend-list');
+        const recommendIntro = document.getElementById('recommend-intro');
+        const closeRecommendBtn = document.getElementById('close-recommend-btn');
+        const reshuffleRecommendBtn = document.getElementById('reshuffle-recommend-btn');
+
+        let recommendCandidates = null;  // caché de candidatos por sesión de modal
+
+        // Perfil de gustos: pondera vibes/género/ritmo de tus libros.
+        // Terminados pesan según valoración; lo que lees ahora también cuenta.
+        const buildTasteProfile = () => {
+            const profile = { moods: {}, genres: {}, ritmos: {}, weight: 0 };
+            booksData.forEach(b => {
+                let w = 0;
+                if (b.section === 'libros-terminados') {
+                    w = (typeof b.rating === 'number' && b.rating > 0) ? Math.max(0.2, b.rating - 2.5) : 0.6;
+                } else if (b.section === 'leyendo-ahora') {
+                    w = 1;
+                }
+                if (w <= 0) return;
+                (b.estadosDeAnimo || []).forEach(m => { profile.moods[m] = (profile.moods[m] || 0) + w; });
+                if (b.genre && b.genre !== 'Sin género') {
+                    const g = b.genre.toLowerCase();
+                    profile.genres[g] = (profile.genres[g] || 0) + w;
+                }
+                if (b.ritmoNarrativo) {
+                    profile.ritmos[b.ritmoNarrativo] = (profile.ritmos[b.ritmoNarrativo] || 0) + w;
+                }
+                profile.weight += w;
+            });
+            return profile;
+        };
+
+        // Candidatos: mi pila de pendientes + favoritos (★4+) de mis amigos
+        // que yo no tenga. Deduplicado por slug título+autor.
+        const collectCandidates = async () => {
+            const mySlugs = new Set(booksData.map(b => generateBookSlug(b.title, b.author)));
+            const seen = new Set();
+            const candidates = [];
+
+            booksData.forEach(b => {
+                if (b.section !== 'proximas-lecturas' && b.section !== 'lista-deseos') return;
+                const slug = generateBookSlug(b.title, b.author);
+                if (seen.has(slug)) return;
+                seen.add(slug);
+                candidates.push({ source: 'own', book: b, slug });
+            });
+
+            // Máximo 8 amigos por consulta para acotar lecturas de Firestore
+            const friends = myFriendsInfo.slice(0, 8);
+            const friendResults = await Promise.all(friends.map(async (f) => {
+                try {
+                    const snap = await getDocs(query(collection(db, 'books'), where('userId', '==', f.uid)));
+                    const favs = [];
+                    snap.forEach(d => {
+                        const fb = d.data();
+                        if (fb.section !== 'libros-terminados') return;
+                        if (typeof fb.rating !== 'number' || fb.rating < 4) return;
+                        favs.push(fb);
+                    });
+                    return { friend: f, favs };
+                } catch {
+                    return { friend: f, favs: [] };
+                }
+            }));
+
+            friendResults.forEach(({ friend, favs }) => {
+                favs.forEach(fb => {
+                    const slug = generateBookSlug(fb.title, fb.author);
+                    if (mySlugs.has(slug)) return;  // ya lo tengo
+                    const dup = candidates.find(c => c.slug === slug && c.source === 'friend');
+                    if (dup) {
+                        // Mismo libro amado por varios amigos: señal más fuerte
+                        if (fb.rating > dup.friendRating) { dup.friendRating = fb.rating; dup.friendName = friend.username; }
+                        dup.friendCount++;
+                        return;
+                    }
+                    if (seen.has(slug)) return;     // ya es candidato propio: prima el propio
+                    seen.add(slug);
+                    candidates.push({
+                        source: 'friend', book: fb, slug,
+                        friendName: friend.username, friendRating: fb.rating, friendCount: 1
+                    });
+                });
+            });
+
+            return candidates;
+        };
+
+        const scoreCandidates = (candidates, profile) => {
+            const topRitmo = Object.entries(profile.ritmos).sort((a, b) => b[1] - a[1])[0]?.[0];
+            return candidates.map(c => {
+                const b = c.book;
+                let score = 0;
+                const reasons = [];
+
+                const moodHits = (b.estadosDeAnimo || [])
+                    .filter(m => profile.moods[m])
+                    .sort((x, y) => profile.moods[y] - profile.moods[x]);
+                moodHits.forEach(m => { score += Math.min(profile.moods[m], 3); });
+                if (moodHits.length > 0) reasons.push(`Comparte tu vibe favorito: ${moodHits[0]}`);
+
+                const g = (b.genre || '').toLowerCase();
+                if (g && profile.genres[g]) {
+                    score += Math.min(profile.genres[g], 3) * 1.2;
+                    reasons.push(`Género que devoras: ${b.genre}`);
+                }
+
+                if (topRitmo && b.ritmoNarrativo === topRitmo) {
+                    score += 1.5;
+                    reasons.push(`Ritmo ${b.ritmoNarrativo.toLowerCase()}, como a ti te gusta`);
+                }
+
+                if (c.source === 'friend') {
+                    score += 2 + (c.friendRating - 4) * 2 + (c.friendCount - 1) * 1.5;
+                    const stars = Number.isInteger(c.friendRating) ? c.friendRating : c.friendRating.toFixed(1);
+                    reasons.push(c.friendCount > 1
+                        ? `A ${c.friendCount} amigos les encantó (@${c.friendName} le dio ★${stars})`
+                        : `A @${c.friendName} le encantó: ★${stars}`);
+                } else {
+                    score += b.section === 'proximas-lecturas' ? 1.2 : 0.7;
+                    reasons.push(b.section === 'proximas-lecturas'
+                        ? 'Lo tenías esperando en Próximas Lecturas'
+                        : 'Estaba en tu lista de deseos');
+                }
+
+                // Pizca de azar: "Dame otras ideas" varía el podio
+                score += Math.random() * 1.2;
+                return { ...c, score, reasons };
+            }).sort((a, b) => b.score - a.score);
+        };
+
+        const renderRecommendations = (scored) => {
+            recommendList.innerHTML = '';
+
+            if (scored.length === 0) {
+                recommendIntro.textContent = 'Págino no ha encontrado nada que recomendarte todavía.';
+                recommendList.innerHTML = `<p class="recommend-empty">Añade libros a <b>Próximas Lecturas</b> o a tu
+                    <b>Lista de Deseos</b>, o haz amigos para que Págino pueda cotillear sus favoritos. 🦕</p>`;
+                reshuffleRecommendBtn.style.display = 'none';
+                return;
+            }
+
+            recommendIntro.textContent = scored.length < 3
+                ? 'Págino ha encontrado esto rebuscando en las estanterías:'
+                : 'Págino ha husmeado en tu biblioteca y en las de tus amigos. Sus 3 apuestas:';
+            reshuffleRecommendBtn.style.display = scored.length > 3 ? '' : 'none';
+
+            scored.slice(0, 3).forEach(c => {
+                const b = c.book;
+                const card = document.createElement('div');
+                card.className = 'recommend-card';
+
+                const img = document.createElement('img');
+                img.className = 'recommend-cover';
+                img.loading = 'lazy';
+                img.alt = `Portada de ${b.title}`;
+                img.src = b.cover || COVER_PLACEHOLDER;
+                img.onerror = () => { img.onerror = null; img.src = COVER_PLACEHOLDER; };
+
+                const info = document.createElement('div');
+                info.className = 'recommend-info';
+                info.innerHTML = `
+                    <h3>${escapeHtml(b.title)}</h3>
+                    <p class="recommend-author">${escapeHtml(b.author)}</p>
+                    <ul class="recommend-reasons">
+                        ${c.reasons.slice(0, 3).map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+                    </ul>
+                `;
+
+                const actionBtn = document.createElement('button');
+                actionBtn.type = 'button';
+                actionBtn.className = 'btn-primary recommend-action';
+                actionBtn.textContent = c.source === 'own' ? '📖 Empezar a leerlo' : '➕ Añadir a mi biblioteca';
+                actionBtn.onclick = async () => {
+                    actionBtn.disabled = true;
+                    try {
+                        if (c.source === 'own') {
+                            await updateDoc(doc(db, 'books', b.id), { section: 'leyendo-ahora', currentPage: 0 });
+                            actionBtn.textContent = '✓ ¡A leer!';
+                        } else {
+                            // Copia a mi biblioteca (campos dentro de la whitelist de reglas)
+                            await addDoc(collection(db, 'books'), {
+                                userId: user.uid,
+                                title: b.title || 'Sin título',
+                                author: b.author || '',
+                                cover: b.cover || '',
+                                section: 'proximas-lecturas',
+                                totalPages: b.totalPages || 0,
+                                currentPage: 0,
+                                notes: '',
+                                genre: b.genre || 'Sin género',
+                                ritmoNarrativo: b.ritmoNarrativo || '',
+                                estadosDeAnimo: b.estadosDeAnimo || [],
+                                importedFrom: 'recomendacion'
+                            });
+                            actionBtn.textContent = '✓ Añadido';
+                            evaluarLogros();
+                        }
+                    } catch (error) {
+                        console.error('Error aplicando recomendación:', error);
+                        actionBtn.disabled = false;
+                        alert('No se pudo completar la acción.');
+                    }
+                };
+
+                info.appendChild(actionBtn);
+                card.appendChild(img);
+                card.appendChild(info);
+                recommendList.appendChild(card);
+            });
+        };
+
+        const openRecommendModal = async () => {
+            if (viewingFriendLibrary) return;  // booksData es del amigo: no recomendar
+            recommendIntro.textContent = 'Págino está husmeando en tu biblioteca y en las de tus amigos...';
+            recommendList.innerHTML = '<p class="recommend-empty">🦕💭 Olfateando libros…</p>';
+            reshuffleRecommendBtn.style.display = 'none';
+            recommendModal.showModal();
+            try {
+                recommendCandidates = await collectCandidates();
+                renderRecommendations(scoreCandidates(recommendCandidates, buildTasteProfile()));
+            } catch (error) {
+                console.error('Error generando recomendaciones:', error);
+                recommendList.innerHTML = '<p class="recommend-empty">Págino se ha mareado buscando. Inténtalo de nuevo.</p>';
+            }
+        };
+
+        if (recommendBtn) recommendBtn.addEventListener('click', openRecommendModal);
+        if (closeRecommendBtn) closeRecommendBtn.addEventListener('click', () => recommendModal.close());
+        if (reshuffleRecommendBtn) reshuffleRecommendBtn.addEventListener('click', () => {
+            if (recommendCandidates) {
+                renderRecommendations(scoreCandidates(recommendCandidates, buildTasteProfile()));
+            }
+        });
+        if (recommendModal) recommendModal.addEventListener('close', () => { recommendCandidates = null; });
 
         // === RANKING DE PÁGINAS ===
         const renderRanking = async () => {
@@ -1530,7 +2692,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     li.className = `ranking-item${entry.isMe ? ' ranking-me' : ''}`;
                     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`;
                     li.innerHTML = `<span class="ranking-pos">${medal}</span>
-                        <span class="ranking-user">@${entry.username}${entry.isMe ? ' ★' : ''}</span>
+                        <span class="ranking-user">@${escapeHtml(entry.username)}${entry.isMe ? ' ★' : ''}</span>
                         <span class="ranking-pages">${entry.paginas.toLocaleString('es')} págs</span>`;
                     rankingList.appendChild(li);
                 });
@@ -1948,9 +3110,11 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
-        // Aplicamos la lógica a ambos modales
+        // Aplicamos la lógica a los modales
         if (addBookModal) closeOnBackdropClick(addBookModal);
         if (bookDetailModal) closeOnBackdropClick(bookDetailModal);
+        if (recommendModal) closeOnBackdropClick(recommendModal);
+        if (editBookModal) closeOnBackdropClick(editBookModal);
 
         // === OBJETIVOS DE LECTURA ===
         const objetivosBtn = document.getElementById('objetivos-btn');

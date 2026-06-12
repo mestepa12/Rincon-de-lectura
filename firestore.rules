@@ -1,0 +1,350 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================
+    // FUNCIONES DE VALIDACIÓN (Schema Validation)
+    // Las comprobaciones se aplican solo a los campos tocados en la
+    // escritura (affectedKeys) para no bloquear documentos antiguos
+    // con campos legacy. El patrón `!(campo in d)` tolera deleteField().
+    // =========================================================
+
+    // Nota: 'email' fue eliminado deliberadamente — los correos NO se
+    // guardan en Firestore (los custodia Firebase Auth) y las reglas
+    // rechazan cualquier intento de volver a escribirlos.
+    function userFields() {
+      return ['username', 'searchKey', 'uid', 'rachaActual',
+              'ultimaFechaLectura', 'lastReadTimestamp', 'totalPaginasLeidas',
+              'paginasLeidasHoy', 'paginasLeidasSemana', 'fechaDia',
+              'fechaSemana', 'objetivoPaginasDiarias', 'objetivoPaginasSemanales',
+              'logrosDesbloqueados', 'fcmTokens', 'fcmToken'];
+    }
+
+    function validUser(d, a) {
+      return (!a.hasAny(['username'])      || !('username' in d)      || (d.username is string && d.username.size() >= 1 && d.username.size() <= 30))
+          && (!a.hasAny(['searchKey'])     || !('searchKey' in d)     || (d.searchKey is string && d.searchKey.size() <= 30))
+          && (!a.hasAny(['uid'])           || !('uid' in d)           || d.uid == request.auth.uid)
+          && (!a.hasAny(['rachaActual'])   || !('rachaActual' in d)   || (d.rachaActual is number && d.rachaActual >= 0 && d.rachaActual <= 100000))
+          && (!a.hasAny(['totalPaginasLeidas']) || !('totalPaginasLeidas' in d) || (d.totalPaginasLeidas is number && d.totalPaginasLeidas >= 0 && d.totalPaginasLeidas <= 100000000))
+          && (!a.hasAny(['paginasLeidasHoy'])   || !('paginasLeidasHoy' in d)   || (d.paginasLeidasHoy is number && d.paginasLeidasHoy >= 0 && d.paginasLeidasHoy <= 1000000))
+          && (!a.hasAny(['paginasLeidasSemana'])|| !('paginasLeidasSemana' in d)|| (d.paginasLeidasSemana is number && d.paginasLeidasSemana >= 0 && d.paginasLeidasSemana <= 1000000))
+          && (!a.hasAny(['fechaDia'])      || !('fechaDia' in d)      || (d.fechaDia is string && d.fechaDia.size() <= 10))
+          && (!a.hasAny(['fechaSemana'])   || !('fechaSemana' in d)   || (d.fechaSemana is string && d.fechaSemana.size() <= 10))
+          && (!a.hasAny(['objetivoPaginasDiarias'])  || !('objetivoPaginasDiarias' in d)  || (d.objetivoPaginasDiarias is number && d.objetivoPaginasDiarias >= 0 && d.objetivoPaginasDiarias <= 100000))
+          && (!a.hasAny(['objetivoPaginasSemanales'])|| !('objetivoPaginasSemanales' in d)|| (d.objetivoPaginasSemanales is number && d.objetivoPaginasSemanales >= 0 && d.objetivoPaginasSemanales <= 100000))
+          && (!a.hasAny(['logrosDesbloqueados']) || !('logrosDesbloqueados' in d) || (d.logrosDesbloqueados is list && d.logrosDesbloqueados.size() <= 200))
+          && (!a.hasAny(['fcmTokens'])     || !('fcmTokens' in d)     || (d.fcmTokens is list && d.fcmTokens.size() <= 20))
+          && (!a.hasAny(['fcmToken'])      || !('fcmToken' in d)      || (d.fcmToken is string && d.fcmToken.size() <= 4096));
+    }
+
+    function bookFields() {
+      return ['userId', 'title', 'author', 'cover', 'section', 'totalPages',
+              'currentPage', 'notes', 'rating', 'googleLink', 'genre',
+              'ritmoNarrativo', 'estadosDeAnimo', 'importedFrom'];
+    }
+
+    function validBook(d, a) {
+      return (!a.hasAny(['title'])       || !('title' in d)       || (d.title is string && d.title.size() >= 1 && d.title.size() <= 300))
+          && (!a.hasAny(['author'])      || !('author' in d)      || (d.author is string && d.author.size() <= 200))
+          && (!a.hasAny(['cover'])       || !('cover' in d)       || (d.cover is string && d.cover.size() <= 1000))
+          && (!a.hasAny(['section'])     || !('section' in d)     || d.section in ['leyendo-ahora', 'proximas-lecturas', 'libros-terminados', 'lista-deseos', 'libros-abandonados'])
+          && (!a.hasAny(['totalPages'])  || !('totalPages' in d)  || (d.totalPages is number && d.totalPages >= 0 && d.totalPages <= 100000))
+          && (!a.hasAny(['currentPage']) || !('currentPage' in d) || (d.currentPage is number && d.currentPage >= 0 && d.currentPage <= 100000))
+          && (!a.hasAny(['notes'])       || !('notes' in d)       || (d.notes is string && d.notes.size() <= 5000))
+          && (!a.hasAny(['rating'])      || !('rating' in d)      || (d.rating is number && d.rating >= 0 && d.rating <= 5))
+          && (!a.hasAny(['googleLink'])  || !('googleLink' in d)  || (d.googleLink is string && d.googleLink.size() <= 500))
+          && (!a.hasAny(['genre'])       || !('genre' in d)       || (d.genre is string && d.genre.size() <= 100))
+          && (!a.hasAny(['ritmoNarrativo']) || !('ritmoNarrativo' in d) || (d.ritmoNarrativo is string && d.ritmoNarrativo.size() <= 30))
+          && (!a.hasAny(['estadosDeAnimo']) || !('estadosDeAnimo' in d) || (d.estadosDeAnimo is list && d.estadosDeAnimo.size() <= 20))
+          && (!a.hasAny(['importedFrom']) || !('importedFrom' in d) || (d.importedFrom is string && d.importedFrom.size() <= 30));
+    }
+
+    // =========================================================
+    // 1. LIBROS (colección raíz /books)
+    // =========================================================
+    match /books/{bookId} {
+
+      // --- Leer: el dueño o sus amigos ---
+      allow read: if request.auth != null
+                  && (
+                    resource.data.userId == request.auth.uid ||
+                    exists(/databases/$(database)/documents/users/$(resource.data.userId)/friends/$(request.auth.uid))
+                  );
+
+      // --- Crear: solo con tu propio ID, campos whitelisted y válidos ---
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasOnly(bookFields())
+                    && validBook(request.resource.data, request.resource.data.keys());
+
+      // --- Editar: solo el dueño, sin cambiar de dueño, campos válidos ---
+      allow update: if request.auth != null
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(bookFields())
+                    && validBook(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
+
+      // --- Borrar: solo el dueño ---
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // =========================================================
+    // 2. COMENTARIOS DEL CLUB DE LECTURA (/book_comments)
+    // =========================================================
+    match /book_comments/{commentId} {
+      // Los usuarios autenticados pueden leer los comentarios
+      allow read: if request.auth != null;
+
+      // Crear: solo con tu uid, esquema estricto, texto <= 500 caracteres
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.keys().hasOnly(['bookSlug', 'uid', 'username', 'page', 'text', 'timestamp'])
+                    && request.resource.data.bookSlug is string
+                    && request.resource.data.bookSlug.size() >= 1
+                    && request.resource.data.bookSlug.size() <= 300
+                    && request.resource.data.username is string
+                    && request.resource.data.username.size() <= 60
+                    && request.resource.data.page is number
+                    && request.resource.data.page >= 0
+                    && request.resource.data.page <= 100000
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() >= 1
+                    && request.resource.data.text.size() <= 500;
+
+      // Editar: solo el autor, sin tocar uid/bookSlug, texto válido
+      allow update: if request.auth != null
+                    && resource.data.uid == request.auth.uid
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.bookSlug == resource.data.bookSlug
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() >= 1
+                    && request.resource.data.text.size() <= 500;
+
+      // Borrar: solo el autor (en delete no existe request.resource)
+      allow delete: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
+    }
+
+    // =========================================================
+    // 3. CHATS ENTRE AMIGOS (/chats/{uidA_uidB}/messages)
+    // El ID del chat son los dos uids ordenados unidos por '_', así que
+    // la pertenencia se valida parseando el propio ID (sin lecturas extra).
+    // =========================================================
+    match /chats/{chatId} {
+
+      allow read: if request.auth != null
+                  && request.auth.uid in chatId.split('_');
+
+      // Doc padre: solo los participantes, y el ID debe ser coherente
+      // con la lista de participantes (ordenada).
+      allow create, update: if request.auth != null
+                    && request.auth.uid in chatId.split('_')
+                    && request.resource.data.keys().hasOnly(['participants'])
+                    && request.resource.data.participants is list
+                    && request.resource.data.participants.size() == 2
+                    && request.auth.uid in request.resource.data.participants
+                    && chatId == request.resource.data.participants[0] + '_' + request.resource.data.participants[1];
+
+      match /messages/{messageId} {
+        allow read: if request.auth != null
+                    && request.auth.uid in chatId.split('_');
+
+        // Enviar: solo un participante, como emisor él mismo, al otro
+        // participante, que además debe ser su amigo. Esquema estricto.
+        allow create: if request.auth != null
+                      && request.auth.uid in chatId.split('_')
+                      && request.resource.data.from == request.auth.uid
+                      && request.resource.data.to in chatId.split('_')
+                      && request.resource.data.to != request.auth.uid
+                      && exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(request.resource.data.to))
+                      && request.resource.data.keys().hasOnly(['from', 'to', 'type', 'text', 'book', 'timestamp'])
+                      && request.resource.data.type in ['text', 'book']
+                      && (request.resource.data.type != 'text'
+                          || (request.resource.data.text is string
+                              && request.resource.data.text.size() >= 1
+                              && request.resource.data.text.size() <= 1000))
+                      && (request.resource.data.type != 'book'
+                          || request.resource.data.book is map)
+                      && (!('text' in request.resource.data)
+                          || (request.resource.data.text is string
+                              && request.resource.data.text.size() <= 1000));
+
+        // Borrar: solo el emisor. Sin update: los mensajes no se editan.
+        allow delete: if request.auth != null
+                      && resource.data.from == request.auth.uid;
+      }
+    }
+
+    // =========================================================
+    // 3b. LECTURAS COMPARTIDAS (/buddy_reads/{uidA_uidB_slug})
+    // ID = dos uids ordenados + slug del libro, unidos por '_' (los uids
+    // de Firebase Auth y el slug nunca contienen '_'), así que la
+    // pertenencia se valida parseando el ID, como en /chats.
+    // =========================================================
+    match /buddy_reads/{buddyId} {
+
+      allow read: if request.auth != null
+                  && request.auth.uid in buddyId.split('_');
+
+      // Crear: solo un participante, el otro debe ser su amigo, y el ID
+      // debe ser coherente con participants + bookSlug. Esquema cerrado.
+      allow create: if request.auth != null
+                    && request.auth.uid in buddyId.split('_')
+                    && request.resource.data.keys().hasOnly(['participants', 'bookSlug', 'title', 'totalPages', 'createdBy', 'progress', 'finished', 'usernames', 'updatedAt'])
+                    && request.resource.data.participants is list
+                    && request.resource.data.participants.size() == 2
+                    && request.auth.uid in request.resource.data.participants
+                    && buddyId == request.resource.data.participants[0] + '_' + request.resource.data.participants[1] + '_' + request.resource.data.bookSlug
+                    && request.resource.data.createdBy == request.auth.uid
+                    && exists(/databases/$(database)/documents/users/$(request.auth.uid)/friends/$(request.resource.data.participants[0] == request.auth.uid ? request.resource.data.participants[1] : request.resource.data.participants[0]))
+                    && request.resource.data.bookSlug is string
+                    && request.resource.data.bookSlug.size() >= 1
+                    && request.resource.data.bookSlug.size() <= 300
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() >= 1
+                    && request.resource.data.title.size() <= 300
+                    && request.resource.data.totalPages is number
+                    && request.resource.data.totalPages >= 0
+                    && request.resource.data.totalPages <= 100000
+                    && request.resource.data.progress is map
+                    && request.resource.data.finished is map
+                    && request.resource.data.usernames is map;
+
+      // Actualizar: solo participantes y solo progreso/estado
+      allow update: if request.auth != null
+                    && request.auth.uid in buddyId.split('_')
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progress', 'finished', 'updatedAt'])
+                    && request.resource.data.progress is map
+                    && request.resource.data.finished is map;
+
+      // Abandonar: cualquiera de los dos
+      allow delete: if request.auth != null
+                    && request.auth.uid in buddyId.split('_');
+    }
+
+    // =========================================================
+    // 4. RESERVA DE NOMBRES DE USUARIO (/usernames)
+    // ID del documento = username en minúsculas; contenido = { uid }.
+    // Lectura pública: el registro comprueba nombres libres ANTES de
+    // que exista la cuenta. Solo expone el propio username (dato público).
+    // =========================================================
+    match /usernames/{name} {
+      allow read: if true;
+
+      // Solo crear (nunca sobrescribir): la reserva es atómica, dos
+      // registros simultáneos con el mismo nombre no pueden chocar.
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['uid'])
+                    && request.resource.data.uid == request.auth.uid
+                    && name == name.lower()
+                    && name.size() >= 1
+                    && name.size() <= 30;
+
+      // Liberar el nombre: solo su dueño. Sin update: no se transfiere.
+      allow delete: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
+    }
+
+    // =========================================================
+    // 5. USUARIOS (+ estructura antigua + amigos)
+    // =========================================================
+    match /users/{userId} {
+
+      // Leer: solo usuarios autenticados (los perfiles ya no contienen email;
+      // el chequeo de nombres libres del registro usa la colección `usernames`)
+      allow read: if request.auth != null;
+
+      // Crear: solo tu perfil, sin campos extra (p. ej. isAdmin), válidos
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.keys().hasOnly(userFields())
+                    && validUser(request.resource.data, request.resource.data.keys());
+
+      // Actualizar: solo tu perfil; los campos tocados deben estar en la
+      // whitelist (bloquea inyectar isAdmin: true u otros roles) y ser válidos
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(userFields())
+                    && validUser(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
+
+      // === A. LIBROS ANTIGUOS (estructura legacy) ===
+      match /books/{bookId} {
+        allow read: if request.auth != null
+                    && (
+                        request.auth.uid == userId ||
+                        exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid))
+                      );
+
+        allow update, delete: if request.auth != null
+                              && request.auth.uid == userId;
+
+        allow create: if request.auth != null
+                      && request.auth.uid == userId;
+      }
+
+      // === A2. SESIONES DE LECTURA (privadas, solo el dueño) ===
+      match /sessions/{sessionId} {
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+        // Crear: esquema cerrado; las sesiones no se editan después
+        allow create: if request.auth != null
+                      && request.auth.uid == userId
+                      && request.resource.data.keys().hasOnly(['bookId', 'startAtMs', 'durationMin', 'pageStart', 'pageEnd', 'pagesRead', 'endAt'])
+                      && request.resource.data.bookId is string
+                      && request.resource.data.bookId.size() >= 1
+                      && request.resource.data.bookId.size() <= 128
+                      && request.resource.data.startAtMs is number
+                      && request.resource.data.startAtMs > 0
+                      && request.resource.data.durationMin is number
+                      && request.resource.data.durationMin >= 0
+                      && request.resource.data.durationMin <= 1440
+                      && request.resource.data.pageStart is number
+                      && request.resource.data.pageStart >= 0
+                      && request.resource.data.pageStart <= 100000
+                      && request.resource.data.pageEnd is number
+                      && request.resource.data.pageEnd >= 0
+                      && request.resource.data.pageEnd <= 100000
+                      && request.resource.data.pagesRead is number
+                      && request.resource.data.pagesRead >= 0
+                      && request.resource.data.pagesRead <= 100000;
+      }
+
+      // === B. SOLICITUDES DE AMISTAD ===
+      match /friend_requests/{requesterId} {
+        allow read: if request.auth != null
+                    && (request.auth.uid == userId || request.auth.uid == requesterId);
+
+        // Crear/editar: solo el solicitante, con su propio uid y esquema fijo
+        allow create, update: if request.auth != null
+                      && request.auth.uid == requesterId
+                      && request.resource.data.keys().hasOnly(['fromUid', 'fromUsername', 'status', 'timestamp'])
+                      && request.resource.data.fromUid == request.auth.uid
+                      && request.resource.data.fromUsername is string
+                      && request.resource.data.fromUsername.size() <= 60
+                      && request.resource.data.status == 'pending';
+
+        allow delete: if request.auth != null
+                      && (request.auth.uid == userId || request.auth.uid == requesterId);
+      }
+
+      // === C. AMIGOS CONFIRMADOS ===
+      match /friends/{friendId} {
+        allow read: if request.auth != null
+                    && request.auth.uid == userId;
+
+        // El doc de amistad debe apuntar al uid de su propio ID de documento
+        allow create, update: if request.auth != null
+                      && (request.auth.uid == userId || request.auth.uid == friendId)
+                      && request.resource.data.keys().hasOnly(['friendUid', 'friendUsername', 'since'])
+                      && request.resource.data.friendUid == friendId
+                      && request.resource.data.friendUsername is string
+                      && request.resource.data.friendUsername.size() <= 60;
+
+        allow delete: if request.auth != null
+                      && (request.auth.uid == userId || request.auth.uid == friendId);
+      }
+    }
+  }
+}

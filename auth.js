@@ -12,29 +12,24 @@ import {
 } from "firebase/auth";
 import {
     doc,
-    setDoc,
-    collection,
-    query,
-    where,
-    getDocs
+    getDoc,
+    setDoc
 } from "firebase/firestore";
 import { app, auth, db } from "./firebase-init.js";
 
 console.log('auth.js cargado');
 
-// 1. INTENTO DE RECUPERACIÓN MANUAL (El salvavidas)
-// Si el usuario guardó su sesión localmente pero Firebase se olvidó
-const savedEmail = localStorage.getItem('rincon_user_email');
-const savedPass = localStorage.getItem('rincon_user_pass');
-
-if (savedEmail && savedPass && !auth.currentUser) {
-    signInWithEmailAndPassword(auth, savedEmail, savedPass).catch(err => {
-        console.error("Fallo al auto-recuperar sesión:", err);
-        // Si la contraseña cambió y falla, limpiamos
-        localStorage.removeItem('rincon_user_email');
-        localStorage.removeItem('rincon_user_pass');
-    });
-}
+// 1. LIMPIEZA DE CREDENCIALES ANTIGUAS
+// Versiones anteriores guardaban email y contraseña en texto plano en
+// localStorage para re-autenticar manualmente ("el salvavidas"). Eso era
+// una vulnerabilidad: cualquier XSS o acceso al dispositivo podía leerla.
+// La sesión ahora depende EXCLUSIVAMENTE de la persistencia nativa de
+// Firebase Auth (browserLocalPersistence + onAuthStateChanged).
+const limpiarCredencialesAntiguas = () => {
+    localStorage.removeItem('rincon_user_email');
+    localStorage.removeItem('rincon_user_pass');
+};
+limpiarCredencialesAntiguas();
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -79,19 +74,24 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .then(async (userCred) => {
                 // Comprobamos si el usuario ya existe en Firestore
-                const q = query(collection(db, "users"), where("uid", "==", userCred.user.uid));
-                const snapshot = await getDocs(q);
+                const profileSnap = await getDoc(doc(db, "users", userCred.user.uid));
 
-                // Si es nuevo (la consulta está vacía), lo creamos en la base de datos
-                if (snapshot.empty) {
-                    // Creamos un username a partir de su nombre de Google
-                    const nombreGoogle = userCred.user.displayName ? userCred.user.displayName.replace(/\s+/g, '') : 'Lector';
+                // Si es nuevo, lo creamos en la base de datos.
+                // PRIVACIDAD: el email NO se guarda en Firestore — Firebase
+                // Auth ya lo custodia y la colección users es legible por
+                // otros usuarios autenticados.
+                if (!profileSnap.exists()) {
+                    // Truncado a 26 chars: las reglas de Firestore limitan username a 30
+                    const nombreGoogle = userCred.user.displayName ? userCred.user.displayName.replace(/\s+/g, '').slice(0, 26) : 'Lector';
                     const usernameGenerado = nombreGoogle + Math.floor(Math.random() * 1000);
 
                     await setDoc(doc(db, "users", userCred.user.uid), {
                         username: usernameGenerado,
                         searchKey: usernameGenerado.toLowerCase(),
-                        email: userCred.user.email,
+                        uid: userCred.user.uid
+                    });
+                    // Reservar el username (uniqueness + chequeo público de registro)
+                    await setDoc(doc(db, "usernames", usernameGenerado.toLowerCase()), {
                         uid: userCred.user.uid
                     });
                 }
@@ -118,8 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 .then(userCred => {
                     console.log('Login OK:', userCred.user.email);
                     if (userCred.user.emailVerified) {
-                        localStorage.setItem('rincon_user_email', email);
-                        localStorage.setItem('rincon_user_pass', pass);
+                        // Solo un flag de UI para redirigir rápido; la sesión
+                        // real la gestiona Firebase Auth. NUNCA guardar
+                        // credenciales en localStorage.
                         localStorage.setItem('rincon_logged_in', '1');
                         window.location.href = 'biblioteca.html';
                     } else {
@@ -183,30 +184,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const usersRef = collection(db, "users"); 
-                const q = query(usersRef, where("username", "==", usernameInputVal));
-                const querySnapshot = await getDocs(q);
+                // Chequeo de nombre libre contra la colección pública `usernames`
+                // (un doc por nombre, ID = username en minúsculas). La colección
+                // `users` ya no es legible sin autenticar.
+                const usernameKey = usernameInputVal.toLowerCase();
+                const nameSnap = await getDoc(doc(db, "usernames", usernameKey));
 
-                if (!querySnapshot.empty) {
+                if (nameSnap.exists()) {
                     document.getElementById('register-error').textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
-                    return; 
+                    return;
                 }
 
                 const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-                
+
+                // PRIVACIDAD: el email NO se guarda en Firestore (Auth lo custodia)
                 await setDoc(doc(db, "users", userCred.user.uid), {
                     username: usernameInputVal,
-                    searchKey: usernameInputVal.toLowerCase(), // <--- ESTA ES LA LÍNEA QUE FALTABA
-                    email: email,
+                    searchKey: usernameKey,
+                    uid: userCred.user.uid
+                });
+                // Reservar el username: las reglas solo permiten create (no
+                // sobrescribir), así que dos registros simultáneos no chocan.
+                await setDoc(doc(db, "usernames", usernameKey), {
                     uid: userCred.user.uid
                 });
                 
                 await sendEmailVerification(userCred.user);
                 await signOut(auth); // Nos aseguramos de desloguear aquí para que verifique el email
                 
-                // Limpiamos el salvavidas por si acaso
-                localStorage.removeItem('rincon_user_email');
-                localStorage.removeItem('rincon_user_pass');
+                // Limpiar restos de credenciales antiguas por si acaso
+                limpiarCredencialesAntiguas();
 
                 alert("Cuenta creada. Verifica tu correo.");
                 window.location.href = 'login.html';

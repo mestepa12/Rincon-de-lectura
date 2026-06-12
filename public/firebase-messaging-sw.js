@@ -22,7 +22,7 @@ const messaging = firebase.messaging();
 // ============================================================
 // CACHÉ OFFLINE (App Shell)
 // ============================================================
-const CACHE_NAME = 'rincon-shell-v1';
+const CACHE_NAME = 'rincon-shell-v3';
 
 // App Shell: páginas y estáticos con nombre fijo. Los bundles de Vite
 // (/assets/*.js, *.css) llevan hash en el nombre y se cachean en runtime.
@@ -32,6 +32,7 @@ const APP_SHELL = [
     '/biblioteca.html',
     '/login.html',
     '/register.html',
+    '/manifest.json',
     '/cookies.js',
     '/favicon.png',
     '/google-logo.png',
@@ -73,9 +74,16 @@ async function handleNavigation(request) {
     } catch (err) {
         const cached = await caches.match(request);
         if (cached) return cached;
+        // La raíz (start_url de la PWA) siempre responde con el index cacheado
+        const url = new URL(request.url);
+        if (url.pathname === '/' || url.pathname === '/index.html') {
+            const index = (await caches.match('/')) || (await caches.match('/index.html'));
+            if (index) return index;
+        }
         // Fallback: shell principal de la app
         return (await caches.match('/biblioteca.html')) ||
                (await caches.match('/')) ||
+               (await caches.match('/index.html')) ||
                Response.error();
     }
 }
@@ -121,9 +129,13 @@ self.addEventListener('fetch', (event) => {
 // ============================================================
 
 // Notificaciones recibidas con la app en segundo plano.
+// Si el mensaje trae payload `notification`, el SDK ya la muestra solo
+// (imprescindible en iOS): mostrarla aquí también la duplicaría.
+// Solo pintamos manualmente los mensajes solo-data.
 messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title || payload.data?.title || 'Rincón de Lectura';
-    const body = payload.notification?.body || payload.data?.body || '';
+    if (payload.notification) return;
+    const title = payload.data?.title || 'Rincón de Lectura';
+    const body = payload.data?.body || '';
 
     self.registration.showNotification(title, {
         body,
