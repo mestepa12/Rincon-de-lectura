@@ -185,8 +185,10 @@ service cloud.firestore {
     // =========================================================
     match /buddy_reads/{buddyId} {
 
+      // Contra resource.data (no contra el ID): las consultas con
+      // array-contains solo son demostrables así para el motor de reglas.
       allow read: if request.auth != null
-                  && request.auth.uid in buddyId.split('_');
+                  && request.auth.uid in resource.data.participants;
 
       // Crear: solo un participante, el otro debe ser su amigo, y el ID
       // debe ser coherente con participants + bookSlug. Esquema cerrado.

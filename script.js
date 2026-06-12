@@ -2423,7 +2423,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeRecommendBtn = document.getElementById('close-recommend-btn');
         const reshuffleRecommendBtn = document.getElementById('reshuffle-recommend-btn');
 
-        let recommendCandidates = null;  // caché de candidatos por sesión de modal
+        let recommendCandidates = null;     // caché de candidatos por sesión de modal
+        let shownRecommendSlugs = new Set(); // ya mostrados: "otras ideas" no repite
+
+        // Selección sin repetición: excluye lo ya mostrado y, cuando se
+        // agota el pozo, vuelve a empezar.
+        const pickRecommendations = () => {
+            const scored = scoreCandidates(recommendCandidates, buildTasteProfile());
+            let pool = scored.filter(c => !shownRecommendSlugs.has(c.slug));
+            if (pool.length === 0 && scored.length > 0) {
+                shownRecommendSlugs.clear();
+                pool = scored;
+            }
+            const picks = pool.slice(0, 3);
+            picks.forEach(p => shownRecommendSlugs.add(p.slug));
+            return { picks, total: scored.length };
+        };
 
         // Perfil de gustos: pondera vibes/género/ritmo de tus libros.
         // Terminados pesan según valoración; lo que lees ahora también cuenta.
@@ -2549,10 +2564,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }).sort((a, b) => b.score - a.score);
         };
 
-        const renderRecommendations = (scored) => {
+        const renderRecommendations = ({ picks, total }) => {
             recommendList.innerHTML = '';
 
-            if (scored.length === 0) {
+            if (picks.length === 0) {
                 recommendIntro.textContent = 'Págino no ha encontrado nada que recomendarte todavía.';
                 recommendList.innerHTML = `<p class="recommend-empty">Añade libros a <b>Próximas Lecturas</b> o a tu
                     <b>Lista de Deseos</b>, o haz amigos para que Págino pueda cotillear sus favoritos. 🦕</p>`;
@@ -2560,12 +2575,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            recommendIntro.textContent = scored.length < 3
+            recommendIntro.textContent = picks.length < 3
                 ? 'Págino ha encontrado esto rebuscando en las estanterías:'
                 : 'Págino ha husmeado en tu biblioteca y en las de tus amigos. Sus 3 apuestas:';
-            reshuffleRecommendBtn.style.display = scored.length > 3 ? '' : 'none';
+            reshuffleRecommendBtn.style.display = total > 3 ? '' : 'none';
 
-            scored.slice(0, 3).forEach(c => {
+            picks.forEach(c => {
                 const b = c.book;
                 const card = document.createElement('div');
                 card.className = 'recommend-card';
@@ -2638,7 +2653,8 @@ document.addEventListener('DOMContentLoaded', () => {
             recommendModal.showModal();
             try {
                 recommendCandidates = await collectCandidates();
-                renderRecommendations(scoreCandidates(recommendCandidates, buildTasteProfile()));
+                shownRecommendSlugs.clear();
+                renderRecommendations(pickRecommendations());
             } catch (error) {
                 console.error('Error generando recomendaciones:', error);
                 recommendList.innerHTML = '<p class="recommend-empty">Págino se ha mareado buscando. Inténtalo de nuevo.</p>';
@@ -2649,10 +2665,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeRecommendBtn) closeRecommendBtn.addEventListener('click', () => recommendModal.close());
         if (reshuffleRecommendBtn) reshuffleRecommendBtn.addEventListener('click', () => {
             if (recommendCandidates) {
-                renderRecommendations(scoreCandidates(recommendCandidates, buildTasteProfile()));
+                renderRecommendations(pickRecommendations());
             }
         });
-        if (recommendModal) recommendModal.addEventListener('close', () => { recommendCandidates = null; });
+        if (recommendModal) recommendModal.addEventListener('close', () => {
+            recommendCandidates = null;
+            shownRecommendSlugs.clear();
+        });
 
         // === RANKING DE PÁGINAS ===
         const renderRanking = async () => {
