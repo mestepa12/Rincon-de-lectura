@@ -227,6 +227,9 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
     list-style: none;
     cursor: pointer;
     padding: 0.8rem 1rem;
+    min-height: 2.75rem;
+    box-sizing: border-box;
+    background: var(--card-bg-color);
     font-weight: bold;
     font-size: 0.95rem;
     display: flex;
@@ -244,7 +247,7 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
     transition: transform var(--transition-speed);
 }
 .detail-collapse[open] > summary::after { transform: rotate(180deg); }
-.detail-collapse > summary:hover { background: var(--card-bg-color); }
+.detail-collapse > summary:hover { background: var(--border-color); }
 .detail-collapse[open] > summary { border-bottom: 1px solid var(--border-color); }
 .detail-collapse > *:not(summary) { padding: 0.9rem 1rem; }
 .detail-collapse .detail-notes-section,
