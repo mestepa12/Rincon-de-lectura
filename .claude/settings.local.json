@@ -42,7 +42,8 @@
       "PowerShell(firebase functions:log *)",
       "PowerShell($cfg = Get-Content \"C:\\\\Users\\\\meste\\\\.config\\\\configstore\\\\firebase-tools.json\" -Raw | ConvertFrom-Json; $body = @{ grant_type = \"refresh_token\"; refresh_token = $cfg.tokens.refresh_token; client_id = \"563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com\"; client_secret = \"j9iVZfS8kkCEFUPaAeJV0sAi\" }; $tok = Invoke-RestMethod -Method Post -Uri \"https://oauth2.googleapis.com/token\" -Body $body; $h = @{ Authorization = \"Bearer $\\($tok.access_token\\)\" }; foreach \\($uid in @\\('jEaD8eQvjVT9Se9n7E157lJity63','R052gCBhGJRcUlesVZZ93u03Wt03'\\)\\) { $d = Invoke-RestMethod -Uri \"https://firestore.googleapis.com/v1/projects/mi-rincon-de-lectura/databases/\\(default\\)/documents/users/$uid\" -Headers $h; $tokens = $d.fields.fcmTokens.arrayValue.values; \"UID: $uid\"; \"  username: $\\($d.fields.username.stringValue\\)\"; \"  num fcmTokens: $\\($tokens.Count\\)\"; if \\($tokens\\) { $tokens | ForEach-Object { \"    token: $\\($_.stringValue.Substring\\(0,25\\)\\)...\" } } })",
       "PowerShell(node repair-usernames.mjs)",
-      "PowerShell(foreach\\($f in 'login.html','register.html','privacidad.html'\\){ Write-Output \"=== $f ===\"; Get-Content \"C:\\\\Users\\\\meste\\\\Desktop\\\\Proyectos\\\\Rincon-de-lectura\\\\$f\" -TotalCount 20 })"
+      "PowerShell(foreach\\($f in 'login.html','register.html','privacidad.html'\\){ Write-Output \"=== $f ===\"; Get-Content \"C:\\\\Users\\\\meste\\\\Desktop\\\\Proyectos\\\\Rincon-de-lectura\\\\$f\" -TotalCount 20 })",
+      "Bash(git commit *)"
     ]
   }
 }
