@@ -22,7 +22,7 @@ const messaging = firebase.messaging();
 // ============================================================
 // CACHÉ OFFLINE (App Shell)
 // ============================================================
-const CACHE_NAME = 'rincon-shell-v4';
+const CACHE_NAME = 'rincon-shell-v5';
 
 // App Shell: páginas y estáticos con nombre fijo. Los bundles de Vite
 // (/assets/*.js, *.css) llevan hash en el nombre y se cachean en runtime.
