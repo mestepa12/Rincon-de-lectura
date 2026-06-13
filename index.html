@@ -76,9 +76,9 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-    
+    <!-- Chart.js y html2canvas se cargan de forma diferida (lazy-libs.js)
+         solo al abrir estadísticas o exportar tarjetas. -->
+
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
 <script>
@@ -102,40 +102,40 @@
         </div>
     </nav>
 
-    <!-- ==================== LANDING: HERO ==================== -->
+<!-- ==================== LANDING: HERO ==================== -->
     <section class="landing-hero">
-        <p class="hero-eyebrow">📚 Tu biblioteca personal, sin anuncios y en español</p>
-        <h1 class="hero-title">Convierte la lectura en tu mejor hábito.</h1>
-        <p class="hero-sub">Tus libros, tus estadísticas, tus reglas. Registra lo que lees, mantén tu racha encendida y comparte tus reseñas con el mundo.</p>
+        <p class="hero-eyebrow">📚 Tu tracker de lectura y biblioteca virtual, sin anuncios</p>
+        <h1 class="hero-title">La app para registrar lecturas que convierte leer en tu mejor hábito.</h1>
+        <p class="hero-sub">Tus libros, tus estadísticas, tus reglas. Descubre la mejor alternativa a Goodreads en español: haz el seguimiento de tus páginas, mantén tu racha diaria y comparte reseñas con el mundo.</p>
         <div class="hero-ctas">
             <a href="register.html" class="cta-btn cta-primary">Crear Cuenta Gratis</a>
             <a href="#demo" class="cta-btn cta-secondary">Probar Demo Interactiva</a>
         </div>
     </section>
-
+    
     <!-- ==================== LANDING: BENEFICIOS ==================== -->
     <section class="landing-features">
-        <h2 class="landing-section-title">Todo lo que necesitas para leer más</h2>
+        <h2 class="landing-section-title">¿Por qué somos la mejor alternativa a Goodreads?</h2>
         <div class="features-grid">
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
-                <h3>Estadísticas visuales de tu progreso</h3>
-                <p>Gráficos claros de tus páginas, géneros y libros terminados. Mira cuánto has crecido como lector de un vistazo.</p>
+                <h3>Estadísticas de lectura avanzadas</h3>
+                <p>Haz el seguimiento de lectura exacto con gráficos claros de tus páginas, géneros y libros terminados. Mira tu progreso de un vistazo.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">🔥</div>
-                <h3>Rachas y logros diarios</h3>
-                <p>Cada día que lees, tu racha crece. Desbloquea medallas, supera tus objetivos y deja que la constancia haga el resto.</p>
+                <h3>Rachas y tracker de hábitos</h3>
+                <p>Cada día que lees, tu racha crece. Desbloquea medallas, supera tus objetivos anuales y deja que la constancia haga el resto.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">👥</div>
-                <h3>Conecta con amigos</h3>
-                <p>Añade a tus amigos, cotillea sus bibliotecas y compite en el ranking de páginas leídas. Leer acompañado motiva el doble.</p>
+                <h3>Club de lectura y comunidad</h3>
+                <p>Añade a tus amigos, descubre sus bibliotecas virtuales y compite en el ranking. Leer acompañado en español motiva el doble.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">✈️</div>
                 <h3>Modo Offline total</h3>
-                <p>Lee en el metro o en modo avión: tu biblioteca funciona sin conexión y se sincroniza sola cuando vuelves a tener internet.</p>
+                <p>Lee en el metro o sin conexión: tu registro de libros funciona offline y se sincroniza automáticamente al recuperar internet.</p>
             </div>
         </div>
     </section>

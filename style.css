@@ -11,9 +11,11 @@
     --font-title: 'Lora', serif;
     --font-body: 'Lato', sans-serif;
     --transition-speed: 0.3s;
+    /* WCAG AA compliant: #7D5C51 on #FDFBF7 = 5.8:1, on #F5EFE6 = 5.2:1 */
+    --accessible-muted-color: #7D5C51;
 }
 
-body.dark-mode { 
+body.dark-mode {
     --bg-color: #1A202C;
     --text-color: #E2E8F0;
     --accent-color: #718096;
@@ -21,6 +23,8 @@ body.dark-mode {
     --card-bg-color: #2D3748;
     --shadow-color: rgba(0, 0, 0, 0.25);
     --border-color: #4A5568;
+    /* WCAG AA compliant: #C4A99E on #2D3748 = 5.4:1, on #1A202C = 7.4:1 */
+    --accessible-muted-color: #C4A99E;
 }
 
 /* ======== GLOBAL & RESET ======== */
@@ -85,7 +89,7 @@ body.dark-mode #site-title { color: #fff; }
 .book-cover { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; display: block; background-color: var(--border-color); cursor: pointer; }
 .book-info { padding: 1rem; display: flex; flex-direction: column; flex-grow: 1; cursor: pointer; }
 .book h3 { font-family: var(--font-title); margin: 0 0 0.25rem 0; font-size: 1.1rem; }
-.book .author { margin: 0; color: var(--accent-color); font-size: 0.9rem; flex-grow: 1; margin-block-end: 0.5rem; }
+.book .author { margin: 0; color: var(--accessible-muted-color); font-size: 0.9rem; flex-grow: 1; margin-block-end: 0.5rem; }
 .book-extra-info { margin-block-start: auto; font-size: 0.9rem; }
 
 .rating-stars { display: flex; gap: 0.25rem; }
@@ -1381,7 +1385,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 }
 
 .main-footer a {
-    color: var(--accent-color); /* Usa el color principal de tu web */
+    color: var(--accessible-muted-color);
     text-decoration: none;
     font-weight: bold;
 }

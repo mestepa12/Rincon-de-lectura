@@ -1,4 +1,5 @@
 import { googleBooksApiKey } from './config.js';
+import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Datos iniciales (Demo): biblioteca precargada para que la demo
@@ -193,7 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // === ESTADÍSTICAS (demo) ===
-    const renderStats = () => {
+    const renderStats = async () => {
+        await loadChart(); // carga Chart.js bajo demanda (define window.Chart)
         if (pieChartInst) { pieChartInst.destroy(); pieChartInst = null; }
         if (barChartInst) { barChartInst.destroy(); barChartInst = null; }
         const isDark = document.body.classList.contains('dark-mode');
@@ -491,6 +493,7 @@ function openModal(id) {
         document.getElementById('export-stars').textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
         card.style.display = 'flex';
         try {
+            const html2canvas = await loadHtml2canvas(); // carga bajo demanda
             const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
             const link = document.createElement('a');
             link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;

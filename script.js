@@ -6,6 +6,9 @@ import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported 
 // 1. Inicialización compartida (app, auth y Firestore con caché persistente)
 import { app, auth, db } from './firebase-init.js';
 
+// Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
+import { loadChart, loadHtml2canvas } from './lazy-libs.js';
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- EL PORTERO: Vigilando la entrada ---
@@ -1649,7 +1652,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (current && genres.includes(current)) sel.value = current;
         };
 
-        const renderStats = () => {
+        const renderStats = async () => {
+            await loadChart(); // carga Chart.js bajo demanda (define window.Chart)
             [pieChartInst, barChartInst, genreChartInst, ratingChartInst, authorsChartInst, ritmoChartInst, moodChartInst].forEach(c => { if (c) c.destroy(); });
             pieChartInst = barChartInst = genreChartInst = ratingChartInst = authorsChartInst = ritmoChartInst = moodChartInst = null;
 
@@ -2871,6 +2875,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('export-stars').textContent = '★'.repeat(fullS) + (halfS ? '½' : '') + '☆'.repeat(5 - fullS - (halfS ? 1 : 0));
             card.style.display = 'flex';
             try {
+                const html2canvas = await loadHtml2canvas(); // carga bajo demanda
                 const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
                 const link = document.createElement('a');
                 link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;
@@ -3430,6 +3435,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.getElementById('export-stats-card');
             card.style.display = 'flex';
             try {
+                const html2canvas = await loadHtml2canvas(); // carga bajo demanda
                 const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
                 const link = document.createElement('a');
                 link.download = 'mis_estadisticas_lectura.png';
