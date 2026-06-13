@@ -211,6 +211,120 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 }
 .btn-edit-book:hover { border-color: var(--accent-color-interactive); transform: scale(1.08); }
 
+/* ======== FICHA DEL LIBRO: SECCIONES DESPLEGABLES ======== */
+.detail-collapse {
+    margin-bottom: 0.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-color);
+    overflow: hidden;
+}
+.detail-collapse > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 0.8rem 1rem;
+    font-weight: bold;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    -webkit-user-select: none;
+    user-select: none;
+    transition: background-color var(--transition-speed);
+}
+.detail-collapse > summary::-webkit-details-marker { display: none; }
+.detail-collapse > summary::after {
+    content: '▾';
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    transition: transform var(--transition-speed);
+}
+.detail-collapse[open] > summary::after { transform: rotate(180deg); }
+.detail-collapse > summary:hover { background: var(--card-bg-color); }
+.detail-collapse[open] > summary { border-bottom: 1px solid var(--border-color); }
+.detail-collapse > *:not(summary) { padding: 0.9rem 1rem; }
+.detail-collapse .detail-notes-section,
+.detail-collapse .detail-comments-section,
+.detail-collapse .detail-vibes-section { margin-bottom: 0; }
+.detail-collapse .detail-vibes-section { border-top: none; padding-top: 0.9rem; margin-top: 0; }
+.detail-collapse .detail-comments-section { border-top: none; padding-top: 0.9rem; margin-top: 0; }
+.buddy-section.detail-collapse > #buddy-content { padding: 0.9rem 1rem; }
+
+/* ======== MODAL "¡ÚLTIMA PÁGINA!" ======== */
+#finish-book-modal {
+    max-width: 380px;
+    width: 92%;
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    text-align: center;
+    border: 2px solid var(--accent-color-interactive);
+}
+#finish-book-modal::backdrop { background: rgba(0, 0, 0, 0.7); -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px); }
+.finish-modal-content { padding: 2rem 1.5rem 1.5rem; position: relative; }
+.finish-confetti {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    right: 0;
+    font-size: 1.6rem;
+    letter-spacing: 1.2rem;
+    opacity: 0.9;
+    pointer-events: none;
+}
+.finish-confetti::before { content: '🎉 '; }
+.finish-confetti::after { content: ' 🎉'; }
+.finish-mascota {
+    width: 96px;
+    height: 96px;
+    object-fit: contain;
+    margin: 0.75rem auto 0.5rem;
+    display: block;
+    animation: finish-bounce 0.9s ease infinite alternate;
+}
+@keyframes finish-bounce {
+    from { transform: translateY(0) rotate(-3deg); }
+    to   { transform: translateY(-8px) rotate(3deg); }
+}
+.finish-modal-content h2 {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-title);
+    border: none;
+    font-size: 1.6rem;
+}
+#finish-book-text {
+    margin: 0 0 1.25rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--accent-color);
+}
+.finish-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+.btn-finish-confirm {
+    width: 100%;
+    padding: 0.9rem;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent-color-interactive);
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: filter var(--transition-speed), transform var(--transition-speed);
+}
+.btn-finish-confirm:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.btn-finish-cancel {
+    width: 100%;
+    padding: 0.7rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-color);
+    font-weight: bold;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.btn-finish-cancel:hover { border-color: var(--accent-color); }
+
 /* ======== LEEMOS JUNTOS (lecturas compartidas) ======== */
 .buddy-section { margin-bottom: 1.5rem; }
 .buddy-section > label { display: block; font-weight: bold; margin-bottom: 0.5rem; }

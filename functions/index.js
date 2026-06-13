@@ -75,9 +75,11 @@ function getUserTokens(userData) {
  * @param {string[]} tokens Tokens FCM del usuario.
  * @param {string} title Título de la notificación.
  * @param {string} body Cuerpo de la notificación.
+ * @param {string} url Ruta a abrir al pulsar la notificación (deep link).
  * @return {Promise<void>}
  */
-async function sendPushToUser(uid, tokens, title, body) {
+async function sendPushToUser(uid, tokens, title, body,
+    url = "/biblioteca.html") {
   if (tokens.length === 0) return;
 
   // Payload híbrido: `notification` es imprescindible para iOS (Safari no
@@ -87,11 +89,11 @@ async function sendPushToUser(uid, tokens, title, body) {
   const response = await messaging.sendEachForMulticast({
     tokens,
     notification: {title, body},
-    data: {url: "/biblioteca.html"},
+    data: {url},
     webpush: {
       headers: {Urgency: "high"},
       notification: {icon: "/favicon.png", badge: "/favicon.png"},
-      fcmOptions: {link: "/biblioteca.html"},
+      fcmOptions: {link: url},
     },
   });
 
@@ -196,10 +198,25 @@ exports.onReadingGoalMet = onDocumentUpdated("users/{uid}", async (event) => {
 });
 
 /**
- * Cron diario (20:00 Europe/Madrid). Busca usuarios con racha activa
- * (`rachaActual` > 0) que todavía no han leído hoy (su
- * `lastReadTimestamp` no es de hoy) y les avisa de que su racha
- * está en peligro.
+ * Días de calendario (UTC) transcurridos entre un Timestamp y ahora.
+ * @param {object|undefined} ts Timestamp de Firestore.
+ * @return {number|null} Días completos de diferencia, o null si no hay fecha.
+ */
+function calendarDaysSince(ts) {
+  if (!ts || typeof ts.toDate !== "function") return null;
+  const d = ts.toDate();
+  const last = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const now = new Date();
+  const today = Date.UTC(
+      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((today - last) / 86400000);
+}
+
+/**
+ * Cron diario (20:00 Europe/Madrid). La racha se congela hasta 2 días
+ * sin leer y muere al 3º, así que:
+ *  - 1 día sin leer: aviso suave (racha congelada).
+ *  - 2+ días sin leer: última oportunidad (a medianoche se reinicia).
  */
 exports.checkStreakAtRisk = onSchedule(
     {
@@ -208,10 +225,6 @@ exports.checkStreakAtRisk = onSchedule(
       region: "europe-west1",
     },
     async () => {
-      // El frontend guarda las fechas de día en UTC (toISOString),
-      // así que comparamos contra la fecha UTC de hoy.
-      const todayUtc = new Date().toISOString().split("T")[0];
-
       const snapshot = await db.collection("users")
           .where("rachaActual", ">", 0)
           .get();
@@ -224,23 +237,32 @@ exports.checkStreakAtRisk = onSchedule(
           const userData = docSnap.data() || {};
           const lastRead =
               userData.lastReadTimestamp ?? userData.ultimaFechaLectura;
-          const lastReadDay = timestampToIso(lastRead)?.split("T")[0];
+          const days = calendarDaysSince(lastRead);
 
-          // Ya ha leído hoy: racha a salvo.
-          if (lastReadDay === todayUtc) return;
+          // Sin fecha o ya ha leído hoy: racha a salvo.
+          if (days === null || days === 0) return;
 
           const tokens = getUserTokens(userData);
           if (tokens.length === 0) return;
 
           const racha = asNumber(userData.rachaActual);
-          await sendPushToUser(
-              docSnap.id,
-              tokens,
-              "🔥 ¡Cuidado! Tu racha está en peligro",
-              `Llevas ${racha} días seguidos leyendo y hoy ` +
-              "todavía no has leído. ¡Unas páginas antes de dormir y " +
-              "racha salvada!",
-          );
+          if (days === 1) {
+            await sendPushToUser(
+                docSnap.id,
+                tokens,
+                "🧊 Tu racha se ha congelado",
+                `Tu racha de ${racha} días aguanta congelada, pero mañana ` +
+                "es el último día para salvarla. ¡Unas páginas y listo!",
+            );
+          } else {
+            await sendPushToUser(
+                docSnap.id,
+                tokens,
+                "🔥 ¡Última oportunidad para tu racha!",
+                `Llevas ${days} días sin leer y tu racha de ${racha} días ` +
+                "se reinicia esta medianoche. ¡Sálvala con unas páginas!",
+            );
+          }
           notified++;
         } catch (error) {
           logger.error("Error procesando usuario en checkStreakAtRisk", {
@@ -254,6 +276,49 @@ exports.checkStreakAtRisk = onSchedule(
       logger.info("Revisión de rachas en peligro completada", {
         usuariosConRacha: snapshot.size,
         notificados: notified,
+      });
+    },
+);
+
+/**
+ * Cron diario (00:05 Europe/Madrid). Reinicia a 0 las rachas de quienes
+ * llevan 3 o más días de calendario sin leer (la congelación cubre los
+ * 2 primeros). El trigger onStreakLost registra cada reinicio en logs.
+ */
+exports.resetExpiredStreaks = onSchedule(
+    {
+      schedule: "5 0 * * *",
+      timeZone: "Europe/Madrid",
+      region: "europe-west1",
+    },
+    async () => {
+      const snapshot = await db.collection("users")
+          .where("rachaActual", ">", 0)
+          .get();
+
+      let resets = 0;
+      const writes = snapshot.docs.map(async (docSnap) => {
+        try {
+          const userData = docSnap.data() || {};
+          const lastRead =
+              userData.lastReadTimestamp ?? userData.ultimaFechaLectura;
+          const days = calendarDaysSince(lastRead);
+          if (days === null || days < 3) return;
+
+          await docSnap.ref.update({rachaActual: 0});
+          resets++;
+        } catch (error) {
+          logger.error("Error reiniciando racha", {
+            uid: docSnap.id,
+            error: error.message,
+          });
+        }
+      });
+
+      await Promise.all(writes);
+      logger.info("Reinicio de rachas caducadas completado", {
+        usuariosConRacha: snapshot.size,
+        rachasReiniciadas: resets,
       });
     },
 );
@@ -482,6 +547,7 @@ exports.onNewChatMessage = onDocumentCreated(
           tokens,
           `💬 Nuevo mensaje de @${senderName}`,
           body,
+          `/biblioteca.html?chat=${encodeURIComponent(from)}`,
       );
 
       logger.info("Notificación de chat enviada", {to, from});

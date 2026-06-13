@@ -134,6 +134,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentFriendName = '';
         let myFriendIds = new Set();
         let myFriendsInfo = [];   // [{uid, username}] para el recomendador
+
+        // Deep link de notificación push: /biblioteca.html?chat=<uid>
+        // Se consume cuando llega la lista de amigos (se necesita el username).
+        let pendingChatUid = new URLSearchParams(window.location.search).get('chat');
+        if (pendingChatUid) {
+            history.replaceState(null, '', window.location.pathname); // limpiar URL
+        }
         let pieChartInst = null;
         let barChartInst = null;
         let genreChartInst = null;
@@ -726,6 +733,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Leemos Juntos: progreso compartido con un amigo
             renderBuddySection(book);
+
+            // Desplegables: abiertos solo si tienen chicha (menos ruido visual)
+            const notesCol = document.getElementById('detail-notes-collapse');
+            if (notesCol) notesCol.open = !!(book.notes && book.notes.trim());
+            const commentsCol = document.getElementById('detail-comments-collapse');
+            if (commentsCol) commentsCol.open = false;
+            const vibesCol = document.getElementById('detail-vibes-collapse');
+            if (vibesCol) vibesCol.open = false;
+            const buddyCol = document.getElementById('buddy-section');
+            if (buddyCol && 'open' in buddyCol) buddyCol.open = !!getBuddyForBook(book);
 
             bookDetailModal.showModal();
         };
@@ -1340,6 +1357,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 username: d.data().friendUsername || '?'
             }));
 
+            // Notificación de chat pulsada: abrir el chat con esa persona
+            if (pendingChatUid) {
+                const f = myFriendsInfo.find(x => x.uid === pendingChatUid);
+                if (f) {
+                    pendingChatUid = null;
+                    openChat(f.uid, f.username);
+                }
+            }
+
             if (snapshot.empty) {
                 friendsList.innerHTML = '<p class="empty-msg">Aún no tienes amigos agregados.</p>';
             } else {
@@ -1836,7 +1862,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 onMessage(messaging, (payload) => {
                     const title = payload.data?.title || payload.notification?.title || 'Rincón de Lectura';
                     const body = payload.data?.body || payload.notification?.body || '';
-                    swRegistration.showNotification(title, { body, icon: '/favicon.png' });
+                    swRegistration.showNotification(title, {
+                        body,
+                        icon: '/favicon.png',
+                        data: { url: payload.data?.url || '/biblioteca.html' }
+                    });
                 });
                 return true;
             } catch (error) {
@@ -1914,9 +1944,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     ultima.setHours(0, 0, 0, 0);
                     const diffDias = Math.round((hoy - ultima) / (1000 * 60 * 60 * 24));
 
+                    // Racha con congelación: tolera hasta 2 días sin leer.
+                    // Lees lunes → martes y miércoles la racha se congela →
+                    // solo si tampoco lees miércoles, el jueves se reinicia.
                     if (diffDias === 0) return;          // Mismo día: ya contabilizado
-                    else if (diffDias === 1) rachaActual += 1;  // Día consecutivo
-                    else rachaActual = 1;                // Racha rota
+                    else if (diffDias <= 2) rachaActual += 1;  // Sigue (1 día saltado como mucho)
+                    else rachaActual = 1;                // 3+ días sin leer: racha rota
                 } else {
                     rachaActual = 1; // Primera vez leyendo
                 }
@@ -1943,7 +1976,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ultima = ultimaFechaTimestamp.toDate();
                 ultima.setHours(0, 0, 0, 0);
                 const diffDias = Math.round((hoy - ultima) / (1000 * 60 * 60 * 24));
-                if (diffDias >= 2) {
+                // La racha se congela hasta 2 días: solo muere al 3º día sin leer
+                if (diffDias >= 3) {
                     await updateDoc(userRef, { rachaActual: 0 });
                 }
             } catch (error) {
@@ -1980,6 +2014,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 console.error('Error actualizando páginas objetivo:', e);
+            }
+        };
+
+        // Modal bonito de "¡última página!": resuelve true/false según el botón.
+        // ESC o cerrar el diálogo cuentan como "todavía no".
+        const askFinishBook = (book) => new Promise((resolve) => {
+            const modal = document.getElementById('finish-book-modal');
+            if (!modal) { resolve(confirm(`¿Mover "${book.title}" a Libros Terminados?`)); return; }
+            document.getElementById('finish-book-text').textContent =
+                `Has llegado a la última página de "${book.title}". ¿Lo colocamos en tu estantería de Libros Terminados?`;
+            let settled = false;
+            const done = (val) => {
+                if (settled) return;
+                settled = true;
+                resolve(val);
+                if (modal.open) modal.close();
+            };
+            document.getElementById('finish-confirm-btn').onclick = () => done(true);
+            document.getElementById('finish-cancel-btn').onclick = () => done(false);
+            modal.addEventListener('close', () => done(false), { once: true });
+            modal.showModal();
+        });
+
+        // Última página alcanzada: ofrecer mover el libro a Terminados.
+        // Devuelve true si el libro se movió.
+        const promptFinishBook = async (book) => {
+            const ok = await askFinishBook(book);
+            if (!ok) return false;
+            try {
+                await updateDoc(doc(db, 'books', book.id), {
+                    section: 'libros-terminados',
+                    currentPage: book.totalPages || 0
+                });
+                book.section = 'libros-terminados';
+                book.currentPage = book.totalPages || 0;
+                renderBooks();
+                syncBuddyProgress(book);   // Leemos Juntos: marcar terminado
+                evaluarLogros();
+                return true;
+            } catch (error) {
+                console.error('Error moviendo el libro a Terminados:', error);
+                return false;
             }
         };
 
@@ -2044,6 +2120,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await evaluarLogros();
                 console.log('Detalles actualizados');
+
+                // ¿Llegó a la última página? Ofrecer pasarlo a Terminados
+                const finalSection = updatedData.section || book.section;
+                const finalPage = updatedData.currentPage !== undefined ? updatedData.currentPage : (book.currentPage || 0);
+                if (finalSection === 'leyendo-ahora' && book.totalPages > 0 && finalPage >= book.totalPages) {
+                    book.currentPage = finalPage;
+                    await promptFinishBook(book);
+                }
+
                 bookDetailModal.close();
             } catch (error) {
                 console.error('Error al guardar:', error);
@@ -2339,6 +2424,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.removeItem(SESSION_KEY);
                 stopSessionTicker();
                 refreshSessionUI(book);
+
+                // ¿Terminó el libro en esta sesión? Ofrecer pasarlo a Terminados
+                if (book.totalPages > 0 && endPage >= book.totalPages) {
+                    const moved = await promptFinishBook(book);
+                    if (moved) openDetailModal(book.id);  // repintar ficha como Terminado (valoración, etc.)
+                }
             } catch (error) {
                 console.error('Error guardando la sesión:', error);
                 alert('No se pudo guardar la sesión.');

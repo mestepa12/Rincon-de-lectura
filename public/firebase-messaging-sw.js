@@ -145,14 +145,23 @@ messaging.onBackgroundMessage((payload) => {
     });
 });
 
-// Al pulsar la notificación, enfocar la app o abrirla.
+// Al pulsar la notificación: enfocar la app y NAVEGAR a la URL del deep
+// link (p. ej. /biblioteca.html?chat=<uid> abre el chat con esa persona).
+// Si la notificación la auto-mostró el SDK, la URL viene en FCM_MSG.
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = event.notification.data?.url || '/';
+    const d = event.notification.data || {};
+    const targetUrl = d.url || d.FCM_MSG?.data?.url || '/biblioteca.html';
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
             for (const client of windowClients) {
-                if ('focus' in client) return client.focus();
+                if ('focus' in client) {
+                    return client.focus().then((focused) => {
+                        const c = focused || client;
+                        if (c && 'navigate' in c) return c.navigate(targetUrl);
+                        return c;
+                    });
+                }
             }
             return clients.openWindow(targetUrl);
         })

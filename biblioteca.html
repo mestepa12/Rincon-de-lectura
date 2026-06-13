@@ -235,29 +235,35 @@
                     </div>
                 </div>
 
-                <div class="detail-notes-section">
-                    <label for="detail-notes">Mis Notas</label>
-                    <textarea id="detail-notes" rows="6"
-                        placeholder="Añade tus notas, citas favoritas o reflexiones aquí..."></textarea>
-                </div>
-
-                <div id="detail-comments-section" class="detail-comments-section">
-                    <label>💬 Club de Lectura</label>
-                    <p class="comments-hint">Comentarios de tus amigos en este libro. Solo verás los de páginas que ya hayas leído: cero spoilers.</p>
-                    <div id="comments-list" class="comments-list"></div>
-                    <div class="comment-input-row">
-                        <input type="text" id="comment-input" maxlength="280"
-                            placeholder="Deja un comentario en tu página actual...">
-                        <button type="button" id="send-comment-btn" class="btn-send-comment" title="Enviar comentario">➤</button>
+                <details id="detail-notes-collapse" class="detail-collapse">
+                    <summary>📝 Mis Notas</summary>
+                    <div class="detail-notes-section">
+                        <textarea id="detail-notes" rows="6"
+                            placeholder="Añade tus notas, citas favoritas o reflexiones aquí..."></textarea>
                     </div>
-                    <p class="comment-page-hint" id="comment-page-hint"></p>
-                </div>
+                </details>
 
-                <div id="buddy-section" class="buddy-section">
-                    <label>🤝 Leemos Juntos</label>
+                <details id="detail-comments-collapse" class="detail-collapse">
+                    <summary>💬 Club de Lectura</summary>
+                    <div id="detail-comments-section" class="detail-comments-section">
+                        <p class="comments-hint">Comentarios de tus amigos en este libro. Solo verás los de páginas que ya hayas leído: cero spoilers.</p>
+                        <div id="comments-list" class="comments-list"></div>
+                        <div class="comment-input-row">
+                            <input type="text" id="comment-input" maxlength="280"
+                                placeholder="Deja un comentario en tu página actual...">
+                            <button type="button" id="send-comment-btn" class="btn-send-comment" title="Enviar comentario">➤</button>
+                        </div>
+                        <p class="comment-page-hint" id="comment-page-hint"></p>
+                    </div>
+                </details>
+
+                <details id="buddy-section" class="buddy-section detail-collapse">
+                    <summary>🤝 Leemos Juntos</summary>
                     <div id="buddy-content"></div>
-                </div>
+                </details>
 
+                <details id="detail-vibes-collapse" class="detail-collapse">
+                    <summary>🎭 Ritmo y Estados de Ánimo</summary>
                 <div id="detail-vibes-section" class="book-vibes-section detail-vibes-section">
                     <p class="vibes-section-title">Ritmo Narrativo</p>
                     <div class="ritmo-options" id="detail-ritmo-options">
@@ -281,6 +287,7 @@
                         <label class="mood-label"><input type="checkbox" name="detail-moods" value="Tranquilizador"> 🍵 Tranquilizador</label>
                     </div>
                 </div>
+                </details>
 
                 <div class="detail-page-actions">
                     <label for="move-book-select">Acciones</label>
@@ -316,6 +323,19 @@
         <div id="recommend-list" class="recommend-list"></div>
         <div class="recommend-footer">
             <button type="button" id="reshuffle-recommend-btn" class="btn-primary">🎲 Dame otras ideas</button>
+        </div>
+    </dialog>
+
+    <dialog id="finish-book-modal">
+        <div class="finish-modal-content">
+            <div class="finish-confetti" aria-hidden="true">🎊</div>
+            <img src="mascota_racha.png" alt="Págino celebrando" class="finish-mascota">
+            <h2>¡Última página!</h2>
+            <p id="finish-book-text">Has terminado el libro.</p>
+            <div class="finish-actions">
+                <button type="button" id="finish-confirm-btn" class="btn-finish-confirm">🏆 Mover a Terminados</button>
+                <button type="button" id="finish-cancel-btn" class="btn-finish-cancel">Todavía no</button>
+            </div>
         </div>
     </dialog>
 
