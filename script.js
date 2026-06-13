@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
         async function buscarLibroPorTitulo(titulo) {
             if (typeof googleBooksApiKey !== 'undefined' && googleBooksApiKey) {
                 const query = encodeURIComponent(titulo);
-                const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`;
+                const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&langRestrict=es&country=ES&key=${googleBooksApiKey}`;
                 try {
                     const response = await fetch(url);
                     if (response.ok) {
@@ -3076,7 +3076,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ? `&key=${googleBooksApiKey}` : '';
                     const q = encodeURIComponent(`${title} ${author}`.trim());
                     const resp = await fetchTimeout(
-                        `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1${apiKey}`
+                        `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&langRestrict=es&country=ES${apiKey}`
                     );
                     if (!resp.ok) throw new Error();
                     const data = await resp.json();

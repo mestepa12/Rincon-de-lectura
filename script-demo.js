@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Búsqueda en Google Books (Para añadir nuevos)
     async function buscarEnGoogle(titulo) {
         if (!titulo.trim()) return [];
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&key=${googleBooksApiKey}`;
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&langRestrict=es&country=ES&key=${googleBooksApiKey}`;
         try {
             const res = await fetch(url);
             const data = await res.json();
@@ -316,7 +316,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 bookSearchResultsDiv.innerHTML = '';
                 libros.forEach(item => {
                     const info = item.volumeInfo;
-                    const cover = info.imageLinks ? info.imageLinks.thumbnail.replace('http://', 'https://') : '';
+                    let cover = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+                    if (cover) {
+                        cover = cover
+                            .replace(/^http:\/\//i, 'https://')
+                            .replace('&edge=curl', '')
+                            .replace('&zoom=1', '&zoom=0');
+                    }
+                    if (!cover) {
+                        const isbn = info.industryIdentifiers
+                            ?.find(id => id.type === 'ISBN_13' || id.type === 'ISBN_10')
+                            ?.identifier;
+                        if (isbn) cover = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+                    }
                     const title = info.title || '';
                     const author = info.authors?.[0] || 'Desconocido';
                     const div = document.createElement('div');
