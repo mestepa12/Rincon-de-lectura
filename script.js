@@ -9,7 +9,7 @@ import { app, auth, db } from './firebase-init.js';
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 
-console.log('%c📚 Rincón de Lectura — versión 3 ✅ (cabeceras más altas)', 'color:#fff;background:#6bcb77;padding:2px 8px;border-radius:4px;font-weight:bold;');
+console.log('%c📚 Rincón de Lectura — versión 4 ✅ (cabeceras: fix flex-shrink)', 'color:#fff;background:#6bcb77;padding:2px 8px;border-radius:4px;font-weight:bold;');
 
 document.addEventListener('DOMContentLoaded', () => {
 
