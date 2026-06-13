@@ -9,6 +9,8 @@ import { app, auth, db } from './firebase-init.js';
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 
+console.log('%c📚 Rincón de Lectura — versión 2 ✅ (cabeceras desplegables)', 'color:#fff;background:#6bcb77;padding:2px 8px;border-radius:4px;font-weight:bold;');
+
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- EL PORTERO: Vigilando la entrada ---
