@@ -1385,25 +1385,40 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     top: 0;
     width: 540px;
     height: 960px;
-    background: linear-gradient(160deg, #1a0905 0%, #4a2010 30%, #8B3A3A 65%, #c4875a 100%);
-    color: white;
+    /* Tres capas: luz superior, viñeta inferior y degradado de marca.
+       shareAsImage sustituye este fondo por el mismo esquema teñido con
+       el color dominante de la portada (ver fondoTarjeta en JS). */
+    background:
+        radial-gradient(130% 85% at 50% 0%, rgba(255, 240, 220, 0.10), transparent 55%),
+        radial-gradient(140% 90% at 50% 115%, rgba(0, 0, 0, 0.5), transparent 60%),
+        linear-gradient(160deg, #170a0c 0%, #3d1a1e 48%, #7a3a3a 100%);
+    color: #fdfbf7;
     font-family: 'Lora', Georgia, serif;
     overflow: hidden;
     flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    padding: 70px 50px 50px;
+    padding: 64px 52px 44px;
     box-sizing: border-box;
 }
 .ec-cover-wrap { display: flex; justify-content: center; width: 100%; }
-.ec-cover { width: 220px; height: 330px; object-fit: cover; border-radius: 10px; box-shadow: 0 24px 64px rgba(0,0,0,0.7); }
-.ec-content { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1; justify-content: center; padding: 32px 0 0; gap: 0; }
-.ec-stars { font-size: 1.8rem; color: #FFC107; letter-spacing: 6px; text-align: center; margin-bottom: 18px; }
-.ec-title { font-size: 1.9rem; font-weight: 700; text-align: center; margin: 0 0 10px; line-height: 1.2; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-.ec-author { font-size: 1rem; text-align: center; opacity: 0.8; margin: 0 0 22px; font-style: italic; font-family: 'Lato', sans-serif; }
-.ec-divider { width: 50px; height: 2px; background: rgba(255,255,255,0.35); margin: 0 auto 22px; }
-.ec-notes { font-size: 0.9rem; text-align: center; line-height: 1.7; opacity: 0.88; font-style: italic; max-height: 130px; overflow: hidden; font-family: 'Lato', sans-serif; }
-.ec-footer { font-size: 0.75rem; opacity: 0.6; text-align: center; letter-spacing: 3px; text-transform: uppercase; font-family: 'Lato', sans-serif; }
+.ec-cover {
+    width: 240px;
+    height: 360px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.55), 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+.ec-content { display: flex; flex-direction: column; align-items: center; width: 100%; flex: 1; justify-content: center; padding: 30px 0 0; gap: 0; }
+.ec-stars { font-size: 1.45rem; color: #F0C24B; letter-spacing: 9px; text-indent: 9px; text-align: center; margin-bottom: 22px; }
+.ec-title { font-size: 2.1rem; font-weight: 600; text-align: center; margin: 0 0 12px; line-height: 1.18; }
+.ec-author { font-family: 'Lato', sans-serif; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; text-indent: 0.2em; text-align: center; opacity: 0.72; margin: 0 0 26px; }
+.ec-divider { width: 36px; height: 1px; background: rgba(255, 255, 255, 0.35); margin: 0 auto 26px; }
+.ec-content:has(.ec-notes:empty) .ec-divider { display: none; }
+.ec-notes { font-size: 1.02rem; text-align: center; line-height: 1.75; opacity: 0.92; font-style: italic; max-height: 230px; overflow: hidden; margin: 0; }
+.ec-notes:not(:empty)::before { content: '\201C'; display: block; font-size: 2.6rem; line-height: 0.6; opacity: 0.35; font-style: normal; margin-bottom: 14px; }
+.ec-footer { font-family: 'Lato', sans-serif; font-size: 0.68rem; opacity: 0.55; text-align: center; letter-spacing: 0.3em; text-indent: 0.3em; text-transform: uppercase; }
 
 .main-footer {
     text-align: center;
@@ -1587,6 +1602,7 @@ html { scroll-behavior: smooth; }
 .story-card-mock .ec-author { font-size: 0.72rem; margin-bottom: 10px; }
 .story-card-mock .ec-divider { margin-bottom: 10px; }
 .story-card-mock .ec-notes { font-size: 0.66rem; max-height: 70px; }
+.story-card-mock .ec-notes::before { display: none; }
 .story-card-mock .ec-footer { font-size: 0.55rem; letter-spacing: 2px; }
 
 /* Banner que separa la landing de la demo interactiva */

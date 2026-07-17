@@ -3005,6 +3005,13 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
         };
 
+        // URLs antiguas guardadas con http:// (mixed content) o con el efecto
+        // "página doblada" de Google Books no cargan: se normalizan antes de pedir.
+        const normalizarCoverUrl = (url) => (url || '')
+            .replace(/^http:\/\//i, 'https://')
+            .replace('&edge=curl', '')
+            .replace(/(covers\.openlibrary\.org\/b\/.+)-M\.jpg$/i, '$1-L.jpg');
+
         const fetchImageAsDataUrl = async (url) => {
             if (!url) return null;
             const toDataUrl = async (fetchUrl) => {
@@ -3018,10 +3025,62 @@ document.addEventListener('DOMContentLoaded', () => {
                     reader.readAsDataURL(blob);
                 });
             };
-            try { return await toDataUrl(url); } catch {}                                    // 1. Directo (funciona si el servidor permite CORS)
-            try { return await toDataUrl(`https://corsproxy.io/?${encodeURIComponent(url)}`); } catch {} // 2. Proxy CORS
-            return null;                                                                     // 3. Sin portada
+            const limpia = normalizarCoverUrl(url);
+            try { return await toDataUrl(limpia); } catch {}                                     // 1. Directo (si el servidor permite CORS)
+            try { return await toDataUrl(`https://wsrv.nl/?url=${encodeURIComponent(limpia)}&w=600`); } catch {} // 2. Proxy de imágenes (CORS abierto)
+            try { return await toDataUrl(`https://corsproxy.io/?${encodeURIComponent(limpia)}`); } catch {}      // 3. Proxy CORS genérico
+            return null;                                                                         // 4. Sin portada
         };
+
+        // Portada de reserva: cubierta dibujada en SVG con la inicial del título,
+        // para que la tarjeta nunca salga con un hueco vacío.
+        const portadaPlaceholder = (titulo) => {
+            const inicial = (titulo || '').trim().charAt(0).toUpperCase() || '?';
+            const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="720">' +
+                '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+                '<stop offset="0" stop-color="#5d2a2e"/><stop offset="1" stop-color="#2b1214"/></linearGradient></defs>' +
+                '<rect width="480" height="720" fill="url(#g)"/>' +
+                '<rect x="16" y="16" width="448" height="688" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>' +
+                '<text x="240" y="440" font-family="Georgia, serif" font-size="240" fill="rgba(253,251,247,0.85)" text-anchor="middle">' + inicial + '</text>' +
+                '</svg>';
+            return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        };
+
+        // Tono medio de la portada (la imagen es data URL, el canvas no se contamina)
+        const tonoDominante = (imgEl) => {
+            try {
+                const c = document.createElement('canvas');
+                c.width = c.height = 24;
+                const cx = c.getContext('2d');
+                cx.drawImage(imgEl, 0, 0, 24, 24);
+                const d = cx.getImageData(0, 0, 24, 24).data;
+                let r = 0, g = 0, b = 0, n = 0;
+                for (let i = 0; i < d.length; i += 4) {
+                    if (d[i + 3] < 200) continue;
+                    r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+                }
+                if (!n) return null;
+                r = r / n / 255; g = g / n / 255; b = b / n / 255;
+                const max = Math.max(r, g, b), min = Math.min(r, g, b);
+                if (max === min) return { h: 350, s: 30 }; // portada gris: granate de marca
+                const dif = max - min;
+                let h;
+                if (max === r) h = ((g - b) / dif) % 6;
+                else if (max === g) h = (b - r) / dif + 2;
+                else h = (r - g) / dif + 4;
+                h = Math.round(h * 60);
+                if (h < 0) h += 360;
+                const l = (max + min) / 2;
+                const s = Math.round((dif / (1 - Math.abs(2 * l - 1))) * 100);
+                return { h, s: Math.min(60, Math.max(28, s)) };
+            } catch { return null; }
+        };
+
+        // Mismo esquema de capas que el CSS de #export-card, teñido con el tono de la portada
+        const fondoTarjeta = ({ h, s }) =>
+            'radial-gradient(130% 85% at 50% 0%, rgba(255, 240, 220, 0.10), transparent 55%), ' +
+            'radial-gradient(140% 90% at 50% 115%, rgba(0, 0, 0, 0.5), transparent 60%), ' +
+            `linear-gradient(160deg, hsl(${h}, ${s}%, 9%) 0%, hsl(${h}, ${s}%, 19%) 48%, hsl(${h}, ${s}%, 32%) 100%)`;
 
         const shareAsImage = async () => {
             mostrarToastShare();
@@ -3033,11 +3092,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Convertir portada a data URL para evitar bloqueos CORS en html2canvas
             const coverDataUrl = await fetchImageAsDataUrl(book.cover);
+            card.style.background = ''; // vuelve al degradado de marca del CSS
+            await new Promise((res) => { coverEl.onload = coverEl.onerror = res; coverEl.src = coverDataUrl || portadaPlaceholder(book.title); });
+            coverEl.style.display = '';
             if (coverDataUrl) {
-                await new Promise((res) => { coverEl.onload = coverEl.onerror = res; coverEl.src = coverDataUrl; });
-                coverEl.style.display = '';
-            } else {
-                coverEl.style.display = 'none'; // Ocultar portada si no se puede cargar
+                const tono = tonoDominante(coverEl);
+                if (tono) card.style.background = fondoTarjeta(tono);
             }
 
             document.getElementById('export-title').textContent = book.title || '';
@@ -3046,7 +3106,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const r = book.rating || 0;
             const fullS = Math.floor(r);
             const halfS = (r % 1) >= 0.5;
-            document.getElementById('export-stars').textContent = '★'.repeat(fullS) + (halfS ? '½' : '') + '☆'.repeat(5 - fullS - (halfS ? 1 : 0));
+            document.getElementById('export-stars').textContent = r > 0
+                ? '★'.repeat(fullS) + (halfS ? '½' : '') + '☆'.repeat(5 - fullS - (halfS ? 1 : 0))
+                : ''; // sin valoración no se pintan cinco estrellas vacías
             card.style.display = 'flex';
             try {
                 const html2canvas = await loadHtml2canvas(); // carga bajo demanda

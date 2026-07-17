@@ -467,6 +467,12 @@ function openModal(id) {
         setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 7000);
     };
 
+    // Ver script.js: normaliza URLs http:// y el "edge=curl" de Google Books
+    const normalizarCoverUrl = (url) => (url || '')
+        .replace(/^http:\/\//i, 'https://')
+        .replace('&edge=curl', '')
+        .replace(/(covers\.openlibrary\.org\/b\/.+)-M\.jpg$/i, '$1-L.jpg');
+
     const fetchImageAsDataUrl = async (url) => {
         if (!url) return null;
         const toDataUrl = async (fetchUrl) => {
@@ -480,10 +486,58 @@ function openModal(id) {
                 reader.readAsDataURL(blob);
             });
         };
-        try { return await toDataUrl(url); } catch {}
-        try { return await toDataUrl(`https://corsproxy.io/?${encodeURIComponent(url)}`); } catch {}
+        const limpia = normalizarCoverUrl(url);
+        try { return await toDataUrl(limpia); } catch {}
+        try { return await toDataUrl(`https://wsrv.nl/?url=${encodeURIComponent(limpia)}&w=600`); } catch {}
+        try { return await toDataUrl(`https://corsproxy.io/?${encodeURIComponent(limpia)}`); } catch {}
         return null;
     };
+
+    const portadaPlaceholder = (titulo) => {
+        const inicial = (titulo || '').trim().charAt(0).toUpperCase() || '?';
+        const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="720">' +
+            '<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">' +
+            '<stop offset="0" stop-color="#5d2a2e"/><stop offset="1" stop-color="#2b1214"/></linearGradient></defs>' +
+            '<rect width="480" height="720" fill="url(#g)"/>' +
+            '<rect x="16" y="16" width="448" height="688" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="2"/>' +
+            '<text x="240" y="440" font-family="Georgia, serif" font-size="240" fill="rgba(253,251,247,0.85)" text-anchor="middle">' + inicial + '</text>' +
+            '</svg>';
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    };
+
+    const tonoDominante = (imgEl) => {
+        try {
+            const c = document.createElement('canvas');
+            c.width = c.height = 24;
+            const cx = c.getContext('2d');
+            cx.drawImage(imgEl, 0, 0, 24, 24);
+            const d = cx.getImageData(0, 0, 24, 24).data;
+            let r = 0, g = 0, b = 0, n = 0;
+            for (let i = 0; i < d.length; i += 4) {
+                if (d[i + 3] < 200) continue;
+                r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+            }
+            if (!n) return null;
+            r = r / n / 255; g = g / n / 255; b = b / n / 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            if (max === min) return { h: 350, s: 30 };
+            const dif = max - min;
+            let h;
+            if (max === r) h = ((g - b) / dif) % 6;
+            else if (max === g) h = (b - r) / dif + 2;
+            else h = (r - g) / dif + 4;
+            h = Math.round(h * 60);
+            if (h < 0) h += 360;
+            const l = (max + min) / 2;
+            const s = Math.round((dif / (1 - Math.abs(2 * l - 1))) * 100);
+            return { h, s: Math.min(60, Math.max(28, s)) };
+        } catch { return null; }
+    };
+
+    const fondoTarjeta = ({ h, s }) =>
+        'radial-gradient(130% 85% at 50% 0%, rgba(255, 240, 220, 0.10), transparent 55%), ' +
+        'radial-gradient(140% 90% at 50% 115%, rgba(0, 0, 0, 0.5), transparent 60%), ' +
+        `linear-gradient(160deg, hsl(${h}, ${s}%, 9%) 0%, hsl(${h}, ${s}%, 19%) 48%, hsl(${h}, ${s}%, 32%) 100%)`;
 
     const shareAsImage = async (book) => {
         mostrarToastShare();
@@ -491,18 +545,19 @@ function openModal(id) {
         const coverEl = document.getElementById('export-cover');
 
         const coverDataUrl = await fetchImageAsDataUrl(book.cover);
+        card.style.background = ''; // degradado de marca del CSS por defecto
+        await new Promise((res) => { coverEl.onload = coverEl.onerror = res; coverEl.src = coverDataUrl || portadaPlaceholder(book.title); });
+        coverEl.style.display = '';
         if (coverDataUrl) {
-            await new Promise((res) => { coverEl.onload = coverEl.onerror = res; coverEl.src = coverDataUrl; });
-            coverEl.style.display = '';
-        } else {
-            coverEl.style.display = 'none';
+            const tono = tonoDominante(coverEl);
+            if (tono) card.style.background = fondoTarjeta(tono);
         }
 
         document.getElementById('export-title').textContent = book.title || '';
         document.getElementById('export-author').textContent = book.author || '';
         document.getElementById('export-notes').textContent = book.notes || '';
         const r = book.rating || 0;
-        document.getElementById('export-stars').textContent = '★'.repeat(r) + '☆'.repeat(5 - r);
+        document.getElementById('export-stars').textContent = r > 0 ? '★'.repeat(r) + '☆'.repeat(5 - r) : '';
         card.style.display = 'flex';
         try {
             const html2canvas = await loadHtml2canvas(); // carga bajo demanda
