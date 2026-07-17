@@ -383,7 +383,7 @@ function openModal(id) {
         document.getElementById('current-page').value = book.currentPage;
         document.getElementById('total-pages-display').textContent = `/ ${book.totalPages} págs`;
         const perc = book.totalPages > 0 ? (book.currentPage / book.totalPages) * 100 : 0;
-        document.getElementById('progress-bar-fill').style.width = Math.min(perc, 100) + '%';
+        document.getElementById('progress-bar-fill').style.transform = `scaleX(${Math.min(perc, 100) / 100})`;
     } else {
         prog.style.display = 'none';
     }

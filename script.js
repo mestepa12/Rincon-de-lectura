@@ -390,12 +390,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const updateProgressVisuals = (currentPage, totalPages) => {
             if (!totalPages || totalPages <= 0) {
                 progressPercentage.textContent = '-';
-                progressBar.style.width = '0%';
+                progressBar.style.transform = 'scaleX(0)';
                 return;
             }
             const percentage = Math.round((currentPage / totalPages) * 100);
             progressPercentage.textContent = `${percentage}%`;
-            progressBar.style.width = `${percentage}%`;
+            progressBar.style.transform = `scaleX(${percentage / 100})`;
         };
 
         // ===============================================
@@ -2369,7 +2369,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <span class="buddy-name">${esYo ? 'Tú' : '@' + escapeHtml(nombre)}</span>
                         <span class="buddy-state">${estado}</span>
                     </div>
-                    <div class="buddy-bar"><div class="buddy-bar-fill${fin ? ' buddy-bar-done' : ''}" style="width:${pct}%"></div></div>
+                    <div class="buddy-bar"><div class="buddy-bar-fill${fin ? ' buddy-bar-done' : ''}" style="transform:scaleX(${pct / 100})"></div></div>
                 </div>`;
         };
 
@@ -3423,8 +3423,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const fS   = document.getElementById('objetivo-semanal-fill');
             if (txtD) txtD.textContent = `${pagHoy} / ${objD || '—'} páginas`;
             if (txtS) txtS.textContent = `${pagSem} / ${objS || '—'} páginas`;
-            if (fD) fD.style.width = objD > 0 ? `${Math.min(100, Math.round(pagHoy / objD * 100))}%` : '0%';
-            if (fS) fS.style.width = objS > 0 ? `${Math.min(100, Math.round(pagSem / objS * 100))}%` : '0%';
+            if (fD) fD.style.transform = objD > 0 ? `scaleX(${Math.min(1, pagHoy / objD)})` : 'scaleX(0)';
+            if (fS) fS.style.transform = objS > 0 ? `scaleX(${Math.min(1, pagSem / objS)})` : 'scaleX(0)';
         };
 
         if (objetivosBtn && objetivosModal) {
