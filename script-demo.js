@@ -306,11 +306,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('manual-data-details').open = true;
     };
 
+    // Debounce: sin él cada pulsación dispara una petición y Google
+    // responde 503 por rate limit al teclear rápido.
+    let demoSearchTimeout;
     if (bookSearchInput) {
-        bookSearchInput.addEventListener('input', async (e) => {
-            const query = e.target.value;
-            if (query.length > 2) {
+        bookSearchInput.addEventListener('input', (e) => {
+            clearTimeout(demoSearchTimeout);
+            const query = e.target.value.trim();
+            if (query.length <= 2) { bookSearchResultsDiv.innerHTML = ''; return; }
+            demoSearchTimeout = setTimeout(async () => {
                 const libros = await buscarEnGoogle(query);
+                if (bookSearchInput.value.trim() !== query) return; // respuesta obsoleta
                 // Construcción vía DOM (sin innerHTML ni onclick inline) para
                 // que títulos/autores de la API no puedan inyectar HTML
                 bookSearchResultsDiv.innerHTML = '';
@@ -341,7 +347,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     div.addEventListener('click', () => seleccionarLibro(title, author, cover, info.pageCount || 0));
                     bookSearchResultsDiv.appendChild(div);
                 });
-            }
+            }, 400);
         });
     }
 
@@ -416,7 +422,9 @@ function openModal(id) {
                 book.rating = 0;
             } else if (book.section === 'leyendo-ahora') {
                 const oldPage = book.currentPage || 0;
-                const newPage = parseInt(document.getElementById('current-page').value) || 0;
+                let newPage = parseInt(document.getElementById('current-page').value) || 0;
+                // Clamp: nunca por debajo de 0 ni por encima del total (igual que la biblioteca real)
+                newPage = Math.max(0, book.totalPages > 0 ? Math.min(newPage, book.totalPages) : newPage);
                 if (newPage > oldPage) updateStreakDemo();
                 book.currentPage = newPage;
             }
