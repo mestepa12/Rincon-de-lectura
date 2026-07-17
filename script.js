@@ -402,6 +402,186 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 3. GESTIÓN DE MODALES Y EVENTOS ===========
         // ===============================================
 
+        // Mensajes de hito: solo se muestran el día EXACTO de la racha
+        const RACHA_HITOS = {
+            1:    { emoji: '🌱', msg: '¡Tu primer día! Págino acaba de conocerte y ya te adora.' },
+            2:    { emoji: '🐣', msg: '¡Dos días! Págino empieza a creer en ti.' },
+            3:    { emoji: '🦕', msg: '¡Tres días seguidos! Págino salta de alegría.' },
+            5:    { emoji: '🖐️', msg: '¡Cinco días! Págino te choca la patita.' },
+            7:    { emoji: '⭐', msg: '¡Una semana completa! ¡Págino te aplaude con sus bracitos!' },
+            10:   { emoji: '🔟', msg: '¡Diez días! Págino ya no puede contar con las patas.' },
+            14:   { emoji: '🔥', msg: '¡DOS SEMANAS seguidas! ¡Págino está en llamas!' },
+            21:   { emoji: '🎯', msg: '¡Tres semanas! Dicen que ya es un hábito. Págino lo confirma.' },
+            30:   { emoji: '💎', msg: '¡UN MES ENTERO leyendo! ¡Págino llora de emoción!' },
+            50:   { emoji: '🏅', msg: '¡50 días! Medio camino al centurión. Págino alucina.' },
+            60:   { emoji: '🌙', msg: '¡Dos meses! Págino ya te considera de la familia.' },
+            75:   { emoji: '🚀', msg: '¡75 días! Págino ha despegado de la emoción.' },
+            90:   { emoji: '👑', msg: '¡TRES MESES! Págino te corona como realeza lectora.' },
+            100:  { emoji: '🌟', msg: '¡CENTURIÓN! ¡100 días! ¡Págino no puede creer tu dedicación!' },
+            150:  { emoji: '🌋', msg: '¡150 días! Ni el meteorito pararía a alguien como tú.' },
+            200:  { emoji: '🏆', msg: '¡200 DÍAS! Págino va a ponerte una estatua.' },
+            250:  { emoji: '🗿', msg: '¡250 días! Eres ya un monumento a la constancia.' },
+            300:  { emoji: '🌠', msg: '¡300 días! Págino pide un deseo: que nunca pares.' },
+            365:  { emoji: '🎂', msg: '¡UN AÑO ENTERO LEYENDO! Págino no tiene palabras. Solo lágrimas de dinosaurio.' },
+            500:  { emoji: '🐉', msg: '¡500 días! Has evolucionado. Ya eres leyenda jurásica.' },
+            730:  { emoji: '🪐', msg: '¡DOS AÑOS! Págino orbita a tu alrededor de pura admiración.' },
+            1000: { emoji: '♾️', msg: '¡1000 DÍAS! Págino declara oficialmente que eres inmortal.' },
+        };
+
+        // Pools aleatorias por tramo de racha. '{d}' se sustituye por el número de días.
+        const RACHA_POOLS = [
+            { min: 1, max: 6, emoji: '🦕', msgs: [
+                '¡Buen comienzo! ¡Págino te anima!',
+                '¡Vas muy bien! Págino mueve la colita de emoción.',
+                'Págino te observa leer... y le encanta lo que ve.',
+                '¡{d} días! Págino ya presume de ti con otros dinosaurios.',
+                'Cada página te hace más fuerte. Palabra de Págino.',
+                'Págino dice: los grandes lectores empezaron igual que tú.',
+                '¡Sigue así! Págino está preparando confeti extra.',
+                'Hoy también has leído. Págino sonríe de oreja a oreja.',
+                'Págino guarda tus páginas como tesoros.',
+                '¡{d} días de racha! El hábito está naciendo.',
+                'Págino susurra: "esto pinta muy pero que muy bien".',
+                'Un día más, un lector mejor. Págino aprueba.',
+                'Págino hace la ola en tu honor. Él solo. Con dos bracitos.',
+                '¡Rugido de celebración! 🦖 Págino está contento.',
+                'Págino apunta tu nombre en su lista de lectores favoritos.',
+                'Leer un poco cada día... Págino sabe que es magia.',
+                '¡Otra página conquistada! Págino planta una banderita.',
+                'Págino dice que hoy hueles a libro nuevo. Es un cumplido.',
+                'La racha crece y Págino crece de orgullo.',
+                'Págino te dedica su mejor pasito de baile prehistórico.',
+                '¡{d} días! Págino ya no recuerda la vida sin tus lecturas.',
+                'Págino asegura que las historias te esperan cada día.',
+                'Hoy leíste. Mañana, ¿quién sabe qué mundo visitarás?',
+                'Págino chocaría los cinco... si tuviera cinco dedos.',
+                'Pequeños pasos, grandes historias. Págino lo sabe bien.',
+            ]},
+            { min: 7, max: 13, emoji: '⭐', msgs: [
+                '¡Más de una semana! Págino no deja de aplaudir.',
+                '¡{d} días seguidos! Págino te mira con ojitos brillantes.',
+                'Págino dice que ya eres oficialmente persona de libros.',
+                'Una semana larga de lectura. Págino está impresionado.',
+                '¡La racha va en serio! Págino saca las serpentinas.',
+                'Págino cuenta tus días de racha antes de dormir.',
+                '¡{d} días! Ni la lluvia de meteoritos te detiene.',
+                'Págino te nombra Ayudante Oficial de Dinosaurio Lector.',
+                'Cada día sumas. Págino resta preocupaciones.',
+                'Págino ruge de felicidad: ¡ROOOAR de {d} días!',
+                'Tu constancia deja a Págino con la boca abierta.',
+                'Págino dice que las páginas te reconocen ya de lejos.',
+                '¡Semana superada y sumando! Págino baila claqué.',
+                'Págino guarda un hueso... digo, un marcapáginas para ti.',
+                'La biblioteca entera murmura tu nombre. Págino lo oyó.',
+                '¡{d} días! Págino cree que naciste para esto.',
+                'Págino infla globos: la fiesta de tu racha continúa.',
+                'Leer ya es parte de tu día. Págino está encantado.',
+                'Págino te haría un monumento, pero solo tiene plastilina.',
+                'Tu racha brilla más que la escama favorita de Págino.',
+                '¡Imparable! Págino toma notas de tu ejemplo.',
+                'Págino presume: "ese lector es amigo mío".',
+                'Los libros hacen cola para que los leas. Págino los organiza.',
+                'Págino asegura que tu racha se ve desde el espacio.',
+                '¡{d} días de páginas y aventuras! Págino aplaude fuerte.',
+            ]},
+            { min: 14, max: 29, emoji: '🔥', msgs: [
+                '¡Más de dos semanas! Págino está que arde de orgullo.',
+                '¡{d} días seguidos! Págino enciende la antorcha de la victoria.',
+                'Tu racha es más fuerte que un T-Rex. Palabra de Págino.',
+                'Págino ya no te anima: te admira.',
+                '¡{d} días! Págino escribió un poema sobre ti. Es malo, pero sincero.',
+                'La constancia es tu superpoder. Págino es tu fan.',
+                'Págino dice que los libros pelean por estar en tus manos.',
+                '¡Racha volcánica! 🌋 Págino se derrite de orgullo.',
+                'Págino ya cuenta contigo como cuenta las estrellas: siempre.',
+                '¡{d} días! Ni hibernando perderías este ritmo.',
+                'Tu marcapáginas debería estar en un museo. Págino insiste.',
+                'Págino hace fuego con dos palitos para celebrarlo.',
+                'Cada día que lees, a Págino le crece el corazón.',
+                '¡La racha sigue viva y coleando! Como Págino.',
+                'Págino declara esta semana: Semana Oficial de Tu Racha.',
+                '¡{d} días imparables! Págino te saluda con reverencia.',
+                'Los dinosaurios se extinguieron; tu racha, jamás.',
+                'Págino tatuaría tu racha en su escama si pudiera.',
+                'Tu constancia hace que Págino crea en los humanos.',
+                '¡Modo lector legendario activado! Págino lo certifica.',
+                'Págino guarda tus {d} días en su cueva de los tesoros.',
+                'Ya no es suerte, es disciplina. Págino lo sabe.',
+                '¡Rachaza! Págino no conocía esa palabra, la inventó por ti.',
+                'Págino enciende una hoguera de celebración. Controlada, tranquilo.',
+                'Las historias te buscan a ti. Págino solo hace de guía.',
+            ]},
+            { min: 30, max: 99, emoji: '💎', msgs: [
+                '¡Más de un mes leyendo! Págino te mira como a un héroe.',
+                '¡{d} días! Págino pulió un diamante para ti. Con la cola.',
+                'Tu racha ya es mayor que muchas plantas de Págino.',
+                'Págino cuenta leyendas sobre ti alrededor del fuego.',
+                '¡{d} días seguidos! Esto ya es un estilo de vida.',
+                'Págino dice que brillas más que su colección de piedras.',
+                'Un mes y sumando. Págino no cabe en sí de orgullo.',
+                'Tu constancia es de diamante. Dura y brillante. Como tú.',
+                '¡{d} días! Págino va a necesitar una vitrina para tu trofeo.',
+                'Págino medita cada mañana: "que su racha siga, que siga...".',
+                'Los libros ya te consideran de la casa. Págino también.',
+                '¡Imparable desde hace {d} días! Págino hace historia contigo.',
+                'Págino te cede su silla favorita de lectura. Honor máximo.',
+                'Tu racha tiene más brillo que mil luciérnagas jurásicas.',
+                'Págino escribe tus hazañas en la pared de la cueva.',
+                '¡{d} días! La palabra "constancia" debería llevar tu foto.',
+                'Págino sospecha que eres mitad humano, mitad biblioteca.',
+                'Cada amanecer, Págino sonríe: sabe que hoy también leerás.',
+                'Tu racha es patrimonio de la humanidad. Págino lo tramita.',
+                '¡Nivel diamante! Págino saca brillo a tu medalla.',
+                'Págino aprendió a contar hasta {d} solo para seguirte.',
+                'Ya no lees para la racha; la racha vive por ti.',
+                'Págino te dedica su rugido más solemne: ROOOOAR.',
+                'Las estanterías se ordenan solas cuando pasas. Págino lo vio.',
+                '¡{d} días! Págino brinda con zumo de helecho a tu salud.',
+            ]},
+            { min: 100, max: Infinity, emoji: '🌟', msgs: [
+                '¡{d} días! Págino ya solo puede mirarte con admiración infinita.',
+                'Eres leyenda. Págino cuenta tu historia a las nuevas generaciones.',
+                '¡{d} días de racha! Los libros escriben libros sobre ti.',
+                'Págino consultó los archivos jurásicos: nadie llegó tan lejos.',
+                'Tu racha brilla tanto que Págino usa gafas de sol.',
+                '¡{d} días! Págino te declara Maestro Supremo de la Lectura.',
+                'Ni cometas, ni eras glaciales: nada detiene tu racha.',
+                'Págino ya no celebra tu racha: la venera.',
+                '¡{d} días seguidos! Esto ya es materia de mitología.',
+                'Los dinosaurios duraron millones de años. Tu racha va camino.',
+                'Págino fundó un club de fans tuyo. Ya son 74 dinosaurios.',
+                'Tu constancia debería estudiarse en las escuelas. Págino insiste.',
+                '¡{d} días! Págino talló tu nombre en la montaña más alta.',
+                'Cada página tuya es un ladrillo de tu leyenda. Págino las cuenta todas.',
+                'Págino asegura que las estrellas forman tu racha en el cielo.',
+                '¡Nivel cósmico! Págino orbita alrededor de tu constancia.',
+                'Tu racha tiene más días que Págino escamas. Y tiene muchas.',
+                '¡{d} días! El universo entero pasa páginas contigo.',
+                'Págino guardará este día en su memoria de dinosaurio. Que es eterna.',
+                'Ya no eres lector: eres biblioteca andante. Págino te sigue a todas partes.',
+            ]},
+        ];
+
+        // Elige mensaje: hito exacto si toca; si no, aleatorio del tramo evitando repetir los últimos usados
+        const elegirMensajeRacha = (racha) => {
+            if (RACHA_HITOS[racha]) return RACHA_HITOS[racha];
+
+            const pool = RACHA_POOLS.find(p => racha >= p.min && racha <= p.max) || RACHA_POOLS[0];
+            let historial = [];
+            try { historial = JSON.parse(localStorage.getItem('rachaMsgHistorial')) || []; } catch (e) {}
+
+            let candidatos = pool.msgs.filter(m => !historial.includes(m));
+            if (candidatos.length === 0) candidatos = pool.msgs;
+            const elegido = candidatos[Math.floor(Math.random() * candidatos.length)];
+
+            historial.push(elegido);
+            // Recuerda los últimos 20 mensajes para que casi nunca se repitan
+            if (historial.length > 20) historial = historial.slice(-20);
+            try { localStorage.setItem('rachaMsgHistorial', JSON.stringify(historial)); } catch (e) {}
+
+            return { emoji: pool.emoji, msg: elegido.replaceAll('{d}', racha) };
+        };
+
         const mostrarAnimacionRacha = (racha) => {
             const overlay  = document.getElementById('racha-celebration');
             const numEl    = document.getElementById('racha-numero-display');
@@ -410,15 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const mascota  = document.getElementById('mascota-emoji');
             if (!overlay) return;
 
-            // Mensajes y emoji de Págino según hito
-            let emoji = '🦕';
-            let msg   = '¡Págino está orgulloso de ti!';
-            if (racha >= 100) { emoji = '🌟'; msg = '¡CENTURIÓN! ¡Págino no puede creer tu dedicación!'; }
-            else if (racha >= 30) { emoji = '💎'; msg = '¡Un mes leyendo! ¡Págino llora de emoción!'; }
-            else if (racha >= 14) { emoji = '🔥'; msg = '¡Dos semanas seguidas! ¡Págino está en llamas!'; }
-            else if (racha >= 7)  { emoji = '⭐'; msg = '¡Una semana completa! ¡Págino te aplaude!'; }
-            else if (racha >= 3)  { emoji = '🦕'; msg = '¡Vas muy bien! ¡Págino salta de alegría!'; }
-            else                  { emoji = '🦕'; msg = '¡Buen comienzo! ¡Págino te anima!'; }
+            const { emoji, msg } = elegirMensajeRacha(racha);
 
             // mascota es ahora <img>, no se cambia textContent
             if (numEl)   numEl.textContent   = `🔥 ${racha}`;
