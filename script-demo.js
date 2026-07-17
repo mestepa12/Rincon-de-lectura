@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { id: 'primer_terminado', icono: '✅', nombre: 'Primera Victoria', descripcion: 'Termina tu primer libro.' },
         { id: 'cinco_libros',     icono: '📚', nombre: 'Coleccionista',    descripcion: 'Acumula 5 libros.' },
         { id: 'maraton',          icono: '🏃', nombre: 'Maratón Lector',   descripcion: 'Lee más de 1.000 páginas en total.' },
-        { id: 'critico',          icono: '⭐', nombre: 'Crítico Literario', descripcion: 'Valóra 3 libros terminados.' },
+        { id: 'critico',          icono: '⭐', nombre: 'Crítico Literario', descripcion: 'Valora 3 libros terminados.' },
         { id: 'racha_7',          icono: '🔥', nombre: 'Una Semana',       descripcion: 'Mantén una racha de 7 días.' },
         { id: 'racha_30',         icono: '💥', nombre: 'Imparable',        descripcion: 'Mantén una racha de 30 días.' },
     ];
@@ -292,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 'input' detecta cada tecla, 'search' detecta cuando borras con la X del input
         searchBar.addEventListener('input', renderBooks);
         searchBar.addEventListener('search', renderBooks);
-        console.log("✅ Buscador detectado y vinculado.");
     } else {
         console.error("❌ ERROR: No se encontró el elemento con ID 'search-bar'");
     }
@@ -365,6 +364,8 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage: 0,
             notes: ''
         });
+        // Limpiar el filtro para que el libro recién añadido no quede oculto
+        if (searchBar && searchBar.value) searchBar.value = '';
         renderBooks();
         evaluarLogros();
         addBookModal.close();

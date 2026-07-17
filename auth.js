@@ -17,8 +17,6 @@ import {
 } from "firebase/firestore";
 import { app, auth, db } from "./firebase-init.js";
 
-console.log('auth.js cargado');
-
 // 1. LIMPIEZA DE CREDENCIALES ANTIGUAS
 // Versiones anteriores guardaban email y contraseña en texto plano en
 // localStorage para re-autenticar manualmente ("el salvavidas"). Eso era
@@ -33,9 +31,7 @@ limpiarCredencialesAntiguas();
 
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded disparado');
     const loginForm = document.getElementById('login-form');
-    console.log('loginForm encontrado:', loginForm);
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
     const loginError = document.getElementById('login-error');
@@ -108,15 +104,10 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const email = emailInput.value;
             const pass = passwordInput.value;
-            console.log('Login submit — email:', email);
 
             setPersistence(auth, browserLocalPersistence)
-                .then(() => {
-                    console.log('Persistence OK, llamando signIn...');
-                    return signInWithEmailAndPassword(auth, email, pass);
-                })
+                .then(() => signInWithEmailAndPassword(auth, email, pass))
                 .then(userCred => {
-                    console.log('Login OK:', userCred.user.email);
                     if (userCred.user.emailVerified) {
                         // Solo un flag de UI para redirigir rápido; la sesión
                         // real la gestiona Firebase Auth. NUNCA guardar

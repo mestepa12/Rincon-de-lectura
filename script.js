@@ -9,14 +9,12 @@ import { app, auth, db } from './firebase-init.js';
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 
-console.log('%c📚 Rincón de Lectura — versión 4 ✅ (cabeceras: fix flex-shrink)', 'color:#fff;background:#6bcb77;padding:2px 8px;border-radius:4px;font-weight:bold;');
 
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- EL PORTERO: Vigilando la entrada ---
     onAuthStateChanged(auth, (user) => {
         if (user && user.emailVerified) {
-            console.log("Usuario verificado:", user.email);
             runApp(user); 
         }
     });
@@ -1022,6 +1020,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if(toggleFriendsBtn) toggleFriendsBtn.addEventListener('click', () => toggleSidebar(true));
         if(closeSidebarBtn) closeSidebarBtn.addEventListener('click', () => toggleSidebar(false));
         if(sidebarOverlay) sidebarOverlay.addEventListener('click', () => toggleSidebar(false));
+        // El sidebar no es un <dialog>: Escape debe cerrarlo igual que al resto de modales
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && friendsSidebar && friendsSidebar.classList.contains('open')) toggleSidebar(false);
+        });
 
         // 2. Cargar MI nombre de usuario
         const loadMyProfile = async () => {
@@ -1671,9 +1673,14 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         
             addDoc(collection(db, 'books'), newBook).then(() => {
-                console.log("Libro añadido a Firebase");
                 addBookForm.reset();
                 if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = '';
+                // Si hay un filtro activo el libro nuevo quedaría oculto sin aviso:
+                // se limpia y se relanza el filtrado para que siempre sea visible.
+                if (searchBar && searchBar.value) {
+                    searchBar.value = '';
+                    searchBar.dispatchEvent(new Event('input'));
+                }
                 addBookModal.close();
             }).catch(error => console.error("Error al añadir libro:", error));
         };
@@ -2297,7 +2304,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 await evaluarLogros();
-                console.log('Detalles actualizados');
 
                 // ¿Llegó a la última página? Ofrecer pasarlo a Terminados
                 const finalSection = updatedData.section || book.section;
