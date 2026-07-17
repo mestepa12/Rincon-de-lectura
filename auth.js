@@ -29,6 +29,37 @@ const limpiarCredencialesAntiguas = () => {
 };
 limpiarCredencialesAntiguas();
 
+// Traduce los códigos de error de Firebase Auth a mensajes útiles.
+// Nota: distinguir "correo no registrado" de "contraseña incorrecta" facilita
+// saber si un correo tiene cuenta (enumeración). Decisión de producto asumida.
+const mensajeDeErrorAuth = (code) => {
+    switch (code) {
+        // Login
+        case 'auth/user-not-found': return 'No existe ninguna cuenta con este correo. ¿Quieres crear una?';
+        case 'auth/wrong-password': return 'La contraseña no es correcta. Puedes restablecerla en "¿Has olvidado tu contraseña?".';
+        case 'auth/invalid-credential': return 'Correo o contraseña incorrectos.';
+        case 'auth/invalid-email': return 'El formato del correo no es válido.';
+        case 'auth/user-disabled': return 'Esta cuenta está deshabilitada. Contacta con soporte.';
+        case 'auth/too-many-requests': return 'Demasiados intentos fallidos. Espera unos minutos o restablece tu contraseña.';
+        // Registro
+        case 'auth/email-already-in-use': return 'Ya existe una cuenta con este correo. Prueba a iniciar sesión.';
+        case 'auth/weak-password': return 'La contraseña es demasiado débil. Usa al menos 8 caracteres con letras y números.';
+        // Genéricos
+        case 'auth/network-request-failed': return 'Sin conexión. Comprueba tu red e inténtalo de nuevo.';
+        case 'auth/popup-blocked': return 'El navegador ha bloqueado la ventana de Google. Permite ventanas emergentes e inténtalo otra vez.';
+        default: return 'Ha ocurrido un error inesperado. Inténtalo de nuevo en unos minutos.';
+    }
+};
+
+// Reglas de contraseña del registro: mínimo 8 caracteres con letras y números.
+// Devuelve el mensaje de error o null si es válida.
+const validarPassword = (pass) => {
+    if (pass.length < 8) return 'La contraseña debe tener al menos 8 caracteres.';
+    if (!/[a-zA-Z]/.test(pass)) return 'La contraseña debe incluir al menos una letra.';
+    if (!/[0-9]/.test(pass)) return 'La contraseña debe incluir al menos un número.';
+    return null;
+};
+
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
@@ -94,7 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('rincon_logged_in', '1');
                 window.location.href = 'biblioteca.html';
             })
-            .catch(err => console.error("Error Google:", err));
+            .catch(err => {
+                console.error("Error Google:", err.code);
+                // Cerrar la ventana de Google a propósito no es un error
+                if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
+                if (loginError) loginError.textContent = mensajeDeErrorAuth(err.code);
+            });
         });
     }
     
@@ -120,8 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
                 .catch(err => {
                     console.error('Login error code:', err.code);
-                    console.error('Login error msg:', err.message);
-                    loginError.textContent = 'Correo o contraseña incorrectos.';
+                    loginError.textContent = mensajeDeErrorAuth(err.code);
                 });
         });
     }
@@ -168,9 +203,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const email = document.getElementById('register-email').value;
             const pass = regPasswordInput.value;
             const usernameInputVal = regUsernameInput.value.trim();
+            const registerError = document.getElementById('register-error');
+
+            if (!/^[a-zA-Z0-9_]{3,30}$/.test(usernameInputVal)) {
+                registerError.textContent = 'El nombre de usuario debe tener entre 3 y 30 caracteres, solo letras, números y guion bajo.';
+                return;
+            }
+
+            const errorPass = validarPassword(pass);
+            if (errorPass) {
+                registerError.textContent = errorPass;
+                return;
+            }
 
             if (pass !== regConfirmInput.value) {
-                document.getElementById('register-error').textContent = 'Las contraseñas no coinciden.';
+                registerError.textContent = 'Las contraseñas no coinciden.';
                 return;
             }
 
@@ -182,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const nameSnap = await getDoc(doc(db, "usernames", usernameKey));
 
                 if (nameSnap.exists()) {
-                    document.getElementById('register-error').textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
+                    registerError.textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
                     return;
                 }
 
@@ -210,8 +257,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = 'login.html';
 
             } catch (error) {
-                console.error("Error en el registro:", error);
-                document.getElementById('register-error').textContent = 'Error al crear la cuenta. Inténtalo de nuevo.';
+                console.error("Error en el registro:", error.code);
+                registerError.textContent = mensajeDeErrorAuth(error.code);
             }
         });
     }
@@ -228,8 +275,11 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             sendPasswordResetEmail(auth, document.getElementById('reset-email').value)
                 .then(() => {
-                    alert("Enlace enviado.");
+                    alert("Enlace enviado. Revisa tu bandeja de entrada y la carpeta de spam.");
                     resetModal.close();
+                })
+                .catch(err => {
+                    alert(mensajeDeErrorAuth(err.code));
                 });
         });
         document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.close());
