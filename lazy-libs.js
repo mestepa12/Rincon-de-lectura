@@ -1,41 +1,23 @@
 // Carga diferida de librerías pesadas (Chart.js, html2canvas).
-// No se incluyen en la carga inicial: se inyectan desde su CDN solo cuando
-// el usuario abre las estadísticas o exporta una tarjeta. Así se reduce el
-// JavaScript sin usar en el arranque (Lighthouse: "Reduce unused JavaScript").
+// No se incluyen en la carga inicial: Vite las separa en chunks propios que
+// solo se descargan cuando el usuario abre las estadísticas o exporta una
+// tarjeta. Así se reduce el JavaScript sin usar en el arranque y no dependemos
+// de CDNs externos (bloqueados por la CSP).
 
-const CHART_SRC = 'https://cdn.jsdelivr.net/npm/chart.js';
-const HTML2CANVAS_SRC = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
-
-// Cachea la promesa por URL para no inyectar el mismo script dos veces.
-const loaded = new Map();
-
-function injectScript(src) {
-    if (loaded.has(src)) return loaded.get(src);
-    const promise = new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src;
-        s.async = true;
-        s.onload = () => resolve();
-        s.onerror = () => {
-            loaded.delete(src); // permite reintentar tras un fallo de red
-            reject(new Error('No se pudo cargar: ' + src));
-        };
-        document.head.appendChild(s);
-    });
-    loaded.set(src, promise);
-    return promise;
-}
-
-// Devuelve el global Chart, cargándolo del CDN si aún no está disponible.
+// Devuelve el global Chart, cargando el chunk si aún no está disponible.
 export async function loadChart() {
-    if (typeof window.Chart === 'undefined') await injectScript(CHART_SRC);
+    if (typeof window.Chart === 'undefined') {
+        const { default: Chart } = await import('chart.js/auto');
+        window.Chart = Chart;
+    }
     return window.Chart;
 }
 
-// Devuelve el global html2canvas, cargándolo del CDN si aún no está disponible.
+// Devuelve el global html2canvas, cargando el chunk si aún no está disponible.
 export async function loadHtml2canvas() {
     if (typeof window.html2canvas === 'undefined') {
-        await injectScript(HTML2CANVAS_SRC);
+        const { default: html2canvas } = await import('html2canvas');
+        window.html2canvas = html2canvas;
     }
     return window.html2canvas;
 }

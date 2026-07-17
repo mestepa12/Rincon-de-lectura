@@ -41,8 +41,6 @@ const APP_SHELL = [
 
 // CDNs de librerías estáticas que la app necesita offline.
 const CDN_HOSTS = [
-    'cdn.jsdelivr.net',
-    'html2canvas.hertzen.com',
     'www.gstatic.com'
 ];
 
