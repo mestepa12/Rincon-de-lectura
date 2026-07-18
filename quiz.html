@@ -84,5 +84,52 @@
         </section>
 
     </main>
+
+    <!-- Contenido estático indexable: los perfiles y las preguntas viven en el
+         HTML para buscadores y asistentes de IA (el flujo interactivo va por JS,
+         que muchos crawlers no ejecutan). Mismo contenido que quiz-data.js. -->
+    <section class="quiz-perfiles">
+        <h2>Los cuatro perfiles posibles</h2>
+        <p class="quiz-perfiles-intro">Este test de personalidad literaria mide qué tropo domina tu forma de leer: qué escenas buscas, de quién sospechas y qué final te deja satisfecho. Al terminar las ocho preguntas sales con uno de estos cuatro perfiles, cada uno con sus recomendaciones de lectura.</p>
+        <div class="perfiles-grid">
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">⚔️</span> Enemies to Lovers</h3>
+                <p class="perfil-tagline">El odio es solo el primer capítulo.</p>
+                <p>Vives para la tensión: miradas que cortan, treguas forzosas y ese momento exacto en que el desprecio se vuelve otra cosa. Si no discuten, no te lo crees.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> Orgullo y Prejuicio (Jane Austen), Una corte de rosas y espinas (Sarah J. Maas) y El príncipe cruel (Holly Black).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">🏕️</span> Found Family</h3>
+                <p class="perfil-tagline">La sangre no elige; tú sí.</p>
+                <p>Tu debilidad son los grupos imposibles que acaban cenando juntos. Te importa menos salvar el mundo que quién cuida de quién mientras tanto.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> Seis de Cuervos (Leigh Bardugo), La casa en el mar más azul (TJ Klune) y El camino de los reyes (Brandon Sanderson).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">✨</span> El Elegido</h3>
+                <p class="perfil-tagline">La profecía no se va a cumplir sola.</p>
+                <p>Destinos que pesan, mentores que desaparecen y un protagonista que no pidió nada de esto. Lo tuyo es ver a alguien corriente aceptar algo enorme.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> El Nombre del Viento (Patrick Rothfuss), Percy Jackson y el ladrón del rayo (Rick Riordan) y El ojo del mundo (Robert Jordan).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">🌀</span> El Giro Final</h3>
+                <p class="perfil-tagline">Confías en el narrador. Error.</p>
+                <p>Lees como quien interroga: subrayas frases sospechosas, desconfías del personaje amable y celebras que un epílogo te obligue a releer el libro entero.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> La verdad sobre el caso Harry Quebert (Joël Dicker), La paciente silenciosa (Alex Michaelides) y Y no quedó ninguno (Agatha Christie).</p>
+            </article>
+        </div>
+        <details class="quiz-preguntas-lista">
+            <summary>¿Qué te vamos a preguntar? (las ocho preguntas, sin desvelar qué puntúa cada respuesta)</summary>
+            <ol>
+                <li>Abres un libro nuevo. ¿Qué te atrapa en la primera página?</li>
+                <li>Tu escena favorita de cualquier historia.</li>
+                <li>En tu grupo de amigos, tú eres...</li>
+                <li>Elige escenario para perderte un fin de semana.</li>
+                <li>Un personaje nuevo entra en escena. ¿Cuándo sospechas de él?</li>
+                <li>¿Qué te hace abandonar un libro?</li>
+                <li>Cierra los ojos: ¿qué tiene la escena que quieres leer esta noche?</li>
+                <li>El final perfecto.</li>
+            </ol>
+        </details>
+    </section>
 </body>
 </html>
