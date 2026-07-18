@@ -1,9 +1,9 @@
 User-agent: *
 Allow: /
 
-# Páginas privadas o sin valor SEO: requieren sesión o son utilidades
-Disallow: /biblioteca
-Disallow: /biblioteca.html
+# /biblioteca ya NO se bloquea aquí: la página lleva <meta name="robots"
+# content="noindex, follow"> y Google necesita poder rastrearla para leerlo.
+# Un Disallow impediría ver el noindex y la URL podría quedar indexada "vacía".
 Disallow: /404
 Disallow: /404.html
 

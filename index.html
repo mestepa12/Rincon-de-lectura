@@ -74,6 +74,10 @@
       ]
     }
     </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://covers.openlibrary.org">
+    <link rel="preload" as="image" fetchpriority="high" href="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg">
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js y html2canvas se cargan de forma diferida (lazy-libs.js)
@@ -116,7 +120,7 @@
             </div>
             <div class="hero-visual" aria-hidden="true">
                 <div class="story-card-mock">
-                    <div class="ec-cover-wrap"><img src="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg" alt="" class="ec-cover"></div>
+                    <div class="ec-cover-wrap"><img src="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg" alt="" class="ec-cover" width="180" height="271" fetchpriority="high"></div>
                     <div class="ec-content">
                         <div class="ec-stars">★★★★★</div>
                         <p class="ec-title">Cien Años de Soledad</p>
@@ -175,7 +179,7 @@
     <!-- ==================== LANDING: RACHA / PÁGINO ==================== -->
     <section class="landing-social reveal">
         <div class="racha-mock" aria-hidden="true">
-            <img src="mascota_racha.png" alt="" class="racha-mock-img">
+            <img src="mascota_racha.webp" alt="" class="racha-mock-img" width="500" height="500" loading="lazy">
             <p class="racha-mock-num">🔥 14</p>
             <p class="racha-mock-label">días seguidos leyendo</p>
             <p class="racha-mock-msg">“Dos semanas. Págino ya presume de ti con otros dinosaurios.”</p>
@@ -236,7 +240,7 @@
 
     <!-- ==================== LANDING: CIERRE ==================== -->
     <section class="landing-cierre reveal">
-        <img src="mascota_racha.png" alt="" class="cierre-mascota">
+        <img src="mascota_racha.webp" alt="" class="cierre-mascota" width="500" height="500" loading="lazy">
         <h2 class="landing-section-title">¿Te quedas a leer?</h2>
         <p class="cierre-sub">Tu biblioteca, tus rachas y tus reseñas te esperan. Empezar cuesta un minuto.</p>
         <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
@@ -373,7 +377,7 @@
         onScroll();
     })();
 </script>
-<script type="module" src="auth.js"></script>
+<script type="module" src="landing-auth.js"></script>
 <script type="module" src="script-demo.js"></script>
 <script type="module" src="./config.js"></script>
 
