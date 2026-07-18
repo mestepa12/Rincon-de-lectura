@@ -28,6 +28,12 @@ const limpiarCredencialesAntiguas = () => {
 };
 limpiarCredencialesAntiguas();
 
+// Si el usuario vino del muro del test de personalidad, tras autenticarse
+// vuelve al quiz (que le espera con las respuestas guardadas) en vez de a
+// la biblioteca. quiz.js limpia la marca al mostrar el resultado.
+const destinoTrasAuth = () =>
+    sessionStorage.getItem('quiz_retorno') ? 'quiz.html' : 'biblioteca.html';
+
 // Traduce los códigos de error de Firebase Auth a mensajes útiles.
 // Nota: distinguir "correo no registrado" de "contraseña incorrecta" facilita
 // saber si un correo tiene cuenta (enumeración). Decisión de producto asumida.
@@ -122,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 localStorage.setItem('rincon_logged_in', '1');
-                window.location.href = 'biblioteca.html';
+                window.location.href = destinoTrasAuth();
             })
             .catch(err => {
                 console.error("Error Google:", err.code);
@@ -148,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // real la gestiona Firebase Auth. NUNCA guardar
                         // credenciales en localStorage.
                         localStorage.setItem('rincon_logged_in', '1');
-                        window.location.href = 'biblioteca.html';
+                        window.location.href = destinoTrasAuth();
                     } else {
                         loginError.textContent = 'Verifica tu correo antes de entrar.';
                     }
@@ -167,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const path = window.location.pathname;
         if (user && user.emailVerified) {
             if (path === '/' || path.includes('index') || path.includes('login') || path.includes('register')) {
-                window.location.href = 'biblioteca.html';
+                window.location.href = destinoTrasAuth();
             }
         } else if (user && !user.emailVerified) {
             // Sin verificar no hay biblioteca: de vuelta al login con el banner
@@ -283,6 +289,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // puede entrar a la biblioteca, y así el banner de login puede
                 // mostrar el correo y reenviar el enlace sin volver a loguear.
                 limpiarCredencialesAntiguas();
+                // Desde el muro del test: directo al resultado (la sesión queda
+                // iniciada); el aviso de verificación le esperará en el login.
+                if (sessionStorage.getItem('quiz_retorno')) {
+                    window.location.href = 'quiz.html';
+                    return;
+                }
                 sessionStorage.setItem('registro_recien_creado', '1');
                 window.location.href = 'login.html';
 

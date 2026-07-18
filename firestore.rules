@@ -18,7 +18,7 @@ service cloud.firestore {
               'ultimaFechaLectura', 'lastReadTimestamp', 'totalPaginasLeidas',
               'paginasLeidasHoy', 'paginasLeidasSemana', 'fechaDia',
               'fechaSemana', 'objetivoPaginasDiarias', 'objetivoPaginasSemanales',
-              'logrosDesbloqueados', 'fcmTokens', 'fcmToken'];
+              'logrosDesbloqueados', 'fcmTokens', 'fcmToken', 'quizResults'];
     }
 
     function validUser(d, a) {
@@ -35,7 +35,8 @@ service cloud.firestore {
           && (!a.hasAny(['objetivoPaginasSemanales'])|| !('objetivoPaginasSemanales' in d)|| (d.objetivoPaginasSemanales is number && d.objetivoPaginasSemanales >= 0 && d.objetivoPaginasSemanales <= 100000))
           && (!a.hasAny(['logrosDesbloqueados']) || !('logrosDesbloqueados' in d) || (d.logrosDesbloqueados is list && d.logrosDesbloqueados.size() <= 200))
           && (!a.hasAny(['fcmTokens'])     || !('fcmTokens' in d)     || (d.fcmTokens is list && d.fcmTokens.size() <= 20))
-          && (!a.hasAny(['fcmToken'])      || !('fcmToken' in d)      || (d.fcmToken is string && d.fcmToken.size() <= 4096));
+          && (!a.hasAny(['fcmToken'])      || !('fcmToken' in d)      || (d.fcmToken is string && d.fcmToken.size() <= 4096))
+          && (!a.hasAny(['quizResults'])   || !('quizResults' in d)   || (d.quizResults is map && d.quizResults.size() <= 50));
     }
 
     function bookFields() {
@@ -247,6 +248,16 @@ service cloud.firestore {
       // Liberar el nombre: solo su dueño. Sin update: no se transfiere.
       allow delete: if request.auth != null
                     && resource.data.uid == request.auth.uid;
+    }
+
+    // =========================================================
+    // 4b. TESTS DE PERSONALIDAD (/quizzes)
+    // Lectura pública: las preguntas son el gancho viral y se juegan
+    // sin cuenta. Escritura solo desde la consola/Admin SDK.
+    // =========================================================
+    match /quizzes/{quizId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     // =========================================================

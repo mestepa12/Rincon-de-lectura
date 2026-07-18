@@ -10,6 +10,7 @@ export default defineConfig({
         login: 'login.html',
         register: 'register.html',
         privacidad: 'privacidad.html',
+        quiz: 'quiz.html',
         404: '404.html',
       }
     }

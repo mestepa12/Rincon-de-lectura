@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>¿Cuál es tu tropo literario dominante? | Mi Rincón de Lectura</title>
+    <meta name="description" content="Cinco preguntas, dos minutos, una verdad incómoda sobre tu forma de leer. Descubre tu tropo literario dominante y compártelo en tus Stories.">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mi Rincón de Lectura">
+    <meta property="og:title" content="¿Cuál es tu tropo literario dominante?">
+    <meta property="og:description" content="Cinco preguntas, dos minutos, una verdad incómoda sobre tu forma de leer.">
+    <meta property="og:url" content="https://rinconlectura.es/quiz">
+    <meta property="og:image" content="https://rinconlectura.es/og-image.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="quiz.js"></script>
+</head>
+<body class="quiz-body">
+
+    <nav class="landing-nav nav-scrolled" aria-label="Navegación principal">
+        <a href="index.html" class="nav-brand">📚 Mi Rincón de Lectura</a>
+        <div class="nav-actions">
+            <a href="index.html" class="nav-btn nav-btn-ghost"><span class="nav-btn-text">← Volver</span><span class="nav-btn-icon" aria-hidden="true">←</span></a>
+        </div>
+    </nav>
+
+    <main class="quiz-main">
+
+        <!-- Portada del test -->
+        <section id="quiz-intro" class="quiz-vista">
+            <p class="quiz-emoji" aria-hidden="true">🎭</p>
+            <h1 id="quiz-titulo">¿Cuál es tu tropo literario dominante?</h1>
+            <p id="quiz-gancho" class="quiz-gancho">Cinco preguntas, dos minutos, una verdad incómoda sobre tu forma de leer.</p>
+            <button id="quiz-empezar" class="cta-btn cta-primary">Empezar el test</button>
+            <p class="quiz-meta">Sin registro para jugar · 4 perfiles posibles</p>
+        </section>
+
+        <!-- Pregunta activa -->
+        <section id="quiz-pregunta" class="quiz-vista" hidden>
+            <div class="quiz-progreso" aria-hidden="true"><div id="quiz-progreso-fill"></div></div>
+            <p id="quiz-contador" class="quiz-contador"></p>
+            <h2 id="quiz-texto-pregunta"></h2>
+            <div id="quiz-opciones" class="quiz-opciones"></div>
+        </section>
+
+        <!-- Muro de conversión: la última respuesta exige sesión -->
+        <section id="quiz-gate" class="quiz-vista" hidden>
+            <p class="quiz-emoji" aria-hidden="true">🔮</p>
+            <h2>Tu resultado está listo</h2>
+            <p class="quiz-gancho">Crea tu cuenta o inicia sesión para desvelarlo y guardarlo en tu perfil.</p>
+            <div class="quiz-gate-botones">
+                <button id="gate-google" class="btn-google"><img src="google-logo.png" alt="" width="20" height="20">Continuar con Google</button>
+                <a id="gate-registro" href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
+                <a id="gate-login" href="login.html" class="quiz-gate-login">Ya tengo cuenta, iniciar sesión</a>
+            </div>
+            <p class="quiz-meta">Tus respuestas se conservan mientras te registras.</p>
+        </section>
+
+        <!-- Resultado: infografía vertical compartible -->
+        <section id="quiz-resultado" class="quiz-vista" hidden>
+            <div id="resultado-card" class="resultado-card">
+                <p class="rc-marca">MI RINCÓN DE LECTURA</p>
+                <p class="rc-sobre">Mi tropo literario dominante</p>
+                <p id="rc-emoji" class="rc-emoji" aria-hidden="true"></p>
+                <h2 id="rc-nombre" class="rc-nombre"></h2>
+                <p id="rc-tagline" class="rc-tagline"></p>
+                <div id="rc-afinidades" class="rc-afinidades"></div>
+                <p id="rc-descripcion" class="rc-descripcion"></p>
+                <div class="rc-libro">
+                    <p class="rc-libro-label">Tu próxima lectura</p>
+                    <p id="rc-libro-titulo" class="rc-libro-titulo"></p>
+                </div>
+                <p class="rc-footer">¿Cuál es el tuyo? · rinconlectura.es/quiz</p>
+            </div>
+            <div class="resultado-share">
+                <button id="share-stories" class="cta-btn cta-primary">📸 Compartir en Stories</button>
+                <button id="share-tiktok" class="cta-btn cta-primary">🎵 Compartir en TikTok</button>
+                <button id="share-link" class="cta-btn cta-secondary">🔗 Copiar enlace del test</button>
+            </div>
+            <p id="share-estado" class="quiz-meta" aria-live="polite"></p>
+            <a href="biblioteca.html" class="quiz-gate-login">Ir a mi biblioteca →</a>
+        </section>
+
+    </main>
+</body>
+</html>

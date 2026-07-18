@@ -1680,6 +1680,115 @@ html { scroll-behavior: smooth; }
 .story-card-mock .ec-notes::before { display: none; }
 .story-card-mock .ec-footer { font-size: 0.55rem; letter-spacing: 2px; }
 
+/* Strip del test viral en la landing */
+.landing-quiz { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 1rem; }
+.quiz-strip {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    background: var(--card-bg-color);
+    border: 2px solid var(--accent-color-interactive);
+    border-radius: 16px;
+    padding: 1.4rem 1.8rem;
+    box-shadow: 0 8px 24px var(--shadow-color);
+}
+.quiz-strip-emoji { font-size: 2.6rem; line-height: 1; flex-shrink: 0; }
+.quiz-strip-text { flex: 1; min-width: 0; }
+.quiz-strip-text h2 { font-family: var(--font-title); font-size: 1.3rem; margin: 0 0 0.2rem; color: var(--text-color); }
+.quiz-strip-text p { font-size: 0.9rem; margin: 0; color: var(--text-color); opacity: 0.75; }
+.quiz-strip .cta-btn { flex-shrink: 0; }
+@media (max-width: 720px) {
+    .quiz-strip { flex-direction: column; text-align: center; gap: 0.9rem; padding: 1.5rem 1.2rem; }
+}
+
+/* ======== TEST DE PERSONALIDAD LITERARIA (quiz.html) ======== */
+.quiz-body { background: var(--bg-color); }
+.quiz-main {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: calc(60px + 2.5rem) 1.25rem 3rem;
+    min-height: 100dvh;
+    box-sizing: border-box;
+}
+.quiz-vista { text-align: center; }
+.quiz-emoji { font-size: 3.2rem; margin: 0 0 0.6rem; line-height: 1; }
+#quiz-intro h1, #quiz-gate h2 {
+    font-family: var(--font-title);
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    line-height: 1.2;
+    color: var(--text-color);
+    margin: 0 0 0.8rem;
+}
+.quiz-gancho { font-size: 1.02rem; line-height: 1.6; color: var(--text-color); opacity: 0.8; max-width: 40ch; margin: 0 auto 1.8rem; }
+.quiz-meta { font-size: 0.78rem; color: var(--text-color); opacity: 0.55; margin-top: 1.2rem; }
+
+/* Barra de progreso (transform, no width) */
+.quiz-progreso { width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin-bottom: 1.6rem; }
+#quiz-progreso-fill { display: block; height: 100%; width: 100%; background: var(--accent-color-interactive); border-radius: 3px; transform: scaleX(0); transform-origin: left; transition: transform 0.3s ease-out; }
+.quiz-contador { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: var(--accent-color-interactive); margin: 0 0 0.5rem; }
+#quiz-texto-pregunta { font-family: var(--font-title); font-size: clamp(1.35rem, 4.5vw, 1.7rem); line-height: 1.25; color: var(--text-color); margin: 0 0 1.6rem; }
+.quiz-opciones { display: flex; flex-direction: column; gap: 0.7rem; }
+.quiz-opcion {
+    width: 100%;
+    text-align: left;
+    padding: 1rem 1.2rem;
+    font-size: 0.98rem;
+    line-height: 1.4;
+    font-family: var(--font-body);
+    color: var(--text-color);
+    background: var(--card-bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color var(--transition-hover), transform var(--transition-hover), background-color var(--transition-hover);
+}
+.quiz-opcion:active { transform: scale(0.98); }
+@media (hover: hover) and (pointer: fine) {
+    .quiz-opcion:hover { border-color: var(--accent-color-interactive); }
+}
+.quiz-opcion.elegida { border-color: var(--accent-color-interactive); background: var(--accent-color-interactive); color: #fff; }
+
+/* Muro de conversión */
+.quiz-gate-botones { display: flex; flex-direction: column; gap: 0.8rem; max-width: 340px; margin: 0 auto; }
+.quiz-gate-botones .cta-btn { width: 100%; box-sizing: border-box; text-align: center; }
+.quiz-gate-login { display: inline-block; font-size: 0.9rem; font-weight: 700; color: var(--accent-color-interactive); text-decoration: none; margin-top: 0.4rem; }
+.quiz-gate-login:hover { text-decoration: underline; }
+
+/* Infografía de resultado (mismo lenguaje que la tarjeta de reseña) */
+.resultado-card {
+    width: min(400px, 100%);
+    margin: 0 auto 1.6rem;
+    /* Fondo por defecto granate; quiz.js lo tiñe con el hue del perfil */
+    background:
+        radial-gradient(130% 85% at 50% 0%, rgba(255, 240, 220, 0.12), transparent 55%),
+        radial-gradient(140% 90% at 50% 115%, rgba(0, 0, 0, 0.5), transparent 60%),
+        linear-gradient(160deg, #170a0c 0%, #3d1a1e 48%, #7a3a3a 100%);
+    color: #fdfbf7;
+    border-radius: 16px;
+    padding: 2.2rem 1.8rem 1.6rem;
+    box-sizing: border-box;
+    text-align: center;
+    box-shadow: 0 24px 55px rgba(0, 0, 0, 0.3);
+}
+.rc-marca { font-family: 'Lato', sans-serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.3em; text-indent: 0.3em; opacity: 0.55; margin: 0 0 1.4rem; }
+.rc-sobre { font-family: 'Lato', sans-serif; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; text-indent: 0.18em; opacity: 0.75; margin: 0 0 0.6rem; }
+.rc-emoji { font-size: 3.4rem; line-height: 1; margin: 0 0 0.5rem; }
+.rc-nombre { font-family: var(--font-title); font-size: 2.1rem; font-weight: 700; line-height: 1.15; margin: 0 0 0.4rem; }
+.rc-tagline { font-family: var(--font-title); font-style: italic; font-size: 1rem; opacity: 0.85; margin: 0 0 1.5rem; }
+.rc-afinidades { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
+.rc-afinidad { display: grid; grid-template-columns: 1fr 90px 34px; align-items: center; gap: 0.6rem; }
+.rc-afinidad-nombre { font-family: 'Lato', sans-serif; font-size: 0.74rem; font-weight: 700; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rc-afinidad-barra { display: block; height: 7px; background: rgba(255, 255, 255, 0.18); border-radius: 4px; overflow: hidden; }
+.rc-afinidad-barra span { display: block; height: 100%; width: 100%; background: #F0C24B; border-radius: 4px; transform-origin: left; }
+.rc-afinidad-pct { font-family: 'Lato', sans-serif; font-size: 0.72rem; font-weight: 700; text-align: right; opacity: 0.85; }
+.rc-descripcion { font-family: var(--font-title); font-style: italic; font-size: 0.95rem; line-height: 1.65; opacity: 0.92; margin: 0 0 1.5rem; }
+.rc-libro { border-top: 1px solid rgba(255, 255, 255, 0.25); padding-top: 1rem; margin-bottom: 1.5rem; }
+.rc-libro-label { font-family: 'Lato', sans-serif; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; text-indent: 0.18em; opacity: 0.65; margin: 0 0 0.3rem; }
+.rc-libro-titulo { font-family: var(--font-title); font-size: 1rem; font-weight: 700; margin: 0; }
+.rc-footer { font-family: 'Lato', sans-serif; font-size: 0.66rem; letter-spacing: 0.12em; opacity: 0.6; margin: 0; }
+.resultado-share { display: flex; flex-direction: column; gap: 0.7rem; max-width: 340px; margin: 0 auto; }
+.resultado-share .cta-btn { width: 100%; box-sizing: border-box; text-align: center; }
+
 /* Cierre de la landing tras la demo */
 .landing-cierre {
     text-align: center;
