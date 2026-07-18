@@ -1,6 +1,27 @@
 import { googleBooksApiKey } from './config.js';
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 
+// Entradas suaves de las secciones de la landing al hacer scroll.
+// La clase js-reveal activa el estado oculto SOLO si este script cargó:
+// sin JS la página se ve completa.
+document.documentElement.classList.add('js-reveal');
+document.addEventListener('DOMContentLoaded', () => {
+    const revealables = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window)) {
+        revealables.forEach(el => el.classList.add('revealed'));
+    } else {
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('revealed');
+                    io.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        revealables.forEach(el => io.observe(el));
+    }
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Datos iniciales (Demo): biblioteca precargada para que la demo
     // se sienta viva desde el primer segundo.
@@ -76,6 +97,30 @@ document.addEventListener('DOMContentLoaded', () => {
             genre: 'Ciencia ficción',
             cover: 'https://covers.openlibrary.org/b/isbn/9780593135204-M.jpg',
             notes: ''
+        },
+        // — Próximas lecturas —
+        {
+            id: 'demo-7',
+            title: 'Dune',
+            author: 'Frank Herbert',
+            section: 'proximas-lecturas',
+            totalPages: 688,
+            currentPage: 0,
+            genre: 'Ciencia ficción',
+            cover: 'https://covers.openlibrary.org/b/isbn/9780441013593-M.jpg',
+            notes: ''
+        },
+        // — Abandonados (con humor: enseña que abandonar también se registra) —
+        {
+            id: 'demo-8',
+            title: 'El Silmarillion',
+            author: 'J. R. R. Tolkien',
+            section: 'libros-abandonados',
+            totalPages: 480,
+            currentPage: 74,
+            genre: 'Fantasía',
+            cover: 'https://covers.openlibrary.org/b/isbn/9780345325815-M.jpg',
+            notes: 'Lo he intentado tres veces. Algún día volveré.'
         }
     ];
 

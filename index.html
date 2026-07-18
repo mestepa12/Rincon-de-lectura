@@ -98,72 +98,87 @@
             <a href="login.html" class="nav-btn nav-btn-ghost" aria-label="Iniciar Sesión">
                 <span class="nav-btn-icon" aria-hidden="true">👤</span><span class="nav-btn-text">Iniciar Sesión</span>
             </a>
-            <a href="register.html" class="nav-btn nav-btn-primary">Crear Cuenta</a>
+            <a href="register.html" class="nav-btn nav-btn-primary">Crear cuenta gratis</a>
         </div>
     </nav>
 
     <!-- ==================== LANDING: HERO ==================== -->
     <section class="landing-hero">
-        <p class="hero-eyebrow">📚 Tu tracker de lectura y biblioteca virtual, sin anuncios</p>
-        <h1 class="hero-title">La app para registrar lecturas que convierte leer en tu mejor hábito.</h1>
-        <p class="hero-sub">Tus libros, tus estadísticas, tus reglas. Únete a la red social de lectura definitiva en español: haz el seguimiento de tus páginas, mantén tu racha diaria y comparte reseñas con el mundo.</p>
-        <div class="hero-ctas">
-            <a href="register.html" class="cta-btn cta-primary">Crear Cuenta Gratis</a>
-            <a href="#demo" class="cta-btn cta-secondary">Probar Demo Interactiva</a>
+        <div class="hero-inner">
+            <div class="hero-copy">
+                <p class="hero-eyebrow">La alternativa a Goodreads en español, sin anuncios</p>
+                <h1 class="hero-title">Convierte leer en tu mejor hábito.</h1>
+                <p class="hero-sub">Registra tus libros, mantén tu racha diaria y comparte reseñas que dan gusto ver. Gratis.</p>
+                <div class="hero-ctas">
+                    <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
+                    <a href="#demo" class="cta-btn cta-secondary">Probar la demo</a>
+                </div>
+            </div>
+            <div class="hero-visual" aria-hidden="true">
+                <div class="story-card-mock">
+                    <div class="ec-cover-wrap"><img src="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg" alt="" class="ec-cover"></div>
+                    <div class="ec-content">
+                        <div class="ec-stars">★★★★★</div>
+                        <p class="ec-title">Cien Años de Soledad</p>
+                        <p class="ec-author">Gabriel García Márquez</p>
+                        <div class="ec-divider"></div>
+                        <p class="ec-notes">Obra maestra absoluta. Macondo y los Buendía se quedan contigo para siempre.</p>
+                    </div>
+                    <div class="ec-footer">Mi Rincón de Lectura</div>
+                </div>
+            </div>
         </div>
     </section>
 
     <!-- ==================== LANDING: BENEFICIOS ==================== -->
-    <section class="landing-features">
-        <h2 class="landing-section-title">La plataforma definitiva para organizar tus lecturas</h2>
+    <section class="landing-features reveal">
+        <h2 class="landing-section-title">Todo lo que tu estantería no puede hacer</h2>
         <div class="features-grid">
-            <div class="feature-card">
+            <div class="feature-card feature-card-wide">
                 <div class="feature-icon">📊</div>
-                <h3>Estadísticas de lectura avanzadas</h3>
-                <p>Haz el seguimiento de lectura exacto con gráficos claros de tus páginas, géneros y libros terminados. Mira tu progreso de un vistazo.</p>
+                <h3>Estadísticas de lectura</h3>
+                <p>Páginas, géneros y libros terminados en gráficos claros. Tu progreso de un vistazo.</p>
+                <div class="mini-chart" aria-hidden="true">
+                    <span style="height:34%"></span><span style="height:52%"></span><span style="height:41%"></span><span style="height:68%"></span><span style="height:57%"></span><span style="height:88%"></span>
+                </div>
             </div>
-            <div class="feature-card">
+            <div class="feature-card feature-card-tinted">
                 <div class="feature-icon">🔥</div>
-                <h3>Rachas y tracker de hábitos</h3>
-                <p>Cada día que lees, tu racha crece. Desbloquea medallas, supera tus objetivos anuales y deja que la constancia haga el resto.</p>
+                <h3>Rachas que enganchan</h3>
+                <p>Cada día que lees, tu racha crece y caen medallas. La constancia hace el resto.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">👥</div>
-                <h3>Club de lectura y comunidad</h3>
-                <p>Añade a tus amigos, descubre sus bibliotecas virtuales y compite en el ranking. Leer acompañado en español motiva el doble.</p>
+                <h3>Club de lectura</h3>
+                <p>Amigos, sus bibliotecas y un ranking de páginas. Leer acompañado motiva el doble.</p>
             </div>
-            <div class="feature-card">
+            <div class="feature-card feature-card-wide">
                 <div class="feature-icon">✈️</div>
-                <h3>Modo Offline total</h3>
-                <p>Lee en el metro o sin conexión: tu registro de libros funciona offline y se sincroniza automáticamente al recuperar internet.</p>
+                <h3>Modo offline total</h3>
+                <p>En el metro o sin cobertura: tu registro funciona offline y se sincroniza solo al volver la conexión.</p>
             </div>
         </div>
     </section>
 
-    <!-- ==================== LANDING: COMPARTE TUS RESEÑAS ==================== -->
-    <section class="landing-social">
-        <div class="social-text">
-            <h2 class="landing-section-title">Comparte tus reseñas en segundos</h2>
-            <p class="social-sub">Exporta tarjetas perfectas para tus Stories de Instagram o TikTok con un solo clic.</p>
-            <a href="register.html" class="cta-btn cta-primary">Empezar a leer ahora</a>
+    <!-- ==================== LANDING: RACHA / PÁGINO ==================== -->
+    <section class="landing-social reveal">
+        <div class="racha-mock" aria-hidden="true">
+            <img src="mascota_racha.png" alt="" class="racha-mock-img">
+            <p class="racha-mock-num">🔥 14</p>
+            <p class="racha-mock-label">días seguidos leyendo</p>
+            <p class="racha-mock-msg">“Dos semanas. Págino ya presume de ti con otros dinosaurios.”</p>
         </div>
-        <div class="story-card-mock" aria-hidden="true">
-            <div class="ec-cover-wrap"><img src="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg" alt="" class="ec-cover"></div>
-            <div class="ec-content">
-                <div class="ec-stars">★★★★★</div>
-                <p class="ec-title">Cien Años de Soledad</p>
-                <p class="ec-author">Gabriel García Márquez</p>
-                <div class="ec-divider"></div>
-                <p class="ec-notes">Obra maestra absoluta. Macondo y los Buendía se quedan contigo para siempre.</p>
-            </div>
-            <div class="ec-footer">Mi Rincón de Lectura</div>
+        <div class="social-text">
+            <h2 class="landing-section-title">Una racha que da pena romper</h2>
+            <p class="social-sub">Págino, tu mascota lectora, celebra cada día que lees y te espera al siguiente. Medallas, objetivos y reseñas listas para compartir en tus Stories.</p>
+            <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
         </div>
     </section>
 
     <!-- ==================== DEMO INTERACTIVA ==================== -->
     <div class="demo-banner" id="demo">
         🚀 Esto de aquí abajo es la demo: tócalo todo, añade libros, suma páginas... Los cambios no se guardan al cerrar la pestaña.
-        <a href="register.html">Crea tu cuenta para guardarlo todo</a>
+        <a href="register.html">Crear cuenta gratis</a>
     </div>
 
     <header class="site-header">
@@ -206,6 +221,14 @@
             <div class="books-container" data-section="libros-abandonados"></div>
         </section>
     </main>
+
+    <!-- ==================== LANDING: CIERRE ==================== -->
+    <section class="landing-cierre reveal">
+        <img src="mascota_racha.png" alt="" class="cierre-mascota">
+        <h2 class="landing-section-title">¿Te quedas a leer?</h2>
+        <p class="cierre-sub">Tu biblioteca, tus rachas y tus reseñas te esperan. Empezar cuesta un minuto.</p>
+        <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
+    </section>
 
     <dialog id="add-book-modal">
         <form id="add-book-form">

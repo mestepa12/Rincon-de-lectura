@@ -1443,10 +1443,18 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 html { scroll-behavior: smooth; }
 
 .landing-hero {
-    text-align: center;
-    padding: 5rem 1.5rem 4rem;
+    padding: 4rem 1.5rem;
     background: linear-gradient(180deg, var(--card-bg-color) 0%, var(--bg-color) 100%);
     border-bottom: 1px solid var(--border-color);
+    overflow: hidden;
+}
+.hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    align-items: center;
+    gap: 3rem;
 }
 .hero-eyebrow {
     display: inline-block;
@@ -1462,25 +1470,30 @@ html { scroll-behavior: smooth; }
 }
 .hero-title {
     font-family: var(--font-title);
-    font-size: clamp(2.2rem, 5vw, 3.4rem);
-    line-height: 1.15;
-    margin: 0 auto 1rem;
-    max-width: 760px;
+    font-size: clamp(2.4rem, 4.5vw, 3.6rem);
+    line-height: 1.12;
+    margin: 0 0 1rem;
+    max-width: 17ch; /* "Convierte leer en / tu mejor hábito." = 2 líneas */
     color: var(--text-color);
 }
 .hero-sub {
-    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-size: clamp(1rem, 2vw, 1.2rem);
     line-height: 1.6;
-    max-width: 640px;
-    margin: 0 auto 2.2rem;
+    max-width: 42ch;
+    margin: 0 0 2.2rem;
     color: var(--text-color);
     opacity: 0.85;
 }
 .hero-ctas {
     display: flex;
     gap: 1rem;
-    justify-content: center;
     flex-wrap: wrap;
+}
+.hero-visual {
+    display: flex;
+    justify-content: center;
+    /* La tarjeta asoma con leve rotación; la sombra la ancla al fondo */
+    filter: drop-shadow(0 30px 50px rgba(40, 15, 15, 0.28));
 }
 .cta-btn {
     display: inline-block;
@@ -1519,11 +1532,13 @@ html { scroll-behavior: smooth; }
     margin: 0 auto;
     padding: 4rem 1.5rem;
 }
+/* Bento 3 columnas con zigzag: ancha+normal / normal+ancha */
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1.4rem;
 }
+.feature-card-wide { grid-column: span 2; }
 .feature-card {
     background: var(--card-bg-color);
     border: 1px solid var(--border-color);
@@ -1531,14 +1546,50 @@ html { scroll-behavior: smooth; }
     padding: 1.8rem 1.5rem;
     box-shadow: 0 4px 14px var(--shadow-color);
     transition: transform var(--transition-hover), box-shadow var(--transition-hover);
+    display: flex;
+    flex-direction: column;
 }
+.feature-card-tinted {
+    background: linear-gradient(150deg, #7a3a3a 0%, #5a2626 100%);
+    border-color: transparent;
+}
+/* Doble clase: gana a los ".feature-card h3/p" declarados más abajo */
+.feature-card.feature-card-tinted h3, .feature-card.feature-card-tinted p { color: #fdfbf7; }
+.feature-card.feature-card-tinted p { opacity: 0.88; }
+/* Mini gráfica decorativa de la card de estadísticas */
+.mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    height: 74px;
+    margin-top: auto;
+    padding-top: 1.2rem;
+}
+.mini-chart span {
+    flex: 1;
+    border-radius: 6px 6px 2px 2px;
+    background: linear-gradient(180deg, var(--accent-color-interactive), rgba(154, 59, 59, 0.55));
+}
+.mini-chart span:nth-child(even) { background: linear-gradient(180deg, #A1887F, rgba(161, 136, 127, 0.5)); }
 @media (hover: hover) and (pointer: fine) {
     .feature-card:hover {
         transform: translateY(-4px);
         box-shadow: 0 10px 24px var(--shadow-color);
     }
 }
-.feature-icon { font-size: 2.2rem; margin-bottom: 0.8rem; }
+/* Emoji en chip uniforme: mismo tamaño y fondo para las cuatro cards */
+.feature-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    border-radius: 14px;
+    background: rgba(154, 59, 59, 0.1);
+    margin-bottom: 0.9rem;
+}
+.feature-card-tinted .feature-icon { background: rgba(255, 255, 255, 0.14); }
 .feature-card h3 {
     font-family: var(--font-title);
     font-size: 1.15rem;
@@ -1558,11 +1609,32 @@ html { scroll-behavior: smooth; }
     margin: 0 auto;
     padding: 4rem 1.5rem;
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
+    /* Visual a la izquierda, texto a la derecha: zigzag respecto al hero */
+    grid-template-columns: 0.9fr 1.1fr;
     gap: 3rem;
     align-items: center;
     border-top: 1px solid var(--border-color);
 }
+/* Maqueta de racha con Págino */
+.racha-mock {
+    width: 270px;
+    margin: 0 auto;
+    background: var(--card-bg-color);
+    border: 2px solid var(--accent-color-interactive);
+    border-radius: 16px;
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+    padding: 1.8rem 1.4rem 1.4rem;
+    text-align: center;
+    transform: rotate(2deg);
+    transition: transform var(--transition-hover);
+}
+@media (hover: hover) and (pointer: fine) {
+    .racha-mock:hover { transform: rotate(0deg) scale(1.02); }
+}
+.racha-mock-img { width: 96px; height: auto; margin-bottom: 0.4rem; filter: drop-shadow(0 4px 12px rgba(255, 105, 180, 0.3)); }
+.racha-mock-num { font-family: var(--font-title); font-size: 2.6rem; font-weight: 700; color: var(--accent-color-interactive); margin: 0; line-height: 1.1; }
+.racha-mock-label { font-family: 'Lato', sans-serif; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; opacity: 0.6; margin: 0.2rem 0 0.9rem; color: var(--text-color); }
+.racha-mock-msg { font-family: var(--font-title); font-style: italic; font-size: 0.88rem; line-height: 1.5; color: var(--text-color); opacity: 0.8; margin: 0; }
 .landing-social .landing-section-title { text-align: left; margin-bottom: 1rem; }
 .social-sub {
     font-size: 1.05rem;
@@ -1572,15 +1644,19 @@ html { scroll-behavior: smooth; }
     margin: 0 0 2rem;
 }
 
-/* Maqueta de la tarjeta de exportacion (reusa clases .ec-* a escala) */
+/* Maqueta de la tarjeta de exportacion (reusa clases .ec-* a escala).
+   El fondo replica el esquema de capas de la tarjeta real (#export-card). */
 .story-card-mock {
     width: 270px;
     aspect-ratio: 9 / 16;
     margin: 0 auto;
-    background: linear-gradient(160deg, #1a0905 0%, #4a2010 30%, #8B3A3A 65%, #c4875a 100%);
-    color: #fff;
+    background:
+        radial-gradient(130% 85% at 50% 0%, rgba(255, 240, 220, 0.10), transparent 55%),
+        radial-gradient(140% 90% at 50% 115%, rgba(0, 0, 0, 0.5), transparent 60%),
+        linear-gradient(160deg, #170a0c 0%, #3d1a1e 48%, #7a3a3a 100%);
+    color: #fdfbf7;
     font-family: var(--font-title);
-    border-radius: 18px;
+    border-radius: 16px;
     box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
     display: flex;
     flex-direction: column;
@@ -1604,6 +1680,33 @@ html { scroll-behavior: smooth; }
 .story-card-mock .ec-notes::before { display: none; }
 .story-card-mock .ec-footer { font-size: 0.55rem; letter-spacing: 2px; }
 
+/* Cierre de la landing tras la demo */
+.landing-cierre {
+    text-align: center;
+    padding: 4.5rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    background: linear-gradient(180deg, var(--bg-color) 0%, var(--card-bg-color) 100%);
+}
+.cierre-mascota { width: 88px; height: auto; margin-bottom: 0.6rem; }
+.landing-cierre .landing-section-title { margin-bottom: 0.6rem; }
+.cierre-sub {
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    opacity: 0.85;
+    max-width: 46ch;
+    margin: 0 auto 1.8rem;
+}
+
+/* Entradas al hacer scroll (IntersectionObserver añade .revealed).
+   Solo se ocultan si el JS marcó <html class="js-reveal">: sin JS todo visible. */
+.js-reveal .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.js-reveal .reveal.revealed { opacity: 1; transform: none; }
+
 /* Banner que separa la landing de la demo interactiva */
 .demo-banner {
     background-color: var(--accent-color-interactive);
@@ -1615,12 +1718,22 @@ html { scroll-behavior: smooth; }
 }
 .demo-banner a { color: #fff; text-decoration: underline; margin-left: 10px; }
 
+@media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 2.5rem; text-align: center; }
+    .hero-title, .hero-sub { margin-left: auto; margin-right: auto; }
+    .hero-ctas { justify-content: center; }
+    .hero-visual .story-card-mock { width: 230px; }
+}
 @media (max-width: 720px) {
-    .landing-hero { padding: 3.5rem 1.2rem 3rem; }
+    .landing-hero { padding: 3rem 1.2rem; }
     .landing-features, .landing-social { padding: 2.8rem 1.2rem; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-card-wide { grid-column: auto; }
     .landing-social { grid-template-columns: 1fr; gap: 2.2rem; }
+    .landing-social .racha-mock { order: 2; }
+    .landing-social .social-text { order: 1; text-align: center; }
     .landing-social .landing-section-title { text-align: center; }
-    .landing-social .social-text { text-align: center; }
+    .landing-cierre { padding: 3.2rem 1.2rem; }
     .cta-btn { width: 100%; max-width: 320px; text-align: center; }
 }
 
@@ -1672,7 +1785,7 @@ html { scroll-behavior: smooth; }
     min-height: 44px;
     min-width: 44px;
     padding: 0 1.1rem;
-    border-radius: 10px;
+    border-radius: 12px; /* misma escala que .cta-btn */
     font-weight: 700;
     font-size: 0.95rem;
     text-decoration: none;
@@ -2072,4 +2185,5 @@ html { scroll-behavior: smooth; }
     .friends-sidebar, .logro-toast, .cookie-banner {
         transition-duration: 0.01s;
     }
+    .js-reveal .reveal { opacity: 1; transform: none; transition: none; }
 }
