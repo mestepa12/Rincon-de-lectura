@@ -2296,3 +2296,91 @@ html { scroll-behavior: smooth; }
     }
     .js-reveal .reveal { opacity: 1; transform: none; transition: none; }
 }
+
+/* ==================== LANDING: QUÉ ES + COMPARATIVA ==================== */
+.landing-que-es {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 0.5rem;
+}
+.landing-que-es .landing-section-title { margin-bottom: 1.2rem; }
+.que-es-texto {
+    font-size: 1.02rem;
+    line-height: 1.75;
+    color: var(--text-color);
+    opacity: 0.88;
+    margin: 0;
+}
+
+.landing-vs {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+}
+.vs-tabla-wrap { overflow-x: auto; }
+.vs-tabla {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px var(--shadow-color);
+    font-size: 0.95rem;
+}
+.vs-tabla th, .vs-tabla td {
+    padding: 0.85rem 1.1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-color);
+}
+.vs-tabla thead th {
+    font-family: var(--font-title);
+    font-size: 1rem;
+    background: rgba(154, 59, 59, 0.08);
+}
+.vs-tabla tbody tr:last-child th, .vs-tabla tbody tr:last-child td { border-bottom: none; }
+.vs-tabla tbody th { font-weight: 700; width: 34%; }
+.vs-tabla .vs-si { color: var(--accent-color-interactive); font-weight: 700; }
+.vs-nota {
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    opacity: 0.75;
+    margin: 1.1rem 0 1.4rem;
+    text-align: center;
+}
+.landing-vs .cta-holder { text-align: center; }
+
+/* Página /vs-goodreads */
+.vs-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    color: var(--text-color);
+}
+.vs-page h1 {
+    font-family: var(--font-title);
+    font-size: clamp(1.7rem, 4vw, 2.4rem);
+    margin: 1.2rem 0 0.4rem;
+}
+.vs-page h2 {
+    font-family: var(--font-title);
+    font-size: 1.35rem;
+    margin: 2.4rem 0 0.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border-color);
+}
+.vs-page p, .vs-page li { line-height: 1.75; font-size: 1rem; }
+.vs-page ul { padding-left: 1.4rem; }
+.vs-intro { font-size: 1.05rem; opacity: 0.88; }
+.vs-page .vs-tabla { margin: 1.2rem 0; }
+.vs-cta-final {
+    margin-top: 2.5rem;
+    text-align: center;
+    background: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+}
+.vs-cta-final p { margin: 0 0 1.2rem; }

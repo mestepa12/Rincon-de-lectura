@@ -10,7 +10,7 @@ const cleanInternalUrls = () => ({
   transformIndexHtml(html) {
     return html
       .replace(/href="index\.html"/g, 'href="/"')
-      .replace(/href="(login|register|quiz|privacidad|biblioteca)\.html"/g, 'href="/$1"')
+      .replace(/href="(login|register|quiz|privacidad|biblioteca|vs-goodreads)\.html"/g, 'href="/$1"')
       .replace(/location\.replace\('biblioteca\.html'\)/g, "location.replace('/biblioteca')")
   }
 })
@@ -27,6 +27,7 @@ export default defineConfig({
         register: 'register.html',
         privacidad: 'privacidad.html',
         quiz: 'quiz.html',
+        vsgoodreads: 'vs-goodreads.html',
         404: '404.html',
       }
     }
