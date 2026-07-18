@@ -1706,7 +1706,7 @@ html { scroll-behavior: smooth; }
 .quiz-main {
     max-width: 560px;
     margin: 0 auto;
-    padding: calc(60px + 2.5rem) 1.25rem 3rem;
+    padding: 4.5rem 1.25rem 3rem;
     min-height: 100dvh;
     box-sizing: border-box;
 }
