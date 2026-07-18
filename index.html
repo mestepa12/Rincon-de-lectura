@@ -37,12 +37,25 @@
       "@context": "https://schema.org",
       "@graph": [
         {
+          "@type": "Organization",
+          "@id": "https://rinconlectura.es/#org",
+          "name": "Mi Rincón de Lectura",
+          "url": "https://rinconlectura.es/",
+          "logo": "https://rinconlectura.es/favicon.png",
+          "founder": {
+            "@type": "Person",
+            "@id": "https://rinconlectura.es/#miguel",
+            "name": "Miguel Estepa"
+          }
+        },
+        {
           "@type": "WebSite",
           "@id": "https://rinconlectura.es/#website",
           "url": "https://rinconlectura.es/",
           "name": "Mi Rincón de Lectura",
           "description": "Rastreador de lectura en español: estadísticas, rachas diarias, logros y amigos lectores.",
-          "inLanguage": "es"
+          "inLanguage": "es-ES",
+          "publisher": { "@id": "https://rinconlectura.es/#org" }
         },
         {
           "@type": "WebApplication",
@@ -52,9 +65,10 @@
           "description": "Aplicación web gratuita para registrar tus lecturas: organiza tu biblioteca, sigue tu progreso página a página, mantén rachas diarias, desbloquea logros y comparte reseñas con amigos. Funciona offline y no tiene anuncios.",
           "applicationCategory": "LifestyleApplication",
           "applicationSubCategory": "Seguimiento de lectura",
-          "operatingSystem": "Web, Android, iOS",
+          "operatingSystem": "Web",
           "browserRequirements": "Requiere un navegador moderno con JavaScript",
-          "inLanguage": "es",
+          "inLanguage": "es-ES",
+          "author": { "@id": "https://rinconlectura.es/#org" },
           "image": "https://rinconlectura.es/og-image.png",
           "screenshot": "https://rinconlectura.es/og-image.png",
           "offers": {
@@ -288,6 +302,12 @@
             <div class="books-container" data-section="libros-abandonados"></div>
         </section>
     </main>
+
+    <!-- ==================== LANDING: QUIÉN ESTÁ DETRÁS ==================== -->
+    <section class="landing-about reveal">
+        <h2 class="landing-section-title">¿Quién está detrás de esto?</h2>
+        <p class="about-texto">Una persona, no una empresa. Me llamo Miguel, soy de España y monté Mi Rincón de Lectura porque quería llevar la cuenta de mis lecturas sin anuncios ni cuentas de pago, y de paso que mis amigos dejaran de preguntarme "¿por qué libro vas?". La app la mantengo yo, las decisiones las tomo yo, y si algo falla puedes quejarte directamente a mí desde la app. Tus datos no se venden a nadie, entre otras cosas porque no hay departamento comercial al que vendérselos.</p>
+    </section>
 
     <!-- ==================== LANDING: CIERRE ==================== -->
     <section class="landing-cierre reveal">

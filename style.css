@@ -2440,3 +2440,19 @@ html { scroll-behavior: smooth; }
 }
 .quiz-preguntas-lista ol { margin: 0.8rem 0 0.3rem; padding-left: 1.4rem; }
 .quiz-preguntas-lista li { font-size: 0.92rem; line-height: 1.7; }
+
+/* ==================== LANDING: QUIÉN ESTÁ DETRÁS ==================== */
+.landing-about {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 3rem 1.5rem 1rem;
+}
+.landing-about .landing-section-title { margin-bottom: 1.1rem; }
+.about-texto {
+    font-size: 1rem;
+    line-height: 1.75;
+    color: var(--text-color);
+    opacity: 0.87;
+    margin: 0;
+    text-align: center;
+}
