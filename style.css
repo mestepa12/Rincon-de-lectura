@@ -829,8 +829,6 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     .header-controls { gap: 0.25rem; }
     .header-controls button { padding: 0.35rem 0.45rem; font-size: 0.75rem; }
     #streak-counter.streak-counter { font-size: 0.75rem; padding: 0.25rem 0.4rem; }
-    /* Ocultar texto verbose en botones, dejar solo los icónicos */
-    #toggle-view { display: none; }
 }
 
 
@@ -1030,7 +1028,8 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 @media (max-width: 480px) {
     .friends-sidebar {
         width: 85%; /* Ocupa casi todo el ancho en móvil */
-        right: -100%;
+        /* El ocultado lo hace el transform del selector base; un right
+           negativo aquí lo dejaría fuera de pantalla incluso abierto */
     }
 }
 
