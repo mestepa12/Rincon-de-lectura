@@ -13,7 +13,7 @@
 export const QUIZ_TROPOS = {
     id: 'tropo-literario',
     titulo: '¿Cuál es tu tropo literario dominante?',
-    gancho: 'Cinco preguntas, dos minutos, una verdad incómoda sobre tu forma de leer.',
+    gancho: 'Ocho preguntas, tres minutos, una verdad incómoda sobre tu forma de leer.',
     emoji: '🎭',
     perfiles: {
         enemies: {
@@ -21,7 +21,11 @@ export const QUIZ_TROPOS = {
             emoji: '⚔️',
             tagline: 'El odio es solo el primer capítulo.',
             descripcion: 'Vives para la tensión: miradas que cortan, treguas forzosas y ese momento exacto en que el desprecio se vuelve otra cosa. Si no discuten, no te lo crees.',
-            libro: 'Orgullo y Prejuicio, de Jane Austen',
+            libros: [
+                'Orgullo y Prejuicio, de Jane Austen',
+                'Una corte de rosas y espinas, de Sarah J. Maas',
+                'El príncipe cruel, de Holly Black'
+            ],
             hue: 350
         },
         familia: {
@@ -29,7 +33,11 @@ export const QUIZ_TROPOS = {
             emoji: '🏕️',
             tagline: 'La sangre no elige; tú sí.',
             descripcion: 'Tu debilidad son los grupos imposibles que acaban cenando juntos. Te importa menos salvar el mundo que quién cuida de quién mientras tanto.',
-            libro: 'Seis de Cuervos, de Leigh Bardugo',
+            libros: [
+                'Seis de Cuervos, de Leigh Bardugo',
+                'La casa en el mar más azul, de TJ Klune',
+                'El camino de los reyes, de Brandon Sanderson'
+            ],
             hue: 145
         },
         elegido: {
@@ -37,7 +45,11 @@ export const QUIZ_TROPOS = {
             emoji: '✨',
             tagline: 'La profecía no se va a cumplir sola.',
             descripcion: 'Destinos que pesan, mentores que desaparecen y un protagonista que no pidió nada de esto. Lo tuyo es ver a alguien corriente aceptar algo enorme.',
-            libro: 'El Nombre del Viento, de Patrick Rothfuss',
+            libros: [
+                'El Nombre del Viento, de Patrick Rothfuss',
+                'Percy Jackson y el ladrón del rayo, de Rick Riordan',
+                'El ojo del mundo, de Robert Jordan'
+            ],
             hue: 40
         },
         giro: {
@@ -45,7 +57,11 @@ export const QUIZ_TROPOS = {
             emoji: '🌀',
             tagline: 'Confías en el narrador. Error.',
             descripcion: 'Lees como quien interroga: subrayas frases sospechosas, desconfías del personaje amable y celebras que un epílogo te obligue a releer el libro entero.',
-            libro: 'La verdad sobre el caso Harry Quebert, de Joël Dicker',
+            libros: [
+                'La verdad sobre el caso Harry Quebert, de Joël Dicker',
+                'La paciente silenciosa, de Alex Michaelides',
+                'Y no quedó ninguno, de Agatha Christie'
+            ],
             hue: 215
         }
     },
@@ -84,6 +100,33 @@ export const QUIZ_TROPOS = {
                 { texto: 'Una taberna ruidosa con canciones y mesa larga', pesos: { familia: 3, enemies: 1 } },
                 { texto: 'Un reino al borde del colapso que alguien debe salvar', pesos: { elegido: 3, familia: 1 } },
                 { texto: 'Una mansión con puertas cerradas y un testamento', pesos: { giro: 3, elegido: 1 } }
+            ]
+        },
+        {
+            texto: 'Un personaje nuevo entra en escena. Sospechas de él si...',
+            opciones: [
+                { texto: 'Te cae mal desde su primera frase (volverá, lo sabes)', pesos: { enemies: 3, familia: 1 } },
+                { texto: 'Insiste demasiado en que trabaja mejor solo', pesos: { familia: 3, giro: 1 } },
+                { texto: 'Rechaza el trono que todos le ofrecen', pesos: { elegido: 3, enemies: 1 } },
+                { texto: 'Es encantador y a todo el mundo le adora', pesos: { giro: 3, elegido: 1 } }
+            ]
+        },
+        {
+            texto: '¿Qué te hace abandonar un libro?',
+            opciones: [
+                { texto: 'Que los protagonistas se lleven bien desde el principio', pesos: { enemies: 3, giro: 1 } },
+                { texto: 'Que el grupo se separe y cada uno vaya por su lado', pesos: { familia: 3, enemies: 1 } },
+                { texto: 'Que el héroe gane sin sacrificar nada', pesos: { elegido: 3, familia: 1 } },
+                { texto: 'Verle el final desde el capítulo dos', pesos: { giro: 3, elegido: 1 } }
+            ]
+        },
+        {
+            texto: 'Cierra los ojos: la escena que quieres leer esta noche tiene...',
+            opciones: [
+                { texto: 'Una tregua incómoda en un espacio demasiado pequeño', pesos: { enemies: 3, giro: 1 } },
+                { texto: 'Una cena caótica con gente que se interrumpe', pesos: { familia: 3, elegido: 1 } },
+                { texto: 'Un mapa, un juramento y un camino que empieza', pesos: { elegido: 3, familia: 1 } },
+                { texto: 'Una carta que nadie debía leer', pesos: { giro: 3, enemies: 1 } }
             ]
         },
         {
