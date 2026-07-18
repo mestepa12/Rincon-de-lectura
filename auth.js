@@ -5,7 +5,6 @@ import {
     GoogleAuthProvider,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
-    signOut,
     sendPasswordResetEmail,
     setPersistence,
     browserLocalPersistence
@@ -162,18 +161,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- DETECTOR DE SESIÓN Y REDIRECCIÓN ---
+    // Nota: con cleanUrls la ruta es "/biblioteca" (sin .html), por eso los
+    // checks van sin extensión.
     onAuthStateChanged(auth, (user) => {
+        const path = window.location.pathname;
         if (user && user.emailVerified) {
-            const path = window.location.pathname;
-            if (path === '/' || path.includes('index.html') || path.includes('login.html') || path.includes('register.html')) {
+            if (path === '/' || path.includes('index') || path.includes('login') || path.includes('register')) {
                 window.location.href = 'biblioteca.html';
             }
         } else if (user && !user.emailVerified) {
-            if (divAviso) divAviso.style.display = 'block'; 
+            // Sin verificar no hay biblioteca: de vuelta al login con el banner
+            if (path.includes('biblioteca')) {
+                window.location.href = 'login.html';
+                return;
+            }
+            if (divAviso) {
+                divAviso.style.display = 'block';
+                const emailSpan = document.getElementById('verif-email');
+                const emailWrap = document.getElementById('verif-email-wrap');
+                if (emailSpan && user.email) {
+                    emailSpan.textContent = user.email;
+                    if (emailWrap) emailWrap.style.display = 'inline';
+                }
+                // Recién llegado del registro: tono de éxito en el titular
+                if (sessionStorage.getItem('registro_recien_creado')) {
+                    sessionStorage.removeItem('registro_recien_creado');
+                    const titulo = document.getElementById('verif-titulo');
+                    if (titulo) titulo.textContent = '✅ ¡Cuenta creada! Solo falta confirmar tu correo.';
+                }
+                // Facilitar el reintento de login tras verificar
+                if (emailInput && !emailInput.value && user.email) emailInput.value = user.email;
+            }
         } else {
             if (divAviso) divAviso.style.display = 'none';
-            const path = window.location.pathname;
-            if (path.includes('biblioteca.html')) {
+            if (path.includes('biblioteca')) {
                 window.location.href = 'index.html';
             }
         }
@@ -181,17 +202,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- REENVIAR CORREO ---
     if (btnReenviar) {
+        let reenvioBloqueadoHasta = 0; // cooldown para no chocar con el rate limit de Firebase
         btnReenviar.addEventListener('click', async (e) => {
             e.preventDefault();
-            if (auth.currentUser) {
-                try {
-                    await sendEmailVerification(auth.currentUser);
-                    textoEstado.innerText = "✅ Enviado. Revisa SPAM.";
-                    textoEstado.style.display = "block";
-                } catch (err) {
-                    textoEstado.innerText = "❌ Error. Espera un poco.";
-                    textoEstado.style.display = "block";
-                }
+            if (!auth.currentUser) return;
+            if (Date.now() < reenvioBloqueadoHasta) {
+                textoEstado.innerText = "⏳ Espera un momento antes de volver a reenviar.";
+                textoEstado.style.display = "block";
+                return;
+            }
+            try {
+                await sendEmailVerification(auth.currentUser);
+                reenvioBloqueadoHasta = Date.now() + 60000;
+                textoEstado.innerText = `✅ Correo reenviado a ${auth.currentUser.email}. Si no llega, mira en spam.`;
+                textoEstado.style.display = "block";
+            } catch (err) {
+                reenvioBloqueadoHasta = Date.now() + 60000;
+                textoEstado.innerText = err.code === 'auth/too-many-requests'
+                    ? "❌ Demasiados reenvíos seguidos. Espera unos minutos."
+                    : "❌ No se pudo reenviar. Inténtalo de nuevo en un rato.";
+                textoEstado.style.display = "block";
             }
         });
     }
@@ -248,12 +278,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 
                 await sendEmailVerification(userCred.user);
-                await signOut(auth); // Nos aseguramos de desloguear aquí para que verifique el email
-                
-                // Limpiar restos de credenciales antiguas por si acaso
-                limpiarCredencialesAntiguas();
 
-                alert("Cuenta creada. Verifica tu correo.");
+                // La sesión se queda iniciada a propósito: sin verificar no se
+                // puede entrar a la biblioteca, y así el banner de login puede
+                // mostrar el correo y reenviar el enlace sin volver a loguear.
+                limpiarCredencialesAntiguas();
+                sessionStorage.setItem('registro_recien_creado', '1');
                 window.location.href = 'login.html';
 
             } catch (error) {

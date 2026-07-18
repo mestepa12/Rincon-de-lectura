@@ -43,13 +43,14 @@
             <button type="submit" class="btn-primary">Entrar</button>
             <p id="login-error" class="error-message"></p>
 
-            <div id="msg-verificacion" style="display: none; margin-top: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; background-color: #f9f9f9; font-size: 14px;">
-                <p style="margin: 0; color: #333;">
-                    ⚠️ Tu cuenta no ha sido verificada todavía. 
-                    <br>
-                    <a href="#" id="btn-reenviar-correo" style="color: #007bff; font-weight: bold;">Haz clic aquí para recibir un nuevo enlace.</a>
+            <div id="msg-verificacion" style="display: none; margin-top: 15px; padding: 14px; border: 2px solid var(--accent-color-interactive, #9B3B3B); border-radius: 8px; background-color: #fdf6f0; font-size: 14px; line-height: 1.5;">
+                <p style="margin: 0 0 6px; font-weight: bold;" id="verif-titulo">📬 Confirma tu correo para activar la cuenta.</p>
+                <p style="margin: 0 0 10px;">
+                    Te hemos enviado un enlace de verificación<span id="verif-email-wrap" style="display:none;"> a <b id="verif-email"></b></span>.
+                    Si no aparece en unos minutos, <b>revisa la carpeta de spam</b> o "correo no deseado".
                 </p>
-                <p id="estado-envio" style="margin-top: 5px; font-size: 12px; display: none;"></p>
+                <a href="#" id="btn-reenviar-correo" style="font-weight: bold;">Reenviar el correo de verificación</a>
+                <p id="estado-envio" style="margin-top: 6px; font-size: 12px; display: none;"></p>
                 </div>
 
         </form>
