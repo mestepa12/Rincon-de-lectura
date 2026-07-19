@@ -31,7 +31,7 @@
             <h1 id="quiz-titulo">¿Cuál es tu tropo literario dominante?</h1>
             <p id="quiz-gancho" class="quiz-gancho">Ocho preguntas, tres minutos, una verdad incómoda sobre tu forma de leer.</p>
             <button id="quiz-empezar" class="cta-btn cta-primary">Empezar el test</button>
-            <p class="quiz-meta">Sin registro para jugar · 4 perfiles posibles</p>
+            <p class="quiz-meta">Sin registro para jugar · 8 perfiles posibles</p>
         </section>
 
         <!-- Pregunta activa -->
@@ -69,8 +69,8 @@
                 <div id="rc-afinidades" class="rc-afinidades"></div>
                 <p id="rc-descripcion" class="rc-descripcion"></p>
                 <div class="rc-libro">
-                    <p class="rc-libro-label">Tus próximas lecturas</p>
-                    <ul id="rc-libro-lista" class="rc-libro-lista"></ul>
+                    <p class="rc-libro-label">Tu próxima lectura</p>
+                    <p id="rc-libro-titulo" class="rc-libro-titulo"></p>
                 </div>
                 <p class="rc-footer">¿Cuál es el tuyo? · rinconlectura.es/quiz</p>
             </div>
@@ -92,8 +92,8 @@
          HTML para buscadores y asistentes de IA (el flujo interactivo va por JS,
          que muchos crawlers no ejecutan). Mismo contenido que quiz-data.js. -->
     <section class="quiz-perfiles">
-        <h2>Los cuatro perfiles posibles</h2>
-        <p class="quiz-perfiles-intro">Este test de personalidad literaria mide qué tropo domina tu forma de leer: qué escenas buscas, de quién sospechas y qué final te deja satisfecho. Al terminar las ocho preguntas sales con uno de estos cuatro perfiles, cada uno con sus recomendaciones de lectura.</p>
+        <h2>Los ocho perfiles posibles</h2>
+        <p class="quiz-perfiles-intro">Este test de personalidad literaria mide qué tropo domina tu forma de leer: qué escenas buscas, de quién sospechas y qué final te deja satisfecho. Al terminar las ocho preguntas sales con uno de estos ocho perfiles, cada uno con sus recomendaciones de lectura.</p>
         <div class="perfiles-grid">
             <article class="perfil-card">
                 <h3><span aria-hidden="true">⚔️</span> Enemies to Lovers</h3>
@@ -118,6 +118,30 @@
                 <p class="perfil-tagline">Confías en el narrador. Error.</p>
                 <p>Lees como quien interroga: subrayas frases sospechosas, desconfías del personaje amable y celebras que un epílogo te obligue a releer el libro entero.</p>
                 <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> La verdad sobre el caso Harry Quebert (Joël Dicker), La paciente silenciosa (Alex Michaelides), Y no quedó ninguno (Agatha Christie), Reina roja (Juan Gómez-Jurado), La sombra del viento (Carlos Ruiz Zafón), Los siete maridos de Evelyn Hugo (Taylor Jenkins Reid), Perdida (Gillian Flynn) y La chica del tren (Paula Hawkins).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">🌻</span> Grumpy x Sunshine</h3>
+                <p class="perfil-tagline">Uno gruñe, el otro brilla. Matemática perfecta.</p>
+                <p>Te puede el contraste: el cascarrabias con corazón de mantequilla y la persona-sol que lo desarma sin esfuerzo. Sabes exactamente cómo acaba y justo por eso lo lees.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> The Spanish Love Deception (Elena Armas), Gente que conocemos en vacaciones (Emily Henry), Todo lo que nunca fuimos (Alice Kellen), Icebreaker (Hannah Grace) y Book Lovers (Emily Henry).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">🕯️</span> Academia Oscura</h3>
+                <p class="perfil-tagline">Las mejores historias huelen a biblioteca vieja.</p>
+                <p>Universidades con secretos, sociedades con contraseña y conocimiento que se paga caro. Si hay tweed, latín y un crimen elegante, ya estás dentro.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> El secreto (Donna Tartt), Babel (R. F. Kuang), La novena casa (Leigh Bardugo), Una educación mortal (Naomi Novik) y El retrato de Dorian Gray (Oscar Wilde).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">🥀</span> El Villano Moralmente Gris</h3>
+                <p class="perfil-tagline">Técnicamente el malo. Emocionalmente, tuyo.</p>
+                <p>No lees para ver ganar al héroe: lees para entender al que rompe las reglas. Los personajes impecables te aburren; los rotos, con motivos, te pueden.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> La balada de los pájaros cantores y las serpientes (Suzanne Collins), Vicious (V. E. Schwab), El imperio del vampiro (Jay Kristoff), La serpiente y las alas de la noche (Carissa Broadbent) y Asistente de villano (Hannah Nicole Maehrer).</p>
+            </article>
+            <article class="perfil-card">
+                <h3><span aria-hidden="true">☕</span> Lectura de Confort</h3>
+                <p class="perfil-tagline">Té caliente, manta y cero traiciones esta noche.</p>
+                <p>Lees para estar bien: pueblos pequeños, librerías, segundas oportunidades y finales que abrazan. La angustia, mejor en los libros de otros.</p>
+                <p class="perfil-libros"><strong>Lecturas para este perfil:</strong> La biblioteca de la medianoche (Matt Haig), Un cuento perfecto (Elísabet Benavent), La sociedad literaria y del pastel de piel de patata de Guernsey (Mary Ann Shaffer y Annie Barrows), Heartstopper (Alice Oseman) y 84, Charing Cross Road (Helene Hanff).</p>
             </article>
         </div>
         <details class="quiz-preguntas-lista">

@@ -83,79 +83,135 @@ export const QUIZ_TROPOS = {
                 'La chica del tren, de Paula Hawkins'
             ],
             hue: 215
+        },
+        grunon: {
+            nombre: 'Grumpy x Sunshine',
+            emoji: '🌻',
+            tagline: 'Uno gruñe, el otro brilla. Matemática perfecta.',
+            descripcion: 'Te puede el contraste: el cascarrabias con corazón de mantequilla y la persona-sol que lo desarma sin esfuerzo. Sabes exactamente cómo acaba y justo por eso lo lees.',
+            libros: [
+                'The Spanish Love Deception, de Elena Armas',
+                'Gente que conocemos en vacaciones, de Emily Henry',
+                'Todo lo que nunca fuimos, de Alice Kellen',
+                'Icebreaker, de Hannah Grace',
+                'Book Lovers, de Emily Henry'
+            ],
+            hue: 25
+        },
+        academia: {
+            nombre: 'Academia Oscura',
+            emoji: '🕯️',
+            tagline: 'Las mejores historias huelen a biblioteca vieja.',
+            descripcion: 'Universidades con secretos, sociedades con contraseña y conocimiento que se paga caro. Si hay tweed, latín y un crimen elegante, ya estás dentro.',
+            libros: [
+                'El secreto, de Donna Tartt',
+                'Babel, de R. F. Kuang',
+                'La novena casa, de Leigh Bardugo',
+                'Una educación mortal, de Naomi Novik',
+                'El retrato de Dorian Gray, de Oscar Wilde'
+            ],
+            hue: 265
+        },
+        grismoral: {
+            nombre: 'El Villano Moralmente Gris',
+            emoji: '🥀',
+            tagline: 'Técnicamente el malo. Emocionalmente, tuyo.',
+            descripcion: 'No lees para ver ganar al héroe: lees para entender al que rompe las reglas. Los personajes impecables te aburren; los rotos, con motivos, te pueden.',
+            libros: [
+                'La balada de los pájaros cantores y las serpientes, de Suzanne Collins',
+                'Vicious, de V. E. Schwab',
+                'El imperio del vampiro, de Jay Kristoff',
+                'La serpiente y las alas de la noche, de Carissa Broadbent',
+                'Asistente de villano, de Hannah Nicole Maehrer'
+            ],
+            hue: 330
+        },
+        cozy: {
+            nombre: 'Lectura de Confort',
+            emoji: '☕',
+            tagline: 'Té caliente, manta y cero traiciones esta noche.',
+            descripcion: 'Lees para estar bien: pueblos pequeños, librerías, segundas oportunidades y finales que abrazan. La angustia, mejor en los libros de otros.',
+            libros: [
+                'La biblioteca de la medianoche, de Matt Haig',
+                'Un cuento perfecto, de Elísabet Benavent',
+                'La sociedad literaria y del pastel de piel de patata de Guernsey, de Mary Ann Shaffer y Annie Barrows',
+                'Heartstopper, de Alice Oseman',
+                '84, Charing Cross Road, de Helene Hanff'
+            ],
+            hue: 175
         }
     },
     preguntas: [
         {
             texto: 'Abres un libro nuevo. ¿Qué te atrapa en la primera página?',
             opciones: [
-                { texto: 'Dos personajes que se odian y comparten destino', pesos: { enemies: 3, giro: 1 } },
-                { texto: 'Un grupo de desconocidos obligados a colaborar', pesos: { familia: 3, elegido: 1 } },
-                { texto: 'Una profecía que alguien intenta esquivar', pesos: { elegido: 3, giro: 1 } },
-                { texto: 'Un narrador que claramente esconde algo', pesos: { giro: 3, enemies: 1 } }
+                { texto: 'Dos personajes que se odian y comparten destino', pesos: { enemies: 3, grunon: 1 } },
+                { texto: 'Un narrador que claramente esconde algo', pesos: { giro: 3, grismoral: 1 } },
+                { texto: 'Un campus con niebla, normas raras y un secreto', pesos: { academia: 3, giro: 1 } },
+                { texto: 'Una librería de pueblo con dueño cascarrabias', pesos: { cozy: 3, grunon: 1 } }
             ]
         },
         {
             texto: 'Tu escena favorita de cualquier historia:',
             opciones: [
-                { texto: 'La discusión que termina demasiado cerca', pesos: { enemies: 3, familia: 1 } },
-                { texto: 'El «¿y ahora qué hacemos?» alrededor de una hoguera', pesos: { familia: 3, enemies: 1 } },
+                { texto: 'La discusión que termina demasiado cerca', pesos: { enemies: 3, grunon: 1 } },
+                { texto: 'El «¿y ahora qué hacemos?» alrededor de una hoguera', pesos: { familia: 3, cozy: 1 } },
                 { texto: 'El momento en que por fin acepta quién es', pesos: { elegido: 3, familia: 1 } },
-                { texto: 'La página que te obliga a releer el capítulo uno', pesos: { giro: 3, elegido: 1 } }
+                { texto: 'El monólogo donde el villano explica sus razones (y tienen sentido)', pesos: { grismoral: 3, giro: 1 } }
             ]
         },
         {
             texto: 'En tu grupo de amigos, tú eres...',
             opciones: [
-                { texto: 'Quien discute por deporte (con cariño)', pesos: { enemies: 3 } },
-                { texto: 'Quien organiza las quedadas y cocina para todos', pesos: { familia: 3 } },
-                { texto: 'Quien tiene un plan de vida ligeramente épico', pesos: { elegido: 3 } },
-                { texto: 'Quien guarda secretos mejor que nadie', pesos: { giro: 3 } }
+                { texto: 'Quien organiza las quedadas y cocina para todos', pesos: { familia: 3, cozy: 1 } },
+                { texto: 'Quien tiene un plan de vida ligeramente épico', pesos: { elegido: 3, academia: 1 } },
+                { texto: 'Quien parece borde hasta que te ganas su cariño', pesos: { grunon: 3, enemies: 1 } },
+                { texto: 'Quien defiende al malo de la peli en cada debate', pesos: { grismoral: 3, giro: 1 } }
             ]
         },
         {
             texto: 'Elige escenario para perderte un fin de semana:',
             opciones: [
-                { texto: 'Una academia con rivalidades y pasillos oscuros', pesos: { enemies: 2, giro: 2 } },
-                { texto: 'Una taberna ruidosa con canciones y mesa larga', pesos: { familia: 3, enemies: 1 } },
-                { texto: 'Un reino al borde del colapso que alguien debe salvar', pesos: { elegido: 3, familia: 1 } },
-                { texto: 'Una mansión con puertas cerradas y un testamento', pesos: { giro: 3, elegido: 1 } }
+                { texto: 'Una academia con rivalidades y pasillos oscuros', pesos: { academia: 3, enemies: 1 } },
+                { texto: 'Una taberna ruidosa con canciones y mesa larga', pesos: { familia: 3, elegido: 1 } },
+                { texto: 'Una mansión con puertas cerradas y un testamento', pesos: { giro: 3, grismoral: 1 } },
+                { texto: 'Un pueblo costero con librería y panadería', pesos: { cozy: 3, grunon: 1 } }
             ]
         },
         {
             texto: 'Un personaje nuevo entra en escena. Sospechas de él si...',
             opciones: [
-                { texto: 'Te cae mal desde su primera frase (volverá, lo sabes)', pesos: { enemies: 3, familia: 1 } },
-                { texto: 'Insiste demasiado en que trabaja mejor solo', pesos: { familia: 3, giro: 1 } },
-                { texto: 'Rechaza el trono que todos le ofrecen', pesos: { elegido: 3, enemies: 1 } },
-                { texto: 'Es encantador y a todo el mundo le adora', pesos: { giro: 3, elegido: 1 } }
+                { texto: 'Su mal humor es claramente una coraza', pesos: { grunon: 3, enemies: 1 } },
+                { texto: 'Rechaza el trono que todos le ofrecen', pesos: { elegido: 3, familia: 1 } },
+                { texto: 'Es encantador y a todo el mundo le adora', pesos: { giro: 3, grismoral: 1 } },
+                { texto: 'Sabe demasiado latín y sonríe demasiado poco', pesos: { academia: 3, giro: 1 } }
             ]
         },
         {
             texto: '¿Qué te hace abandonar un libro?',
             opciones: [
-                { texto: 'Que los protagonistas se lleven bien desde el principio', pesos: { enemies: 3, giro: 1 } },
-                { texto: 'Que el grupo se separe y cada uno vaya por su lado', pesos: { familia: 3, enemies: 1 } },
-                { texto: 'Que el héroe gane sin sacrificar nada', pesos: { elegido: 3, familia: 1 } },
-                { texto: 'Verle el final desde el capítulo dos', pesos: { giro: 3, elegido: 1 } }
+                { texto: 'Que los protagonistas se lleven bien desde el principio', pesos: { enemies: 3, grunon: 1 } },
+                { texto: 'Que el grupo se separe y cada uno vaya por su lado', pesos: { familia: 3, cozy: 1 } },
+                { texto: 'Un villano plano que es malo «porque sí»', pesos: { grismoral: 3, academia: 1 } },
+                { texto: 'Sufrimiento gratuito: la vida ya duele bastante', pesos: { cozy: 3, familia: 1 } }
             ]
         },
         {
             texto: 'Cierra los ojos: la escena que quieres leer esta noche tiene...',
             opciones: [
-                { texto: 'Una tregua incómoda en un espacio demasiado pequeño', pesos: { enemies: 3, giro: 1 } },
-                { texto: 'Una cena caótica con gente que se interrumpe', pesos: { familia: 3, elegido: 1 } },
                 { texto: 'Un mapa, un juramento y un camino que empieza', pesos: { elegido: 3, familia: 1 } },
-                { texto: 'Una carta que nadie debía leer', pesos: { giro: 3, enemies: 1 } }
+                { texto: 'Una carta que nadie debía leer', pesos: { giro: 3, academia: 1 } },
+                { texto: 'Un gruñido que en realidad significa «me importas»', pesos: { grunon: 3, enemies: 1 } },
+                { texto: 'Una biblioteca prohibida a medianoche', pesos: { academia: 3, grismoral: 1 } }
             ]
         },
         {
             texto: 'El final perfecto:',
             opciones: [
-                { texto: 'Se odiaban en la página uno y míralos ahora', pesos: { enemies: 3, familia: 1 } },
-                { texto: 'Todos sentados a la misma mesa, contra todo pronóstico', pesos: { familia: 3, elegido: 1 } },
-                { texto: 'El sacrificio que solo esa persona podía hacer', pesos: { elegido: 3, enemies: 1 } },
-                { texto: 'El epílogo que reescribe el libro entero', pesos: { giro: 3, familia: 1 } }
+                { texto: 'Se odiaban en la página uno y míralos ahora', pesos: { enemies: 3, grunon: 1 } },
+                { texto: 'El gruñón por fin sonríe, y solo para una persona', pesos: { grunon: 3, cozy: 1 } },
+                { texto: 'El malo gana. Y una parte de ti se alegra', pesos: { grismoral: 3, giro: 1 } },
+                { texto: 'Todo el mundo acaba bien, feliz y merendando', pesos: { cozy: 3, familia: 1 } }
             ]
         }
     ]

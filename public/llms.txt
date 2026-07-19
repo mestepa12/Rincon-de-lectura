@@ -14,7 +14,7 @@ Datos clave:
 ## Páginas principales
 
 - [Inicio](https://rinconlectura.es/): qué es la app, funciones, comparativa con Goodreads y quién está detrás
-- [Test: ¿Cuál es tu tropo literario dominante?](https://rinconlectura.es/quiz): test gratuito de 8 preguntas con 4 perfiles lectores (Enemies to Lovers, Found Family, El Elegido, El Giro Final), cada uno con recomendaciones de libros
+- [Test: ¿Cuál es tu tropo literario dominante?](https://rinconlectura.es/quiz): test gratuito de 8 preguntas con 8 perfiles lectores (Enemies to Lovers, Found Family, El Elegido, El Giro Final, Grumpy x Sunshine, Academia Oscura, El Villano Moralmente Gris y Lectura de Confort), cada uno con recomendaciones de libros
 - [Mi Rincón de Lectura vs Goodreads](https://rinconlectura.es/vs-goodreads): comparativa honesta punto por punto entre ambas plataformas, incluyendo dónde gana cada una
 - [Política de privacidad](https://rinconlectura.es/privacidad): tratamiento de datos (RGPD), responsable y contacto
 

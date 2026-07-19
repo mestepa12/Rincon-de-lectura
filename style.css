@@ -1789,8 +1789,6 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
 .rc-libro { border-top: 1px solid rgba(255, 255, 255, 0.25); padding-top: 1rem; margin-bottom: 1.5rem; }
 .rc-libro-label { font-family: 'Lato', sans-serif; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; text-indent: 0.18em; opacity: 0.65; margin: 0 0 0.3rem; }
 .rc-libro-titulo { font-family: var(--font-title); font-size: 1rem; font-weight: 700; margin: 0; }
-.rc-libro-lista { font-family: var(--font-title); font-size: 0.82rem; font-weight: 700; line-height: 1.5; margin: 0; padding: 0; list-style: none; text-align: left; display: inline-block; }
-.rc-libro-lista li::before { content: '· '; opacity: 0.6; }
 .rc-footer { font-family: 'Lato', sans-serif; font-size: 0.66rem; letter-spacing: 0.12em; opacity: 0.6; margin: 0; }
 .resultado-share { display: flex; flex-direction: column; gap: 0.7rem; max-width: 340px; margin: 0 auto; }
 .resultado-share .cta-btn { width: 100%; box-sizing: border-box; text-align: center; }

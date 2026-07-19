@@ -177,18 +177,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('rc-nombre').textContent = perfil.nombre;
         document.getElementById('rc-tagline').textContent = perfil.tagline;
         document.getElementById('rc-descripcion').textContent = perfil.descripcion;
+        // Cada perfil tiene varios libros: la combinación de respuestas decide
+        // cuál sale (determinista al recargar, variado entre personas).
         const libros = perfil.libros || (perfil.libro ? [perfil.libro] : []);
-        const listaLibros = document.getElementById('rc-libro-lista');
-        listaLibros.innerHTML = '';
-        libros.forEach(titulo => {
-            const li = document.createElement('li');
-            li.textContent = titulo;
-            listaLibros.appendChild(li);
-        });
+        const semilla = respuestas.reduce((s, v) => s + v, 0);
+        document.getElementById('rc-libro-titulo').textContent = libros.length ? libros[semilla % libros.length] : '';
 
+        // Con 8 perfiles la tarjeta solo enseña el top 4 de afinidades
         const barras = document.getElementById('rc-afinidades');
         barras.innerHTML = '';
-        afinidades.forEach(({ id, pct }) => {
+        afinidades.slice(0, 4).forEach(({ id, pct }) => {
             const p = quiz.perfiles[id];
             const fila = document.createElement('div');
             fila.className = 'rc-afinidad';
