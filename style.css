@@ -69,12 +69,14 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 body.dark-mode #site-title { color: #fff; }
 
 .header-controls { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; min-width: 0; flex-shrink: 1; max-width: 100%; }
-.header-controls button {
+.header-controls button, .header-controls .header-link {
     background-color: transparent; border: 2px solid #a1887f; color: white; padding: 0.5rem 1rem;
     border-radius: 5px; cursor: pointer; font-family: var(--font-body); font-weight: 700;
     transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed);
 }
-.header-controls button:hover, .header-controls button:focus-visible { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); outline: none; }
+.header-controls .header-link { text-decoration: none; display: inline-block; line-height: normal; }
+.header-controls button:hover, .header-controls button:focus-visible,
+.header-controls .header-link:hover, .header-controls .header-link:focus-visible { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); outline: none; }
 #add-book-btn { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); }
 
 .header-search { width: 100%; }
@@ -774,7 +776,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
         justify-content: flex-start;
         gap: 0.3rem;
     }
-    .header-controls button {
+    .header-controls button, .header-controls .header-link {
         padding: 0.4rem 0.6rem;
         font-size: 0.82rem;
     }
@@ -827,7 +829,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     .site-header { padding: 0.5rem 0.75rem; }
     #site-title { font-size: 1.1rem; white-space: normal; }
     .header-controls { gap: 0.25rem; }
-    .header-controls button { padding: 0.35rem 0.45rem; font-size: 0.75rem; }
+    .header-controls button, .header-controls .header-link { padding: 0.35rem 0.45rem; font-size: 0.75rem; }
     #streak-counter.streak-counter { font-size: 0.75rem; padding: 0.25rem 0.4rem; }
 }
 
@@ -1753,6 +1755,8 @@ html { scroll-behavior: smooth; }
 .quiz-gate-botones .cta-btn { width: 100%; box-sizing: border-box; text-align: center; }
 .quiz-gate-login { display: inline-block; font-size: 0.9rem; font-weight: 700; color: var(--accent-color-interactive); text-decoration: none; margin-top: 0.4rem; }
 .quiz-gate-login:hover { text-decoration: underline; }
+.resultado-enlaces { display: flex; gap: 1.5rem; align-items: baseline; justify-content: center; flex-wrap: wrap; }
+button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; }
 
 /* Infografía de resultado (mismo lenguaje que la tarjeta de reseña) */
 .resultado-card {

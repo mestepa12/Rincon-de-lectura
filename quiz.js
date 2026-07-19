@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.scrollTo({ top: 0, behavior: 'instant' });
     };
 
+    // Con sesión iniciada, "Volver" lleva a la biblioteca en vez de a la landing
+    if (localStorage.getItem('rincon_logged_in') === '1') {
+        document.querySelector('.back-to-demo')?.setAttribute('href', 'biblioteca.html');
+    }
+
     // ---------- 1. Cargar el test: Firestore -> fallback empaquetado ----------
     let quiz = QUIZ_TROPOS;
     try {
@@ -245,14 +250,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // ---------- 7. Arranque ----------
-    document.getElementById('quiz-empezar').addEventListener('click', () => {
+    // ---------- 7. Arranque (y repetición desde el resultado) ----------
+    const empezarTest = () => {
         respuestas = [];
         sessionStorage.removeItem(CLAVE_RESPUESTAS);
         indice = 0;
         renderPregunta();
         mostrar('pregunta');
-    });
+    };
+    document.getElementById('quiz-empezar').addEventListener('click', empezarTest);
+    document.getElementById('quiz-repetir').addEventListener('click', empezarTest);
 
     // Con respuestas completas pendientes (vuelta del muro), no repetir el test
     if (respuestas.length === quiz.preguntas.length) {

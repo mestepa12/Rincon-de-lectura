@@ -24,7 +24,12 @@ export const QUIZ_TROPOS = {
             libros: [
                 'Orgullo y Prejuicio, de Jane Austen',
                 'Una corte de rosas y espinas, de Sarah J. Maas',
-                'El príncipe cruel, de Holly Black'
+                'El príncipe cruel, de Holly Black',
+                'Alas de sangre, de Rebecca Yarros',
+                'Trono de cristal, de Sarah J. Maas',
+                'De sangre y cenizas, de Jennifer L. Armentrout',
+                'Rojo, blanco y sangre azul, de Casey McQuiston',
+                'La hipótesis del amor, de Ali Hazelwood'
             ],
             hue: 350
         },
@@ -36,7 +41,12 @@ export const QUIZ_TROPOS = {
             libros: [
                 'Seis de Cuervos, de Leigh Bardugo',
                 'La casa en el mar más azul, de TJ Klune',
-                'El camino de los reyes, de Brandon Sanderson'
+                'El camino de los reyes, de Brandon Sanderson',
+                'Nacidos de la bruma: El imperio final, de Brandon Sanderson',
+                'Los seis de Atlas, de Olivie Blake',
+                'Leyendas & Lattes, de Travis Baldree',
+                'El priorato del naranjo, de Samantha Shannon',
+                'La comunidad del anillo, de J. R. R. Tolkien'
             ],
             hue: 145
         },
@@ -48,7 +58,12 @@ export const QUIZ_TROPOS = {
             libros: [
                 'El Nombre del Viento, de Patrick Rothfuss',
                 'Percy Jackson y el ladrón del rayo, de Rick Riordan',
-                'El ojo del mundo, de Robert Jordan'
+                'El ojo del mundo, de Robert Jordan',
+                'Harry Potter y la piedra filosofal, de J. K. Rowling',
+                'Eragon, de Christopher Paolini',
+                'Sombra y hueso, de Leigh Bardugo',
+                'El juego de Ender, de Orson Scott Card',
+                'La quinta estación, de N. K. Jemisin'
             ],
             hue: 40
         },
@@ -60,7 +75,12 @@ export const QUIZ_TROPOS = {
             libros: [
                 'La verdad sobre el caso Harry Quebert, de Joël Dicker',
                 'La paciente silenciosa, de Alex Michaelides',
-                'Y no quedó ninguno, de Agatha Christie'
+                'Y no quedó ninguno, de Agatha Christie',
+                'Reina roja, de Juan Gómez-Jurado',
+                'La sombra del viento, de Carlos Ruiz Zafón',
+                'Los siete maridos de Evelyn Hugo, de Taylor Jenkins Reid',
+                'Perdida, de Gillian Flynn',
+                'La chica del tren, de Paula Hawkins'
             ],
             hue: 215
         }
