@@ -246,23 +246,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Devuelve un array de resultados, o null si el servicio no responde
+        // (para distinguir "no hay resultados" de "Google está caído").
         async function buscarEnGoogleBooks(titulo, signal) {
-            if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) return [];
+            if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) return null;
             const query = encodeURIComponent(titulo);
             // Sin langRestrict: filtraba ediciones con el idioma mal etiquetado
             // y provocaba "sin resultados" falsos. country=ES ya prioriza es.
-            const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`;
+            const urls = [
+                `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`,
+                // Reintentos ante 503 sostenidos: mismo endpoint y luego URL
+                // mínima (sin country/printType), que a veces esquiva el error.
+                `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`,
+                `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`
+            ];
+            const backoffMs = [0, 600, 1400];
             try {
-                let response = await fetch(url, { signal: searchSignal(signal) });
-                // Google Books devuelve 503/429 transitorios al teclear rápido.
-                // Un reintento corto suele bastar, y su catálogo es mucho mejor
-                // que el del fallback: merece la espera.
-                if (!response.ok && [429, 500, 502, 503, 504].includes(response.status)) {
-                    await new Promise(r => setTimeout(r, 600));
-                    if (signal?.aborted) return [];
-                    response = await fetch(url, { signal: searchSignal(signal) });
+                let response = null;
+                for (let i = 0; i < urls.length; i++) {
+                    if (backoffMs[i]) await new Promise(r => setTimeout(r, backoffMs[i]));
+                    if (signal?.aborted) return null;
+                    response = await fetch(urls[i], { signal: searchSignal(signal) });
+                    if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) break;
                 }
-                if (!response.ok) return [];
+                if (!response.ok) return null;
                 const data = await response.json();
                 if (!data.items?.length) return [];
                 return data.items.map(item => {
@@ -292,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } catch (e) {
                 if (e.name !== 'AbortError') console.error("Error buscando en Google Books:", e);
-                return [];
+                return null;
             }
         }
 
@@ -302,14 +309,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // sumaba las dos esperas).
             const openLibraryPromise = buscarEnOpenLibrary(titulo, signal);
             const google = await buscarEnGoogleBooks(titulo, signal);
-            if (google.length) return google;
-            return openLibraryPromise;
+            if (google?.length) return { items: google, googleCaido: false };
+            const openLibrary = await openLibraryPromise;
+            return { items: openLibrary, googleCaido: google === null };
         }
 
-        function mostrarResultadosBusqueda(resultados) {
+        function mostrarResultadosBusqueda({ items: resultados, googleCaido }) {
             bookSearchResultsDiv.innerHTML = '';
             if (resultados.length === 0) {
-                bookSearchResultsDiv.innerHTML = '<div style="padding: 0.5rem; font-size: 0.9rem; color: var(--text-color);">No se encontraron resultados.</div>';
+                // Distinguir "el libro no existe" de "Google no responde":
+                // con el servicio caído, reintentar sí tiene sentido.
+                const msg = googleCaido
+                    ? 'El buscador de Google está saturado ahora mismo. Espera unos segundos y busca de nuevo.'
+                    : 'No se encontraron resultados.';
+                bookSearchResultsDiv.innerHTML = `<div style="padding: 0.5rem; font-size: 0.9rem; color: var(--text-color);">${msg}</div>`;
                 return;
             }
 

@@ -330,10 +330,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`;
         try {
             let res = await fetch(url);
-            // 503/429 transitorios al teclear rápido: un reintento corto basta
+            // 503/429 transitorios al teclear rápido: reintento corto, y si
+            // persiste, URL mínima sin country/printType que a veces lo esquiva
             if (!res.ok && [429, 500, 502, 503, 504].includes(res.status)) {
                 await new Promise(r => setTimeout(r, 600));
                 res = await fetch(url);
+            }
+            if (!res.ok && [429, 500, 502, 503, 504].includes(res.status)) {
+                await new Promise(r => setTimeout(r, 1200));
+                res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&key=${googleBooksApiKey}`);
             }
             const data = await res.json();
             return data.items || [];
