@@ -338,9 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (!res.ok && [429, 500, 502, 503, 504].includes(res.status)) {
                 await new Promise(r => setTimeout(r, 1200));
-                // Sin key: la búsqueda pública usa cuota por IP, no la del
-                // proyecto (que es la que suele estar agotada cuando hay 503)
-                res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5`);
+                // Proxy por Cloud Function: IP de Google Cloud + caché CDN,
+                // esquiva el rate limit por IP que sufren las redes móviles
+                res = await fetch(`https://mi-rincon-de-lectura.web.app/api/buscar-libros?q=${encodeURIComponent(titulo)}`);
             }
             const data = await res.json();
             return data.items || [];

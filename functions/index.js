@@ -3,6 +3,7 @@ const {
   onDocumentUpdated,
   onDocumentCreated,
 } = require("firebase-functions/v2/firestore");
+const {onRequest} = require("firebase-functions/v2/https");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
 const logger = require("firebase-functions/logger");
 const {initializeApp} = require("firebase-admin/app");
@@ -120,6 +121,56 @@ async function sendPushToUser(uid, tokens, title, body,
     });
   }
 }
+
+/**
+ * Proxy de búsqueda en Google Books. Los clientes (sobre todo en redes
+ * móviles con CGNAT) sufren 503 sostenidos porque Google limita por IP;
+ * desde la IP de salida de Google Cloud ese límite no aplica.
+ * Se expone vía rewrite de Hosting en /api/buscar-libros, así el CDN
+ * cachea cada consulta (la query forma parte de la clave de caché) y las
+ * búsquedas repetidas ni siquiera invocan la función.
+ */
+exports.buscarLibros = onRequest(
+    {region: "europe-west1", cors: true, maxInstances: 5},
+    async (req, res) => {
+      const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+      if (q.length < 2 || q.length > 100) {
+        res.status(400).json({error: "Parámetro q inválido"});
+        return;
+      }
+
+      // country=ES es obligatorio desde datacenter: sin él Google responde
+      // 403 "Cannot determine user location". Sin key, Google aplica 429 por
+      // IP también a las IPs de salida de GCP (comprobado), así que se usa la
+      // key del proyecto; como está restringida por referrer, hay que mandar
+      // la cabecera Referer del hosting para que Google la acepte.
+      const key = process.env.GOOGLE_BOOKS_API_KEY || "";
+      const url = "https://www.googleapis.com/books/v1/volumes?q=" +
+          encodeURIComponent(q) + "&maxResults=5&country=ES&printType=books" +
+          (key ? `&key=${key}` : "");
+      const opts = {
+        headers: {"Referer": "https://mi-rincon-de-lectura.web.app/"},
+      };
+      try {
+        let r = await fetch(url, opts);
+        if (!r.ok && [429, 500, 502, 503, 504].includes(r.status)) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          r = await fetch(url, opts);
+        }
+        if (!r.ok) {
+          logger.warn("Google Books no disponible", {status: r.status});
+          res.status(502).json({error: `google_books_${r.status}`});
+          return;
+        }
+        const data = await r.json();
+        res.set("Cache-Control", "public, max-age=3600, s-maxage=604800");
+        res.json({items: data.items || []});
+      } catch (error) {
+        logger.error("Error en proxy de Google Books", {error: error.message});
+        res.status(502).json({error: "proxy_error"});
+      }
+    },
+);
 
 /**
  * Registra en Cloud Logging cada vez que un usuario pierde su racha de

@@ -255,14 +255,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `&key=${googleBooksApiKey}` : '';
             // Sin langRestrict: filtraba ediciones con el idioma mal etiquetado
             // y provocaba "sin resultados" falsos. country=ES ya prioriza es.
-            // Escalera de reintentos ante 503/429 sostenidos: la key comparte
-            // cuota de proyecto entre todos los usuarios; el último intento va
-            // SIN key porque la búsqueda pública usa cuota por IP, que el
-            // dispositivo del usuario rara vez tiene agotada.
-            const urls = conKey
-                ? [`${base}&country=ES&printType=books${conKey}`, `${base}${conKey}`, base]
-                : [`${base}&country=ES&printType=books`, base];
-            const backoffMs = [0, 600, 1400];
+            // Escalera ante 503/429 sostenidos: Google limita por IP y las
+            // redes móviles (CGNAT) la comparten entre miles de usuarios, así
+            // que el 2º intento va por nuestra Cloud Function (IP de Google
+            // Cloud + caché CDN). URL absoluta: en la app Android (Capacitor)
+            // el origen no es el hosting y una ruta relativa no llegaría.
+            const proxy = `https://mi-rincon-de-lectura.web.app/api/buscar-libros?q=${query}`;
+            const urls = [
+                `${base}&country=ES&printType=books${conKey}`,
+                proxy,
+                base
+            ];
+            const backoffMs = [0, 500, 1200];
             try {
                 let response = null;
                 for (let i = 0; i < urls.length; i++) {
