@@ -1683,7 +1683,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 ritmoNarrativo: addBookForm.querySelector('input[name="ritmo"]:checked')?.value || '',
                 estadosDeAnimo: [...addBookForm.querySelectorAll('input[name="moods"]:checked')].map(cb => cb.value)
             };
-        
+
+            // Evita duplicados: mismo título + autor (normalizado) ya en la biblioteca
+            const clave = (t, a) => `${(t || '').trim().toLowerCase()}|${(a || '').trim().toLowerCase()}`;
+            const yaExiste = booksData.some(b => clave(b.title, b.author) === clave(newBook.title, newBook.author));
+            if (yaExiste) {
+                alert('Ese libro ya está en tu biblioteca.');
+                return;
+            }
+
             addDoc(collection(db, 'books'), newBook).then(() => {
                 addBookForm.reset();
                 if(bookSearchResultsDiv) bookSearchResultsDiv.innerHTML = '';
@@ -2900,6 +2908,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             await updateDoc(doc(db, 'books', b.id), { section: 'leyendo-ahora', currentPage: 0 });
                             actionBtn.textContent = '✓ ¡A leer!';
                         } else {
+                            // Evita duplicados: mismo título + autor ya en la biblioteca
+                            const norm = s => (s || '').trim().toLowerCase();
+                            if (booksData.some(x => norm(x.title) === norm(b.title) && norm(x.author) === norm(b.author))) {
+                                actionBtn.textContent = '✓ Ya lo tienes';
+                                return;
+                            }
                             // Copia a mi biblioteca (campos dentro de la whitelist de reglas)
                             await addDoc(collection(db, 'books'), {
                                 userId: user.uid,
