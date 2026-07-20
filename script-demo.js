@@ -325,7 +325,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Búsqueda en Google Books (Para añadir nuevos)
     async function buscarEnGoogle(titulo) {
         if (!titulo.trim()) return [];
-        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&langRestrict=es&country=ES&key=${googleBooksApiKey}`;
+        // Sin langRestrict: filtraba ediciones mal etiquetadas y daba "sin
+        // resultados" falsos. country=ES ya prioriza ediciones en español.
+        const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`;
         try {
             const res = await fetch(url);
             const data = await res.json();

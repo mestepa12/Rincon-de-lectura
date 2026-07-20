@@ -214,10 +214,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // === 1. INTEGRACIÓN API GOOGLE BOOKS ===========
         // ===============================================
 
-        async function buscarEnOpenLibrary(query) {
+        // Señal combinada: se aborta si el usuario sigue tecleando o si la API
+        // tarda más de la cuenta (OpenLibrary a veces se queda colgada).
+        const searchSignal = (signal, timeoutMs = 8000) =>
+            (typeof AbortSignal.any === 'function' && typeof AbortSignal.timeout === 'function')
+                ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
+                : signal;
+
+        async function buscarEnOpenLibrary(query, signal) {
             try {
                 const resp = await fetch(
-                    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,author_name,cover_i,number_of_pages_median,subject,key`
+                    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,author_name,cover_i,number_of_pages_median,subject,key`,
+                    { signal: searchSignal(signal) }
                 );
                 if (!resp.ok) return [];
                 const data = await resp.json();
@@ -235,47 +243,56 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        async function buscarLibroPorTitulo(titulo) {
-            if (typeof googleBooksApiKey !== 'undefined' && googleBooksApiKey) {
-                const query = encodeURIComponent(titulo);
-                const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&langRestrict=es&country=ES&key=${googleBooksApiKey}`;
-                try {
-                    const response = await fetch(url);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.items?.length) {
-                            return data.items.map(item => {
-                                const info = item.volumeInfo;
-                                let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
-                                if (coverUrl) {
-                                    // Ojo: no tocar el zoom — Google Books retiró zoom=0
-                                    // y devuelve un placeholder "image not available"
-                                    coverUrl = coverUrl
-                                        .replace(/^http:\/\//i, 'https://')
-                                        .replace('&edge=curl', '');
-                                }
-                                if (!coverUrl) {
-                                    const isbn = info.industryIdentifiers
-                                        ?.find(id => id.type === 'ISBN_13' || id.type === 'ISBN_10')
-                                        ?.identifier;
-                                    if (isbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
-                                }
-                                return {
-                                    title: info.title || 'Sin título',
-                                    author: info.authors?.join(', ') || 'Autor desconocido',
-                                    cover: coverUrl,
-                                    totalPages: info.pageCount || 0,
-                                    link: info.infoLink || info.previewLink || '',
-                                    genre: info.categories?.[0] || 'Sin género'
-                                };
-                            });
-                        }
+        async function buscarEnGoogleBooks(titulo, signal) {
+            if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) return [];
+            const query = encodeURIComponent(titulo);
+            // Sin langRestrict: filtraba ediciones con el idioma mal etiquetado
+            // y provocaba "sin resultados" falsos. country=ES ya prioriza es.
+            const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`;
+            try {
+                const response = await fetch(url, { signal: searchSignal(signal) });
+                if (!response.ok) return [];
+                const data = await response.json();
+                if (!data.items?.length) return [];
+                return data.items.map(item => {
+                    const info = item.volumeInfo;
+                    let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
+                    if (coverUrl) {
+                        // Ojo: no tocar el zoom — Google Books retiró zoom=0
+                        // y devuelve un placeholder "image not available"
+                        coverUrl = coverUrl
+                            .replace(/^http:\/\//i, 'https://')
+                            .replace('&edge=curl', '');
                     }
-                } catch (e) {
-                    console.error("Error buscando en Google Books:", e);
-                }
+                    if (!coverUrl) {
+                        const isbn = info.industryIdentifiers
+                            ?.find(id => id.type === 'ISBN_13' || id.type === 'ISBN_10')
+                            ?.identifier;
+                        if (isbn) coverUrl = `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg`;
+                    }
+                    return {
+                        title: info.title || 'Sin título',
+                        author: info.authors?.join(', ') || 'Autor desconocido',
+                        cover: coverUrl,
+                        totalPages: info.pageCount || 0,
+                        link: info.infoLink || info.previewLink || '',
+                        genre: info.categories?.[0] || 'Sin género'
+                    };
+                });
+            } catch (e) {
+                if (e.name !== 'AbortError') console.error("Error buscando en Google Books:", e);
+                return [];
             }
-            return buscarEnOpenLibrary(titulo);
+        }
+
+        async function buscarLibroPorTitulo(titulo, signal) {
+            // Ambas fuentes en paralelo: si Google falla o viene vacío, el
+            // fallback de OpenLibrary ya está en vuelo (antes iba en serie y
+            // sumaba las dos esperas).
+            const openLibraryPromise = buscarEnOpenLibrary(titulo, signal);
+            const google = await buscarEnGoogleBooks(titulo, signal);
+            if (google.length) return google;
+            return openLibraryPromise;
         }
 
         function mostrarResultadosBusqueda(resultados) {
@@ -322,17 +339,29 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         let searchTimeout;
+        let searchAbort = null;
+        let searchSeq = 0;
         if(bookSearchInput) {
             bookSearchInput.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
+                searchAbort?.abort();
                 const query = e.target.value.trim();
 
                 if (query.length > 2) {
                     bookSearchResultsDiv.innerHTML = '<div style="padding:0.5rem;">Buscando...</div>';
                     searchTimeout = setTimeout(() => {
-                        buscarLibroPorTitulo(query).then(mostrarResultadosBusqueda);
-                    }, 500);
+                        const ctrl = new AbortController();
+                        searchAbort = ctrl;
+                        const seq = ++searchSeq;
+                        buscarLibroPorTitulo(query, ctrl.signal).then((resultados) => {
+                            // Descarta respuestas de búsquedas ya obsoletas:
+                            // una petición lenta no debe pisar la más reciente.
+                            if (seq !== searchSeq) return;
+                            mostrarResultadosBusqueda(resultados);
+                        });
+                    }, 400);
                 } else {
+                    searchSeq++; // invalida respuestas en vuelo
                     bookSearchResultsDiv.innerHTML = '';
                 }
             });
