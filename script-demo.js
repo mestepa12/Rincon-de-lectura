@@ -329,7 +329,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // resultados" falsos. country=ES ya prioriza ediciones en español.
         const url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`;
         try {
-            const res = await fetch(url);
+            let res = await fetch(url);
+            // 503/429 transitorios al teclear rápido: un reintento corto basta
+            if (!res.ok && [429, 500, 502, 503, 504].includes(res.status)) {
+                await new Promise(r => setTimeout(r, 600));
+                res = await fetch(url);
+            }
             const data = await res.json();
             return data.items || [];
         } catch (e) { return []; }

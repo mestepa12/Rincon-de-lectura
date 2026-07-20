@@ -223,8 +223,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function buscarEnOpenLibrary(query, signal) {
             try {
+                // Búsqueda por título (title=), no genérica (q=): la genérica es
+                // difusa y con sesgo inglés ("rey de la codicia" devolvía
+                // "King Leopold's Ghost"). lang=es prioriza ediciones en español.
                 const resp = await fetch(
-                    `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=5&fields=title,author_name,cover_i,number_of_pages_median,subject,key`,
+                    `https://openlibrary.org/search.json?title=${encodeURIComponent(query)}&lang=es&limit=5&fields=title,author_name,cover_i,number_of_pages_median,subject,key`,
                     { signal: searchSignal(signal) }
                 );
                 if (!resp.ok) return [];
@@ -250,7 +253,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // y provocaba "sin resultados" falsos. country=ES ya prioriza es.
             const url = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`;
             try {
-                const response = await fetch(url, { signal: searchSignal(signal) });
+                let response = await fetch(url, { signal: searchSignal(signal) });
+                // Google Books devuelve 503/429 transitorios al teclear rápido.
+                // Un reintento corto suele bastar, y su catálogo es mucho mejor
+                // que el del fallback: merece la espera.
+                if (!response.ok && [429, 500, 502, 503, 504].includes(response.status)) {
+                    await new Promise(r => setTimeout(r, 600));
+                    if (signal?.aborted) return [];
+                    response = await fetch(url, { signal: searchSignal(signal) });
+                }
                 if (!response.ok) return [];
                 const data = await response.json();
                 if (!data.items?.length) return [];
