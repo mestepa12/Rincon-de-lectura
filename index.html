@@ -93,7 +93,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://covers.openlibrary.org">
     <link rel="preload" as="image" fetchpriority="high" href="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg">
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Fuentes en asincrono: con display=swap el texto pinta con la fuente
+         del sistema y cambia al llegar; asi la hoja de Google no bloquea el LCP -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js y html2canvas se cargan de forma diferida (lazy-libs.js)
          solo al abrir estadísticas o exportar tarjetas. -->
