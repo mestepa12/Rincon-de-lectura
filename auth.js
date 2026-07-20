@@ -1,3 +1,4 @@
+import { notify } from './notify.js';
 import {
     onAuthStateChanged,
     sendEmailVerification,
@@ -317,11 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             sendPasswordResetEmail(auth, document.getElementById('reset-email').value)
                 .then(() => {
-                    alert("Enlace enviado. Revisa tu bandeja de entrada y la carpeta de spam.");
+                    notify("Enlace enviado. Revisa tu bandeja de entrada y la carpeta de spam.", 'success');
                     resetModal.close();
                 })
                 .catch(err => {
-                    alert(mensajeDeErrorAuth(err.code));
+                    notify(mensajeDeErrorAuth(err.code), 'error');
                 });
         });
         document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.close());

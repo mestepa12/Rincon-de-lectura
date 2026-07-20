@@ -1,3 +1,4 @@
+import { notify } from './notify.js';
 import { googleBooksApiKey } from './config.js';
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 
@@ -623,7 +624,7 @@ function openModal(id) {
             link.click();
         } catch (err) {
             console.error('Error generando imagen:', err);
-            alert('No se pudo generar la imagen.');
+            notify('No se pudo generar la imagen.', 'error');
         } finally {
             card.style.display = 'none';
             coverEl.style.display = '';

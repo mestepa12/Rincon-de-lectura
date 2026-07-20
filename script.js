@@ -1,3 +1,4 @@
+import { notify, confirmDialog, promptDialog } from './notify.js';
 import { googleBooksApiKey, fcmVapidKey } from './config.js';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
@@ -53,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Ejecutamos todos los cambios a la vez
             await batch.commit();
             console.log("¡Migración completada con éxito! Recarga la página.");
-            alert("Hemos actualizado tu biblioteca al nuevo sistema. Tus libros ya deberían aparecer.");
+            notify("Hemos actualizado tu biblioteca al nuevo sistema. Tus libros ya deberían aparecer.", 'info');
             window.location.reload();
 
         } catch (error) {
@@ -705,13 +706,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 delBtn.setAttribute('aria-label', 'Eliminar comentario');
                 delBtn.textContent = '🗑️';
                 delBtn.onclick = async () => {
-                    if (!confirm('¿Eliminar este comentario? Tus amigos dejarán de verlo.')) return;
+                    const ok = await confirmDialog({
+                        title: '¿Eliminar comentario?',
+                        message: 'Tus amigos dejarán de verlo.',
+                        confirmText: 'Eliminar',
+                        danger: true
+                    });
+                    if (!ok) return;
                     try {
                         await deleteDoc(doc(db, 'book_comments', c.id));
                         // El onSnapshot en tiempo real lo quita de pantalla solo
                     } catch (error) {
                         console.error('Error eliminando comentario:', error);
-                        alert('No se pudo eliminar el comentario.');
+                        notify('No se pudo eliminar el comentario.', 'error');
                     }
                 };
                 meta.appendChild(delBtn);
@@ -799,7 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     evaluarLogros();  // p. ej. "Tertulia Iniciada" / "Alma del Club"
                 } catch (error) {
                     console.error('Error enviando comentario:', error);
-                    alert('No se pudo enviar el comentario.');
+                    notify('No se pudo enviar el comentario.', 'error');
                 } finally {
                     sendBtn.disabled = false;
                 }
@@ -997,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 editBookModal.close();
             } catch (error) {
                 console.error('Error al editar el libro:', error);
-                alert('No se pudieron guardar los cambios.');
+                notify('No se pudieron guardar los cambios.', 'error');
             } finally {
                 submitBtn.disabled = false;
             }
@@ -1090,7 +1097,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const queryText = friendSearchInput.value.trim().toLowerCase();
 
             if (queryText.length < 3) {
-                alert("Escribe al menos 3 letras para buscar.");
+                notify("Escribe al menos 3 letras para buscar.", 'warning');
                 return;
             }
 
@@ -1255,16 +1262,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 batch.delete(reqRef);
 
                 await batch.commit();
-                alert(`¡Ahora eres amigo de @${requestData.fromUsername}!`);
+                notify(`¡Ahora eres amigo de @${requestData.fromUsername}!`, 'success');
 
             } catch (error) {
                 console.error("Error al aceptar:", error);
-                alert("Hubo un error al aceptar la solicitud.");
+                notify("Hubo un error al aceptar la solicitud.", 'error');
             }
         };
 
         const rechazarSolicitud = async (friendId) => {
-            if(!confirm("¿Rechazar solicitud?")) return;
+            const ok = await confirmDialog({
+                title: '¿Rechazar solicitud?',
+                message: 'Podrá volver a enviarte una solicitud más adelante.',
+                confirmText: 'Rechazar',
+                danger: true
+            });
+            if (!ok) return;
             try {
                 await deleteDoc(doc(db, 'users', user.uid, 'friend_requests', friendId));
             } catch (error) {
@@ -1275,7 +1288,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Función REAL para enviar solicitud
         const enviarSolicitudAmistad = async (targetUser) => {
             if (myFriendIds.has(targetUser.uid)) {
-                alert(`¡Ya eres amigo de @${targetUser.username}! No es necesario enviar solicitud.`);
+                notify(`¡Ya eres amigo de @${targetUser.username}! No es necesario enviar solicitud.`, 'info');
                 const btn = document.querySelector(`button[data-uid="${targetUser.uid}"]`); 
                 if (btn) {
                     btn.textContent = "Amigo ✔";
@@ -1305,7 +1318,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     timestamp: serverTimestamp()
                 });
 
-                alert(`¡Solicitud enviada a @${targetUser.username}!`);
+                notify(`¡Solicitud enviada a @${targetUser.username}!`, 'success');
                 if(btn) {
                     btn.textContent = "Enviada";
                     btn.disabled = true; 
@@ -1314,9 +1327,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error("Error al enviar solicitud:", error);
                 if (error.code === 'permission-denied') {
-                     alert("No se pudo enviar la solicitud. Es posible que ya seáis amigos o que tengas una solicitud pendiente.");
+                     notify("No se pudo enviar la solicitud. Es posible que ya seáis amigos o que tengas una solicitud pendiente.", 'warning');
                 } else {
-                     alert("Error al enviar la solicitud. Inténtalo de nuevo.");
+                     notify("Error al enviar la solicitud. Inténtalo de nuevo.", 'error');
                 }
                 if(btn) btn.textContent = "Reintentar";
             }
@@ -1324,9 +1337,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // --- FUNCIÓN PARA ELIMINAR AMIGO ---
         const eliminarAmigo = async (friendUid, friendName) => {
-            if (!confirm(`¿Estás seguro de que quieres eliminar a @${friendName} de tus amigos?\nDejaréis de ver vuestras bibliotecas mutuamente.`)) {
-                return;
-            }
+            const ok = await confirmDialog({
+                title: `¿Eliminar a @${friendName}?`,
+                message: 'Dejaréis de ver vuestras bibliotecas mutuamente.',
+                confirmText: 'Eliminar amigo',
+                danger: true
+            });
+            if (!ok) return;
 
             try {
                 const batch = writeBatch(db);
@@ -1341,7 +1358,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 await batch.commit();
                 
-                alert(`Has eliminado a @${friendName}.`);
+                notify(`Has eliminado a @${friendName}.`, 'info');
 
                 const currentTitle = document.getElementById('site-title').textContent;
                 if (currentTitle.includes(friendName)) {
@@ -1350,7 +1367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error("Error al eliminar amigo:", error);
-                alert("Hubo un error al intentar eliminar al amigo.");
+                notify("Hubo un error al intentar eliminar al amigo.", 'error');
             }
         };
 
@@ -1478,7 +1495,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatInput.value = '';
             } catch (error) {
                 console.error('Error enviando mensaje:', error);
-                alert('No se pudo enviar el mensaje.');
+                notify('No se pudo enviar el mensaje.', 'error');
             } finally {
                 chatSendBtn.disabled = false;
                 chatInput.focus();
@@ -1502,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatBookPicker.style.display = 'none';
             } catch (error) {
                 console.error('Error compartiendo libro:', error);
-                alert('No se pudo compartir el libro.');
+                notify('No se pudo compartir el libro.', 'error');
             } finally {
                 chatBookSendBtn.disabled = false;
             }
@@ -1523,7 +1540,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chatBookSelect.appendChild(opt);
             });
             chatBookPicker.style.display = booksData.length ? 'flex' : 'none';
-            if (!booksData.length) alert('No tienes libros en tu biblioteca para compartir.');
+            if (!booksData.length) notify('No tienes libros en tu biblioteca para compartir.', 'warning');
         });
         chatBookSendBtn.addEventListener('click', sendChatBook);
         document.getElementById('close-chat-btn').addEventListener('click', () => chatModal.close());
@@ -1688,7 +1705,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const clave = (t, a) => `${(t || '').trim().toLowerCase()}|${(a || '').trim().toLowerCase()}`;
             const yaExiste = booksData.some(b => clave(b.title, b.author) === clave(newBook.title, newBook.author));
             if (yaExiste) {
-                alert('Ese libro ya está en tu biblioteca.');
+                notify('Ese libro ya está en tu biblioteca.', 'warning');
                 return;
             }
 
@@ -2099,7 +2116,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     const ok = await obtainPushToken();
-                    if (!ok) alert('No se pudieron activar las notificaciones. Inténtalo más tarde.');
+                    if (!ok) notify('No se pudieron activar las notificaciones. Inténtalo más tarde.', 'error');
                 }
             };
             document.getElementById('push-banner-dismiss').onclick = () => {
@@ -2226,7 +2243,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // ESC o cerrar el diálogo cuentan como "todavía no".
         const askFinishBook = (book) => new Promise((resolve) => {
             const modal = document.getElementById('finish-book-modal');
-            if (!modal) { resolve(confirm(`¿Mover "${book.title}" a Libros Terminados?`)); return; }
+            if (!modal) {
+                confirmDialog({
+                    title: '¡Última página!',
+                    message: `¿Mover "${book.title}" a Libros Terminados?`,
+                    confirmText: '🏆 Mover a Terminados',
+                    cancelText: 'Todavía no'
+                }).then(resolve);
+                return;
+            }
             document.getElementById('finish-book-text').textContent =
                 `Has llegado a la última página de "${book.title}". ¿Lo colocamos en tu estantería de Libros Terminados?`;
             let settled = false;
@@ -2434,7 +2459,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="button" id="buddy-leave-btn" class="buddy-leave">Abandonar lectura compartida</button>
                 `;
                 content.querySelector('#buddy-leave-btn').onclick = async () => {
-                    if (!confirm('¿Abandonar esta lectura compartida? El progreso conjunto se borrará para los dos.')) return;
+                    const ok = await confirmDialog({
+                        title: '¿Abandonar lectura compartida?',
+                        message: 'El progreso conjunto se borrará para los dos.',
+                        confirmText: 'Abandonar',
+                        danger: true
+                    });
+                    if (!ok) return;
                     try { await deleteDoc(doc(db, 'buddy_reads', br.id)); } catch (error) {
                         console.error('Error abandonando lectura compartida:', error);
                     }
@@ -2482,7 +2513,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } catch (error) {
                     console.error('Error creando lectura compartida:', error);
                     btn.disabled = false;
-                    alert('No se pudo crear la lectura compartida.');
+                    notify('No se pudo crear la lectura compartida.', 'error');
                 }
             };
         };
@@ -2636,7 +2667,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } catch (error) {
                 console.error('Error guardando la sesión:', error);
-                alert('No se pudo guardar la sesión.');
+                notify('No se pudo guardar la sesión.', 'error');
             } finally {
                 sessionSaveBtn.disabled = false;
             }
@@ -2935,7 +2966,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (error) {
                         console.error('Error aplicando recomendación:', error);
                         actionBtn.disabled = false;
-                        alert('No se pudo completar la acción.');
+                        notify('No se pudo completar la acción.', 'error');
                     }
                 };
 
@@ -3151,7 +3182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.click();
             } catch (err) {
                 console.error('Error generando imagen:', err);
-                alert('No se pudo generar la imagen.');
+                notify('No se pudo generar la imagen.', 'error');
             } finally {
                 card.style.display = 'none';
                 coverEl.style.display = ''; // restaurar visibilidad
@@ -3296,7 +3327,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             const rows = parseCSV(csvText);
-            if (rows.length < 2) { alert('El CSV está vacío o no tiene el formato de Goodreads.'); return; }
+            if (rows.length < 2) { notify('El CSV está vacío o no tiene el formato de Goodreads.', 'warning'); return; }
             const headers = rows[0].map(h => h.trim());
 
             // ── Mapeo de estanterías Goodreads → nuestras secciones ────────────
@@ -3378,7 +3409,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             }).filter(b => b.title);
 
-            if (parsed.length === 0) { alert('No se encontraron libros válidos en el CSV.'); return; }
+            if (parsed.length === 0) { notify('No se encontraron libros válidos en el CSV.', 'warning'); return; }
 
             // ── Paso 2: obtener portadas en paralelo ─────────────────────────
             // ISBN → OpenLibrary URL instantánea | sin ISBN → llamada Google Books
@@ -3401,11 +3432,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const sinIsbn = parsed.filter(b => !b._isbn13).length;
-            alert(
+            notify(
                 `✅ Importación completada.\n` +
                 `${imported} libro${imported !== 1 ? 's' : ''} importados desde Goodreads.\n\n` +
                 `Portadas: Open Library (ISBN) · Google Books (${sinIsbn} sin ISBN).\n` +
-                `Las portadas que no carguen mostrarán un icono genérico.`
+                `Las portadas que no carguen mostrarán un icono genérico.`,
+                'success'
             );
         };
 
@@ -3436,9 +3468,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (book) updateProgressVisuals(parseInt(currentPageInput.value, 10), book.totalPages);
         });
 
-        deleteBookModalBtn.addEventListener('click', () => {
+        deleteBookModalBtn.addEventListener('click', async () => {
             const bookId = bookDetailModal.dataset.bookId;
-            if (bookId && confirm('¿Estás seguro de que quieres eliminar este libro?')) {
+            if (!bookId) return;
+            const ok = await confirmDialog({
+                title: '¿Eliminar este libro?',
+                message: 'Se borrará de tu biblioteca junto con sus notas y progreso.',
+                confirmText: 'Eliminar',
+                danger: true
+            });
+            if (ok) {
                 handleDeleteBook(bookId);
                 bookDetailModal.close();
             }
@@ -3448,7 +3487,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const bookId = bookDetailModal.dataset.bookId;
             const book = booksData.find(b => b.id === bookId);
             if (!book) return;
-            const newCoverUrl = prompt('Introduce la nueva URL para la portada:', book.cover || '');
+            const newCoverUrl = await promptDialog({
+                title: 'Cambiar portada',
+                message: 'Introduce la nueva URL para la portada:',
+                value: book.cover || '',
+                placeholder: 'https://...',
+                confirmText: 'Guardar'
+            });
             if (newCoverUrl !== null) {
                 try {
                     detailCover.src = newCoverUrl || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
@@ -3711,7 +3756,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 link.click();
             } catch (err) {
                 console.error('Error generando imagen stats:', err);
-                alert('No se pudo generar la imagen.');
+                notify('No se pudo generar la imagen.', 'error');
             } finally {
                 card.style.display = 'none';
             }
@@ -3733,7 +3778,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     await importGoodreadsCSV(file);
                 } catch (err) {
                     console.error('Error importando Goodreads:', err);
-                    alert('Error durante la importación:\n' + err.message);
+                    notify('Error durante la importación:\n' + err.message, 'error');
                 } finally {
                     importGoodreadsBtn.disabled = false;
                     importGoodreadsBtn.innerHTML = '&#128229; Goodreads';
