@@ -338,7 +338,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (!res.ok && [429, 500, 502, 503, 504].includes(res.status)) {
                 await new Promise(r => setTimeout(r, 1200));
-                res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5&key=${googleBooksApiKey}`);
+                // Sin key: la búsqueda pública usa cuota por IP, no la del
+                // proyecto (que es la que suele estar agotada cuando hay 503)
+                res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(titulo)}&maxResults=5`);
             }
             const data = await res.json();
             return data.items || [];

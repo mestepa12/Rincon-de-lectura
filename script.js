@@ -249,17 +249,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Devuelve un array de resultados, o null si el servicio no responde
         // (para distinguir "no hay resultados" de "Google está caído").
         async function buscarEnGoogleBooks(titulo, signal) {
-            if (typeof googleBooksApiKey === 'undefined' || !googleBooksApiKey) return null;
             const query = encodeURIComponent(titulo);
+            const base = `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5`;
+            const conKey = (typeof googleBooksApiKey !== 'undefined' && googleBooksApiKey)
+                ? `&key=${googleBooksApiKey}` : '';
             // Sin langRestrict: filtraba ediciones con el idioma mal etiquetado
             // y provocaba "sin resultados" falsos. country=ES ya prioriza es.
-            const urls = [
-                `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`,
-                // Reintentos ante 503 sostenidos: mismo endpoint y luego URL
-                // mínima (sin country/printType), que a veces esquiva el error.
-                `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&country=ES&printType=books&key=${googleBooksApiKey}`,
-                `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5&key=${googleBooksApiKey}`
-            ];
+            // Escalera de reintentos ante 503/429 sostenidos: la key comparte
+            // cuota de proyecto entre todos los usuarios; el último intento va
+            // SIN key porque la búsqueda pública usa cuota por IP, que el
+            // dispositivo del usuario rara vez tiene agotada.
+            const urls = conKey
+                ? [`${base}&country=ES&printType=books${conKey}`, `${base}${conKey}`, base]
+                : [`${base}&country=ES&printType=books`, base];
             const backoffMs = [0, 600, 1400];
             try {
                 let response = null;
@@ -303,15 +305,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Caché en memoria de búsquedas ya resueltas: repetir una consulta
+        // (borrar y reescribir, volver atrás...) no debe gastar cuota de API.
+        const busquedasCache = new Map();
+
         async function buscarLibroPorTitulo(titulo, signal) {
+            const cacheKey = titulo.toLowerCase();
+            if (busquedasCache.has(cacheKey)) return busquedasCache.get(cacheKey);
+
             // Ambas fuentes en paralelo: si Google falla o viene vacío, el
             // fallback de OpenLibrary ya está en vuelo (antes iba en serie y
             // sumaba las dos esperas).
             const openLibraryPromise = buscarEnOpenLibrary(titulo, signal);
             const google = await buscarEnGoogleBooks(titulo, signal);
-            if (google?.length) return { items: google, googleCaido: false };
-            const openLibrary = await openLibraryPromise;
-            return { items: openLibrary, googleCaido: google === null };
+            let resultado;
+            if (google?.length) {
+                resultado = { items: google, googleCaido: false };
+            } else {
+                const openLibrary = await openLibraryPromise;
+                resultado = { items: openLibrary, googleCaido: google === null };
+            }
+            // Solo cachear búsquedas con resultados: los fallos deben poder
+            // reintentarse cuando el servicio se recupere.
+            if (resultado.items.length) {
+                if (busquedasCache.size > 80) busquedasCache.clear();
+                busquedasCache.set(cacheKey, resultado);
+            }
+            return resultado;
         }
 
         function mostrarResultadosBusqueda({ items: resultados, googleCaido }) {
@@ -383,7 +403,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (seq !== searchSeq) return;
                             mostrarResultadosBusqueda(resultados);
                         });
-                    }, 400);
+                    }, 600);
                 } else {
                     searchSeq++; // invalida respuestas en vuelo
                     bookSearchResultsDiv.innerHTML = '';
