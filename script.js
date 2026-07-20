@@ -236,10 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const info = item.volumeInfo;
                                 let coverUrl = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
                                 if (coverUrl) {
+                                    // Ojo: no tocar el zoom — Google Books retiró zoom=0
+                                    // y devuelve un placeholder "image not available"
                                     coverUrl = coverUrl
                                         .replace(/^http:\/\//i, 'https://')
-                                        .replace('&edge=curl', '')
-                                        .replace('&zoom=1', '&zoom=0');
+                                        .replace('&edge=curl', '');
                                 }
                                 if (!coverUrl) {
                                     const isbn = info.industryIdentifiers
@@ -3323,7 +3324,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!resp.ok) throw new Error();
                     const data = await resp.json();
                     const thumb = data.items?.[0]?.volumeInfo?.imageLinks?.thumbnail;
-                    if (thumb) return thumb.replace('http://', 'https://').replace('zoom=1', 'zoom=0');
+                    if (thumb) return thumb.replace('http://', 'https://');
                 } catch { /* ignorar, usar fallback vacío */ }
                 return ''; // La UI usará COVER_PLACEHOLDER via onerror
             };

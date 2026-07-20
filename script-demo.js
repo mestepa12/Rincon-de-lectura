@@ -368,10 +368,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     const info = item.volumeInfo;
                     let cover = info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || '';
                     if (cover) {
+                        // Ojo: no tocar el zoom — Google Books retiró zoom=0
+                        // y devuelve un placeholder "image not available"
                         cover = cover
                             .replace(/^http:\/\//i, 'https://')
-                            .replace('&edge=curl', '')
-                            .replace('&zoom=1', '&zoom=0');
+                            .replace('&edge=curl', '');
                     }
                     if (!cover) {
                         const isbn = info.industryIdentifiers
