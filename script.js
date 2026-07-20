@@ -132,6 +132,17 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         let booksData = [];
+
+        // Libros guardados cuando Google Books aún servía zoom=0 llevan esa
+        // URL en Firestore; ese zoom ya solo devuelve un placeholder, así que
+        // se normaliza a zoom=1 al cargar.
+        const normalizarCover = (book) => {
+            if (typeof book.cover === 'string' && book.cover.includes('books.google') && book.cover.includes('zoom=0')) {
+                book.cover = book.cover.replace('zoom=0', 'zoom=1');
+            }
+            return book;
+        };
+
         let viewingFriendLibrary = false;
         let currentFriendData = null;
         let currentFriendName = '';
@@ -1619,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const q = query(collection(db, 'books'), where("userId", "==", friendUid));
             onSnapshot(q, (snapshot) => {
                 booksData = [];
-                snapshot.forEach(doc => { booksData.push({ id: doc.id, ...doc.data() }); });
+                snapshot.forEach(doc => { booksData.push(normalizarCover({ id: doc.id, ...doc.data() })); });
                 booksData.sort((a, b) => a.title.localeCompare(b.title));
                 renderBooks();
                 mostrarBotonVolver();
@@ -3218,7 +3229,7 @@ document.addEventListener('DOMContentLoaded', () => {
             booksData = [];
             
             snapshot.forEach(docSnap => {
-                const book = { id: docSnap.id, ...docSnap.data() }; 
+                const book = normalizarCover({ id: docSnap.id, ...docSnap.data() });
                 booksData.push(book);
             });
 
