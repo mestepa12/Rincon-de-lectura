@@ -2636,3 +2636,143 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
     cursor: pointer;
 }
 .app-dialog-cancel:hover { border-color: var(--accent-color); }
+
+/* ======== VISTA ESTANTERÍA (biblioteca como librería real) ======== */
+:root {
+    --madera-frente: #7a5237;
+    --madera-sombra: #55371f;
+    --madera-marco: #6b4630;
+    --madera-fondo: #3d2817;
+}
+body.dark-mode {
+    --madera-frente: #4e3423;
+    --madera-sombra: #33200f;
+    --madera-marco: #45301f;
+    --madera-fondo: #241609;
+}
+
+/* Cada banda de 196px = 180px de hueco + 16px de balda de madera.
+   Los libros miden 196px de alto con el lomo apoyado 16px por encima
+   del borde inferior: quedan de pie sobre la balda. */
+.books-container.estanteria {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0 3px;
+    padding: 0 14px;
+    min-height: 196px;
+    border: 12px solid var(--madera-marco);
+    border-radius: 10px;
+    background-color: var(--madera-fondo);
+    background-image: repeating-linear-gradient(to bottom,
+        transparent 0px, transparent 178px,
+        rgba(0, 0, 0, 0.28) 178px, rgba(0, 0, 0, 0.28) 180px,
+        var(--madera-frente) 180px, var(--madera-frente) 193px,
+        var(--madera-sombra) 193px, var(--madera-sombra) 196px);
+    box-shadow: inset 0 10px 26px rgba(0, 0, 0, 0.4), 0 4px 12px var(--shadow-color);
+}
+
+.shelf-book {
+    position: relative;
+    width: var(--ancho);
+    height: 196px;
+    perspective: 800px;
+    cursor: pointer;
+    z-index: 1;
+    -webkit-tap-highlight-color: transparent;
+}
+.shelf-book:hover, .shelf-book.abierto { z-index: 6; }
+.shelf-book.hidden { display: none; }
+
+.shelf-book-inner {
+    position: absolute;
+    bottom: 16px;
+    left: 0;
+    width: 100%;
+    height: var(--alto);
+    transform-style: preserve-3d;
+    transform-origin: left center;
+    transition: transform 0.38s cubic-bezier(0.22, 0.9, 0.3, 1.15);
+}
+
+/* Sacar el libro de la balda: gira sobre su borde izquierdo y la portada,
+   que vive perpendicular al lomo, queda casi de frente al lector. */
+.shelf-book:not(.cara):hover .shelf-book-inner,
+.shelf-book:not(.cara).abierto .shelf-book-inner {
+    transform: rotateY(-78deg);
+}
+
+.spine {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.05) 22%, rgba(0, 0, 0, 0.16) 78%, rgba(0, 0, 0, 0.42) 100%),
+        var(--lomo);
+    border-radius: 2px 3px 3px 2px;
+    box-shadow: 1px 0 2px rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    backface-visibility: hidden;
+}
+/* Filetes del lomo, como los dorados de imprenta */
+.spine::before, .spine::after {
+    content: '';
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: rgba(255, 224, 160, 0.5);
+}
+.spine::before { top: 9px; }
+.spine::after { bottom: 9px; }
+
+.spine-title {
+    writing-mode: vertical-rl;
+    font-family: var(--font-title);
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: #FDF6EA;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    max-height: calc(100% - 28px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Portada colocada perpendicular al lomo (invisible hasta sacar el libro) */
+.shelf-book:not(.cara) .shelf-cover {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    width: 108px;
+    height: 100%;
+    object-fit: cover;
+    transform-origin: left center;
+    transform: rotateY(90deg);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 10px 8px 20px rgba(0, 0, 0, 0.45);
+    background: var(--card-bg-color);
+}
+
+/* Libros colocados de frente (~1 de cada 7) */
+.shelf-book.cara .shelf-cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+    background: var(--card-bg-color);
+}
+.shelf-book.cara:hover .shelf-book-inner,
+.shelf-book.cara.abierto .shelf-book-inner {
+    transform: translateY(-10px) scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .shelf-book-inner { transition: none; }
+}

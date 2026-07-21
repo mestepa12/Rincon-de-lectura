@@ -467,13 +467,149 @@ document.addEventListener('DOMContentLoaded', () => {
             return bookArticle;
         };
 
+        // ── Vista estantería: libros como lomos en baldas de madera ──────────
+        // Los lomos reales no existen en ninguna API: se generan con el color
+        // dominante de la portada (muestreado en canvas) y el título vertical.
+
+        const PALETA_LOMOS = ['#7C3A3A', '#9A3B3B', '#B5651D', '#6B8E5A', '#3E6257', '#4A5A7A', '#7A4A6E', '#8A6D3B', '#5C4A72', '#2F6690', '#A0522D', '#556B2F'];
+
+        const hashLibro = (s) => {
+            let h = 0;
+            for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+            return Math.abs(h);
+        };
+
+        // Caché persistente de colores muestreados: evita recargar miniaturas
+        // y repetir el muestreo en cada visita.
+        let coloresLomoCache = {};
+        try { coloresLomoCache = JSON.parse(localStorage.getItem('rincon_colores_lomo') || '{}') || {}; } catch { /* caché corrupta: se regenera */ }
+        let guardarColoresTimer;
+        const guardarColoresLomo = () => {
+            clearTimeout(guardarColoresTimer);
+            guardarColoresTimer = setTimeout(() => {
+                try { localStorage.setItem('rincon_colores_lomo', JSON.stringify(coloresLomoCache)); } catch { /* almacenamiento lleno: no pasa nada */ }
+            }, 800);
+        };
+
+        const muestrearColorLomo = (coverUrl, aplicar) => {
+            if (coloresLomoCache[coverUrl]) { aplicar(coloresLomoCache[coverUrl]); return; }
+            const img = new Image();
+            img.crossOrigin = 'anonymous'; // wsrv.nl sirve CORS abierto; el canvas no queda contaminado
+            img.onload = () => {
+                try {
+                    const cv = document.createElement('canvas');
+                    cv.width = 8; cv.height = 12;
+                    const ctx = cv.getContext('2d', { willReadFrequently: true });
+                    ctx.drawImage(img, 0, 0, 8, 12);
+                    const px = ctx.getImageData(0, 0, 8, 12).data;
+                    let r = 0, g = 0, b = 0;
+                    const n = px.length / 4;
+                    for (let i = 0; i < px.length; i += 4) { r += px[i]; g += px[i + 1]; b += px[i + 2]; }
+                    r /= (n * 255); g /= (n * 255); b /= (n * 255);
+                    // RGB → HSL para poder acotar luz y saturación
+                    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+                    const l = (max + min) / 2;
+                    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+                    let hue = 0;
+                    if (d > 0) {
+                        if (max === r) hue = 60 * (((g - b) / d) % 6);
+                        else if (max === g) hue = 60 * ((b - r) / d + 2);
+                        else hue = 60 * ((r - g) / d + 4);
+                    }
+                    if (hue < 0) hue += 360;
+                    // Luz acotada para que el título en blanco siempre se lea
+                    const luz = Math.min(0.50, Math.max(0.24, l));
+                    const sat = Math.max(0.22, Math.min(0.75, s));
+                    const color = `hsl(${Math.round(hue)}, ${Math.round(sat * 100)}%, ${Math.round(luz * 100)}%)`;
+                    coloresLomoCache[coverUrl] = color;
+                    guardarColoresLomo();
+                    aplicar(color);
+                } catch { /* fallo de canvas: se queda el color de paleta */ }
+            };
+            img.src = `https://wsrv.nl/?url=${encodeURIComponent(coverUrl)}&w=48&h=72&fit=cover`;
+        };
+
+        const crearLibroEstanteria = (book) => {
+            const h = hashLibro(book.id || book.title || '');
+            const el = document.createElement('article');
+            el.className = 'shelf-book';
+            el.dataset.id = book.id;
+            el.dataset.titulo = (book.title || '').toLowerCase();
+            el.dataset.autor = (book.author || '').toLowerCase();
+            el.setAttribute('aria-label', `${book.title} de ${book.author}`);
+
+            // ~1 de cada 7 se coloca de frente, como en una librería real
+            const caraVista = h % 7 === 3;
+            if (caraVista) el.classList.add('cara');
+
+            // Grosor según páginas y altura con variación por libro
+            const paginas = book.totalPages || 250;
+            const ancho = caraVista ? 92 : Math.round(Math.min(54, Math.max(30, 24 + paginas / 12)));
+            const alto = 150 + (h % 26);
+            el.style.setProperty('--ancho', `${ancho}px`);
+            el.style.setProperty('--alto', `${alto}px`);
+            el.style.setProperty('--lomo', PALETA_LOMOS[h % PALETA_LOMOS.length]);
+
+            const inner = document.createElement('div');
+            inner.className = 'shelf-book-inner';
+
+            if (!caraVista) {
+                const spine = document.createElement('div');
+                spine.className = 'spine';
+                const titulo = document.createElement('span');
+                titulo.className = 'spine-title';
+                titulo.textContent = book.title || '';
+                spine.appendChild(titulo);
+                inner.appendChild(spine);
+            }
+
+            const img = document.createElement('img');
+            img.className = 'shelf-cover';
+            img.loading = 'lazy';
+            img.alt = '';
+            img.src = book.cover || COVER_PLACEHOLDER;
+            img.onerror = () => { img.onerror = null; img.src = COVER_PLACEHOLDER; };
+            inner.appendChild(img);
+            el.appendChild(inner);
+
+            if (!caraVista && book.cover && /^https?:/i.test(book.cover)) {
+                muestrearColorLomo(book.cover, (c) => el.style.setProperty('--lomo', c));
+            }
+            return el;
+        };
+
         const renderBooks = () => {
-            document.querySelectorAll('.books-container').forEach(c => c.innerHTML = '');
+            const enEstanteria = document.body.classList.contains('vista-estanteria');
+            document.querySelectorAll('.books-container').forEach(c => {
+                c.innerHTML = '';
+                c.classList.toggle('estanteria', enEstanteria);
+            });
             booksData.forEach(book => {
                 const container = document.querySelector(`.books-container[data-section="${book.section}"]`);
-                if (container) container.appendChild(createBookElement(book));
+                if (container) container.appendChild(enEstanteria ? crearLibroEstanteria(book) : createBookElement(book));
             });
         };
+
+        // Conmutador cuadrícula ↔ estantería (persistido)
+        const vistaToggleBtn = document.getElementById('vista-toggle');
+        const actualizarBotonVista = () => {
+            if (!vistaToggleBtn) return;
+            const activa = document.body.classList.contains('vista-estanteria');
+            vistaToggleBtn.textContent = activa ? '🔳' : '📚';
+            vistaToggleBtn.title = activa ? 'Ver como cuadrícula' : 'Ver como estantería';
+        };
+        if (localStorage.getItem('vista_biblioteca') === 'estanteria') {
+            document.body.classList.add('vista-estanteria');
+        }
+        actualizarBotonVista();
+        if (vistaToggleBtn) {
+            vistaToggleBtn.addEventListener('click', () => {
+                const activa = document.body.classList.toggle('vista-estanteria');
+                localStorage.setItem('vista_biblioteca', activa ? 'estanteria' : 'grid');
+                actualizarBotonVista();
+                renderBooks();
+            });
+        }
         
         const updateProgressVisuals = (currentPage, totalPages) => {
             if (!totalPages || totalPages <= 0) {
@@ -3301,8 +3437,24 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         const handleMainContentClick = (e) => {
-            const bookElement = e.target.closest('.book');
-            if (!bookElement) return;
+            const bookElement = e.target.closest('.book, .shelf-book');
+            if (!bookElement) {
+                // Toque fuera de los libros: devolver a la balda el que estuviera sacado
+                document.querySelectorAll('.shelf-book.abierto').forEach(b => b.classList.remove('abierto'));
+                return;
+            }
+
+            if (bookElement.classList.contains('shelf-book')) {
+                // En pantallas táctiles el primer toque "saca" el libro de la
+                // balda (equivalente al hover) y el segundo abre el detalle.
+                if (window.matchMedia('(hover: none)').matches && !bookElement.classList.contains('abierto')) {
+                    document.querySelectorAll('.shelf-book.abierto').forEach(b => b.classList.remove('abierto'));
+                    bookElement.classList.add('abierto');
+                    return;
+                }
+                openDetailModal(bookElement.dataset.id);
+                return;
+            }
 
             if (e.target.matches('.star')) {
                 const btn = e.target;
@@ -3321,6 +3473,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const title = bookElement.querySelector('h3').textContent.toLowerCase();
                 const author = bookElement.querySelector('.author').textContent.toLowerCase();
                 bookElement.classList.toggle('hidden', !title.includes(query) && !author.includes(query));
+            });
+            document.querySelectorAll('.shelf-book').forEach(el => {
+                el.classList.toggle('hidden', !el.dataset.titulo.includes(query) && !el.dataset.autor.includes(query));
             });
         };
 
