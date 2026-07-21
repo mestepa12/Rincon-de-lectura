@@ -67,7 +67,11 @@ const validarPassword = (pass) => {
 };
 
 
-document.addEventListener('DOMContentLoaded', () => {
+// Ojo: este módulo se importa en diferido (idle) desde la landing, cuando
+// DOMContentLoaded ya ha disparado. Registrar el listener a secas dejaría
+// todo el módulo sin ejecutar — incluida la redirección de sesiones vivas —
+// que es justo lo que pasaba en la PWA instalada.
+const iniciarAuth = () => {
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password'); 
@@ -173,6 +177,10 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         const path = window.location.pathname;
         if (user && user.emailVerified) {
+            // Auto-reparar el flag de redirección rápida: las sesiones
+            // iniciadas antes de que existiera no lo tienen y sin él cada
+            // apertura de la PWA aterriza en la landing.
+            localStorage.setItem('rincon_logged_in', '1');
             if (path === '/' || path.includes('index') || path.includes('login') || path.includes('register')) {
                 window.location.href = destinoTrasAuth();
             }
@@ -200,6 +208,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (emailInput && !emailInput.value && user.email) emailInput.value = user.email;
             }
         } else {
+            // Sesión muerta con el flag puesto = bucle de redirecciones
+            // index ↔ biblioteca. Limpiarlo antes de mandar a la landing.
+            localStorage.removeItem('rincon_logged_in');
             if (divAviso) divAviso.style.display = 'none';
             if (path.includes('biblioteca')) {
                 window.location.href = 'index.html';
@@ -327,6 +338,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.getElementById('cancel-reset-btn').addEventListener('click', () => resetModal.close());
     }
-    
-    
-});
+
+
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', iniciarAuth);
+} else {
+    iniciarAuth();
+}
