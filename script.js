@@ -479,54 +479,112 @@ document.addEventListener('DOMContentLoaded', () => {
             return Math.abs(h);
         };
 
-        // Caché persistente de colores muestreados: evita recargar miniaturas
-        // y repetir el muestreo en cada visita.
-        let coloresLomoCache = {};
-        try { coloresLomoCache = JSON.parse(localStorage.getItem('rincon_colores_lomo') || '{}') || {}; } catch { /* caché corrupta: se regenera */ }
-        let guardarColoresTimer;
-        const guardarColoresLomo = () => {
-            clearTimeout(guardarColoresTimer);
-            guardarColoresTimer = setTimeout(() => {
-                try { localStorage.setItem('rincon_colores_lomo', JSON.stringify(coloresLomoCache)); } catch { /* almacenamiento lleno: no pasa nada */ }
+        // Sombreado lateral común de los lomos (brillo a la izquierda, sombra
+        // a la derecha): se superpone tanto al color plano como a la textura.
+        const OVERLAY_LOMO = 'linear-gradient(90deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 22%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.42) 100%)';
+
+        // Caché persistente de lomos generados: color dominante + textura
+        // sintetizada desde la portada. Los lomos reales no existen en ninguna
+        // API; se fabrican con canvas y se guardan como JPEG pequeño (~3KB).
+        let lomosCache = {};
+        try { lomosCache = JSON.parse(localStorage.getItem('rincon_lomos_v1') || '{}') || {}; } catch { /* caché corrupta: se regenera */ }
+        localStorage.removeItem('rincon_colores_lomo'); // clave antigua, ya integrada aquí
+        let guardarLomosTimer;
+        const guardarLomos = () => {
+            clearTimeout(guardarLomosTimer);
+            guardarLomosTimer = setTimeout(() => {
+                try {
+                    localStorage.setItem('rincon_lomos_v1', JSON.stringify(lomosCache));
+                } catch {
+                    // Almacenamiento lleno: soltar la caché y seguir sin persistir
+                    lomosCache = {};
+                    try { localStorage.removeItem('rincon_lomos_v1'); } catch { /* nada más que hacer */ }
+                }
             }, 800);
         };
 
-        const muestrearColorLomo = (coverUrl, aplicar) => {
-            if (coloresLomoCache[coverUrl]) { aplicar(coloresLomoCache[coverUrl]); return; }
-            const img = new Image();
-            img.crossOrigin = 'anonymous'; // wsrv.nl sirve CORS abierto; el canvas no queda contaminado
-            img.onload = () => {
-                try {
-                    const cv = document.createElement('canvas');
-                    cv.width = 8; cv.height = 12;
-                    const ctx = cv.getContext('2d', { willReadFrequently: true });
-                    ctx.drawImage(img, 0, 0, 8, 12);
-                    const px = ctx.getImageData(0, 0, 8, 12).data;
-                    let r = 0, g = 0, b = 0;
-                    const n = px.length / 4;
-                    for (let i = 0; i < px.length; i += 4) { r += px[i]; g += px[i + 1]; b += px[i + 2]; }
-                    r /= (n * 255); g /= (n * 255); b /= (n * 255);
-                    // RGB → HSL para poder acotar luz y saturación
-                    const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-                    const l = (max + min) / 2;
-                    const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
-                    let hue = 0;
-                    if (d > 0) {
-                        if (max === r) hue = 60 * (((g - b) / d) % 6);
-                        else if (max === g) hue = 60 * ((b - r) / d + 2);
-                        else hue = 60 * ((r - g) / d + 4);
-                    }
-                    if (hue < 0) hue += 360;
-                    // Luz acotada para que el título en blanco siempre se lea
-                    const luz = Math.min(0.50, Math.max(0.24, l));
-                    const sat = Math.max(0.22, Math.min(0.75, s));
-                    const color = `hsl(${Math.round(hue)}, ${Math.round(sat * 100)}%, ${Math.round(luz * 100)}%)`;
-                    coloresLomoCache[coverUrl] = color;
-                    guardarColoresLomo();
-                    aplicar(color);
-                } catch { /* fallo de canvas: se queda el color de paleta */ }
-            };
-            img.src = `https://wsrv.nl/?url=${encodeURIComponent(coverUrl)}&w=48&h=72&fit=cover`;
+        const lomosEnVuelo = new Map(); // dedupe: vista y tarjeta pueden pedir a la vez
+
+        const generarLomo = (coverUrl) => {
+            if (!coverUrl || !/^https?:/i.test(coverUrl)) return Promise.resolve({ color: null, textura: null });
+            const cacheada = lomosCache[coverUrl];
+            if (cacheada) return Promise.resolve({ color: cacheada.c, textura: cacheada.t });
+            if (lomosEnVuelo.has(coverUrl)) return lomosEnVuelo.get(coverUrl);
+
+            const promesa = new Promise((resolve) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; // wsrv.nl sirve CORS abierto; el canvas no queda contaminado
+                img.onerror = () => { lomosEnVuelo.delete(coverUrl); resolve({ color: null, textura: null }); };
+                img.onload = () => {
+                    lomosEnVuelo.delete(coverUrl);
+                    try {
+                        const W = 48, H = 192;
+                        const cv = document.createElement('canvas');
+                        cv.width = W; cv.height = H;
+                        const ctx = cv.getContext('2d', { willReadFrequently: true });
+
+                        // Franja izquierda de la portada estirada a lo alto: en
+                        // muchas portadas el arte envuelve el borde y esto se
+                        // parece mucho al lomo real de imprenta.
+                        const franja = Math.max(4, Math.round(img.width * 0.12));
+                        ctx.drawImage(img, 0, 0, franja, img.height, 0, 0, W, H);
+
+                        const media = () => {
+                            const px = ctx.getImageData(0, 0, W, H).data;
+                            let r = 0, g = 0, b = 0;
+                            for (let i = 0; i < px.length; i += 4) { r += px[i]; g += px[i + 1]; b += px[i + 2]; }
+                            const n = px.length / 4 * 255;
+                            return [r / n, g / n, b / n];
+                        };
+                        let [r, g, b] = media();
+
+                        // Franja casi blanca (borde vacío de la portada): mejor
+                        // la portada entera comprimida y desenfocada — hereda
+                        // el arte y la paleta del diseño original.
+                        if ((Math.max(r, g, b) + Math.min(r, g, b)) / 2 > 0.86) {
+                            ctx.save();
+                            try { ctx.filter = 'blur(3px) brightness(0.85)'; } catch { /* sin soporte de filter: vale igual */ }
+                            ctx.drawImage(img, 0, 0, img.width, img.height, -6, -6, W + 12, H + 12);
+                            ctx.restore();
+                            [r, g, b] = media();
+                        }
+
+                        // Velo oscuro suave: garantiza contraste del título blanco
+                        ctx.fillStyle = 'rgba(20, 10, 5, 0.16)';
+                        ctx.fillRect(0, 0, W, H);
+
+                        // Grano de papel
+                        const data = ctx.getImageData(0, 0, W, H);
+                        const d = data.data;
+                        for (let i = 0; i < d.length; i += 8) {
+                            const ruido = (Math.random() - 0.5) * 14;
+                            d[i] += ruido; d[i + 1] += ruido; d[i + 2] += ruido;
+                        }
+                        ctx.putImageData(data, 0, 0);
+
+                        // Color medio en HSL acotado (fallback sin textura)
+                        const max = Math.max(r, g, b), min = Math.min(r, g, b), dif = max - min;
+                        const l = (max + min) / 2;
+                        const s = dif === 0 ? 0 : dif / (1 - Math.abs(2 * l - 1));
+                        let hue = 0;
+                        if (dif > 0) {
+                            if (max === r) hue = 60 * (((g - b) / dif) % 6);
+                            else if (max === g) hue = 60 * ((b - r) / dif + 2);
+                            else hue = 60 * ((r - g) / dif + 4);
+                        }
+                        if (hue < 0) hue += 360;
+                        const color = `hsl(${Math.round(hue)}, ${Math.round(Math.max(0.22, Math.min(0.75, s)) * 100)}%, ${Math.round(Math.min(0.50, Math.max(0.24, l)) * 100)}%)`;
+
+                        const textura = cv.toDataURL('image/jpeg', 0.72);
+                        lomosCache[coverUrl] = { c: color, t: textura };
+                        guardarLomos();
+                        resolve({ color, textura });
+                    } catch { resolve({ color: null, textura: null }); }
+                };
+                img.src = `https://wsrv.nl/?url=${encodeURIComponent(coverUrl)}&w=200&h=300&fit=cover`;
+            });
+            lomosEnVuelo.set(coverUrl, promesa);
+            return promesa;
         };
 
         const crearLibroEstanteria = (book) => {
@@ -553,14 +611,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const inner = document.createElement('div');
             inner.className = 'shelf-book-inner';
 
+            let spineEl = null;
             if (!caraVista) {
-                const spine = document.createElement('div');
-                spine.className = 'spine';
+                spineEl = document.createElement('div');
+                spineEl.className = 'spine';
                 const titulo = document.createElement('span');
                 titulo.className = 'spine-title';
                 titulo.textContent = book.title || '';
-                spine.appendChild(titulo);
-                inner.appendChild(spine);
+                spineEl.appendChild(titulo);
+                inner.appendChild(spineEl);
             }
 
             const img = document.createElement('img');
@@ -573,7 +632,13 @@ document.addEventListener('DOMContentLoaded', () => {
             el.appendChild(inner);
 
             if (!caraVista && book.cover && /^https?:/i.test(book.cover)) {
-                muestrearColorLomo(book.cover, (c) => el.style.setProperty('--lomo', c));
+                generarLomo(book.cover).then(({ color, textura }) => {
+                    if (color) el.style.setProperty('--lomo', color);
+                    if (textura && spineEl) {
+                        spineEl.style.backgroundImage = `${OVERLAY_LOMO}, url(${textura})`;
+                        spineEl.style.backgroundSize = '100% 100%';
+                    }
+                });
             }
             return el;
         };
@@ -3495,9 +3560,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const altoLomo = 92 + (h % 22);
                     spine.style.width = `${ancho}px`;
                     spine.style.height = `${altoLomo}px`;
-                    spine.style.background =
-                        'linear-gradient(90deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 22%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.42) 100%), ' +
-                        (coloresLomoCache[book.cover] || PALETA_LOMOS[h % PALETA_LOMOS.length]);
+                    spine.style.background = `${OVERLAY_LOMO}, ` +
+                        (lomosCache[book.cover]?.c || PALETA_LOMOS[h % PALETA_LOMOS.length]);
+                    // Textura sintetizada desde la portada (async, cacheada):
+                    // se espera junto a las portadas antes de exportar
+                    if (book.cover && /^https?:/i.test(book.cover)) {
+                        cargasPortadas.push(generarLomo(book.cover).then(({ textura }) => {
+                            if (textura) {
+                                spine.style.backgroundImage = `${OVERLAY_LOMO}, url(${textura})`;
+                                spine.style.backgroundSize = '100% 100%';
+                            }
+                        }));
+                    }
                     const titulo = document.createElement('b');
                     titulo.textContent = book.title || '';
                     // Ancho = altura del lomo: tras el rotate(90deg) del CSS
