@@ -1,3 +1,4 @@
+const crypto = require("node:crypto");
 const {setGlobalOptions} = require("firebase-functions");
 const {
   onDocumentUpdated,
@@ -144,29 +145,79 @@ exports.buscarLibros = onRequest(
       // IP también a las IPs de salida de GCP (comprobado), así que se usa la
       // key del proyecto; como está restringida por referrer, hay que mandar
       // la cabecera Referer del hosting para que Google la acepte.
+      // quotaUser (IP del cliente, hasheada): reparte el límite por-minuto de
+      // Google entre usuarios finales en vez de contar todo el tráfico del
+      // proxy como un solo consumidor — sin él, ráfagas concurrentes de
+      // usuarios distintos se ahogaban en 503 (visto en prueba de carga).
+      const ipCliente = String(req.headers["x-forwarded-for"] || "")
+          .split(",")[0].trim() || req.ip || "anon";
+      const quotaUser = crypto.createHash("sha1")
+          .update(ipCliente).digest("hex").slice(0, 16);
+
+      // Caché compartida en Firestore: el CDN cachea por nodo geográfico,
+      // esto es global. Una búsqueda resuelta no vuelve a gastar cuota de
+      // Google (capada a ~100-150/min por key) para ningún usuario en 7 días.
+      const qNorm = q.toLowerCase();
+      const cacheRef = db.collection("busquedas_cache")
+          .doc(crypto.createHash("sha1").update(qNorm).digest("hex"));
+      let cachePrevia = null;
+      try {
+        const snap = await cacheRef.get();
+        if (snap.exists) {
+          cachePrevia = snap.data();
+          if (Date.now() - cachePrevia.ts < 7 * 86400000) {
+            res.set("Cache-Control", "public, max-age=3600, s-maxage=604800");
+            res.json({items: JSON.parse(cachePrevia.items)});
+            return;
+          }
+        }
+      } catch (error) {
+        logger.warn("Caché de búsquedas no disponible", {error: error.message});
+      }
+
       const key = process.env.GOOGLE_BOOKS_API_KEY || "";
       const url = "https://www.googleapis.com/books/v1/volumes?q=" +
           encodeURIComponent(q) + "&maxResults=5&country=ES&printType=books" +
-          (key ? `&key=${key}` : "");
+          `&quotaUser=${quotaUser}` + (key ? `&key=${key}` : "");
       const opts = {
         headers: {"Referer": "https://mi-rincon-de-lectura.web.app/"},
       };
       try {
         let r = await fetch(url, opts);
-        if (!r.ok && [429, 500, 502, 503, 504].includes(r.status)) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
+        // Reintentos con jitter: si todas las peticiones de una ráfaga
+        // reintentan al mismo tiempo fijo, vuelven a chocar juntas.
+        for (let intento = 0; intento < 2 && !r.ok &&
+            [429, 500, 502, 503, 504].includes(r.status); intento++) {
+          const espera = 350 * (intento + 1) + Math.random() * 500;
+          await new Promise((resolve) => setTimeout(resolve, espera));
           r = await fetch(url, opts);
         }
         if (!r.ok) {
           logger.warn("Google Books no disponible", {status: r.status});
+          // Caché caducada disponible: mejor resultado viejo que un 502
+          if (cachePrevia) {
+            res.set("Cache-Control", "public, max-age=600");
+            res.json({items: JSON.parse(cachePrevia.items)});
+            return;
+          }
           res.status(502).json({error: `google_books_${r.status}`});
           return;
         }
         const data = await r.json();
+        const items = data.items || [];
+        cacheRef.set({q: qNorm, items: JSON.stringify(items), ts: Date.now()})
+            .catch((error) => logger.warn("No se pudo guardar la caché", {
+              error: error.message,
+            }));
         res.set("Cache-Control", "public, max-age=3600, s-maxage=604800");
-        res.json({items: data.items || []});
+        res.json({items});
       } catch (error) {
         logger.error("Error en proxy de Google Books", {error: error.message});
+        if (cachePrevia) {
+          res.set("Cache-Control", "public, max-age=600");
+          res.json({items: JSON.parse(cachePrevia.items)});
+          return;
+        }
         res.status(502).json({error: "proxy_error"});
       }
     },
