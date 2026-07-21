@@ -2656,6 +2656,9 @@ body.dark-mode {
    del borde inferior: quedan de pie sobre la balda. */
 .books-container.estanteria {
     display: flex;
+    /* row explícito: neutraliza el flex-direction: column de .list-view,
+       que aquí dejaba un libro por fila */
+    flex-direction: row;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 0 3px;
@@ -2664,11 +2667,20 @@ body.dark-mode {
     border: 12px solid var(--madera-marco);
     border-radius: 10px;
     background-color: var(--madera-fondo);
-    background-image: repeating-linear-gradient(to bottom,
-        transparent 0px, transparent 178px,
-        rgba(0, 0, 0, 0.28) 178px, rgba(0, 0, 0, 0.28) 180px,
-        var(--madera-frente) 180px, var(--madera-frente) 193px,
-        var(--madera-sombra) 193px, var(--madera-sombra) 196px);
+    /* Capas (de arriba a abajo): bombillas altas y bajas de la guirnalda en
+       zigzag, su cable, y las baldas de madera. Todas repiten con la banda
+       de 196px, así cada balda trae su guirnalda colgada del canto. */
+    background-image:
+        radial-gradient(circle at 13px 181px, #FFF3D0 0px, #FFE9AE 1.5px, rgba(255, 202, 100, 0.85) 2.5px, rgba(255, 170, 60, 0.3) 5px, transparent 7px),
+        radial-gradient(circle at 39px 188px, #FFF3D0 0px, #FFE9AE 1.5px, rgba(255, 202, 100, 0.85) 2.5px, rgba(255, 170, 60, 0.3) 5px, transparent 7px),
+        linear-gradient(to bottom, transparent 0px, transparent 183px, rgba(46, 24, 8, 0.6) 183px, rgba(46, 24, 8, 0.6) 184.5px, transparent 184.5px),
+        repeating-linear-gradient(to bottom,
+            transparent 0px, transparent 178px,
+            rgba(0, 0, 0, 0.28) 178px, rgba(0, 0, 0, 0.28) 180px,
+            var(--madera-frente) 180px, var(--madera-frente) 193px,
+            var(--madera-sombra) 193px, var(--madera-sombra) 196px);
+    background-size: 52px 196px, 52px 196px, 100% 196px, auto;
+    background-repeat: repeat, repeat, repeat, repeat;
     box-shadow: inset 0 10px 26px rgba(0, 0, 0, 0.4), 0 4px 12px var(--shadow-color);
 }
 
