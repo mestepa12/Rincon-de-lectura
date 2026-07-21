@@ -578,6 +578,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return el;
         };
 
+        // Decoración de estantería: plantitas, velas y jarrones entre los libros
+        const DECOS_ESTANTERIA = ['🪴', '🕯️', '🌵', '🏺', '🌿'];
+        const crearDecoEstanteria = (h) => {
+            const emoji = DECOS_ESTANTERIA[h % DECOS_ESTANTERIA.length];
+            const d = document.createElement('div');
+            d.className = 'shelf-deco' + (emoji === '🕯️' ? ' vela' : '');
+            d.setAttribute('aria-hidden', 'true');
+            const s = document.createElement('span');
+            s.textContent = emoji;
+            s.style.fontSize = `${(1.9 + (h % 5) * 0.12).toFixed(2)}rem`;
+            d.appendChild(s);
+            return d;
+        };
+
         const renderBooks = () => {
             const enEstanteria = document.body.classList.contains('vista-estanteria');
             document.querySelectorAll('.books-container').forEach(c => {
@@ -586,8 +600,24 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             booksData.forEach(book => {
                 const container = document.querySelector(`.books-container[data-section="${book.section}"]`);
-                if (container) container.appendChild(enEstanteria ? crearLibroEstanteria(book) : createBookElement(book));
+                if (!container) return;
+                container.appendChild(enEstanteria ? crearLibroEstanteria(book) : createBookElement(book));
+                if (enEstanteria) {
+                    // ~1 de cada 5 libros trae un adorno detrás, determinista
+                    // por libro para que la estantería no baile entre renders
+                    const hd = hashLibro((book.id || book.title || '') + 'deco');
+                    if (hd % 5 === 0) container.appendChild(crearDecoEstanteria(hd));
+                }
             });
+            if (enEstanteria) {
+                // Estantería sin libros: una plantita y una vela de compañía
+                document.querySelectorAll('.books-container.estanteria').forEach(c => {
+                    if (!c.childElementCount) {
+                        c.appendChild(crearDecoEstanteria(0));
+                        c.appendChild(crearDecoEstanteria(1));
+                    }
+                });
+            }
         };
 
         // Conmutador cuadrícula ↔ estantería (persistido)

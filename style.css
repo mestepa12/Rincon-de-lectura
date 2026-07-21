@@ -2785,6 +2785,28 @@ body.dark-mode {
     transform: translateY(-10px) scale(1.05);
 }
 
+/* Adornos de balda: plantitas, velas, jarrones */
+.shelf-deco {
+    position: relative;
+    width: 52px;
+    height: 196px;
+    flex: none;
+    pointer-events: none;
+    user-select: none;
+}
+.shelf-deco span {
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    line-height: 1;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+}
+/* Halo cálido para las velas */
+.shelf-deco.vela span {
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 9px rgba(255, 175, 70, 0.75));
+}
+
 @media (prefers-reduced-motion: reduce) {
     .shelf-book-inner { transition: none; }
 }
