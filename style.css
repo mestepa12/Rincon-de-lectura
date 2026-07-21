@@ -2906,16 +2906,23 @@ body.dark-mode {
 .ss-spine i:first-child { top: 6px; }
 .ss-spine i:nth-child(2) { bottom: 6px; }
 .ss-spine b {
-    writing-mode: vertical-rl;
+    /* Nada de writing-mode: html2canvas lo exporta con las letras apiladas.
+       Texto horizontal rotado 90º; el width (fijado en JS a la altura del
+       lomo) pasa a ser la dimensión vertical tras la rotación. */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(90deg);
+    text-align: center;
     font-family: var(--font-title);
     font-weight: 600;
     font-size: 10px;
     letter-spacing: 0.04em;
     color: #FDF6EA;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-    max-height: calc(100% - 20px);
     overflow: hidden;
     white-space: nowrap;
+    text-overflow: ellipsis;
 }
 .ss-face {
     object-fit: cover;

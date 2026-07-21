@@ -3492,13 +3492,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const spine = document.createElement('div');
                     spine.className = 'ss-spine';
+                    const altoLomo = 92 + (h % 22);
                     spine.style.width = `${ancho}px`;
-                    spine.style.height = `${92 + (h % 22)}px`;
+                    spine.style.height = `${altoLomo}px`;
                     spine.style.background =
                         'linear-gradient(90deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 22%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.42) 100%), ' +
                         (coloresLomoCache[book.cover] || PALETA_LOMOS[h % PALETA_LOMOS.length]);
                     const titulo = document.createElement('b');
                     titulo.textContent = book.title || '';
+                    // Ancho = altura del lomo: tras el rotate(90deg) del CSS
+                    // se convierte en el recorrido vertical del texto
+                    titulo.style.width = `${altoLomo - 18}px`;
                     spine.append(document.createElement('i'), document.createElement('i'), titulo);
                     banda.appendChild(spine);
                 }
