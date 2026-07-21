@@ -53,6 +53,7 @@
                 <button id="toggle-theme" type="button">🌙</button>
                 <button id="recommend-btn" type="button" title="¿Qué leo ahora? Págino te recomienda">🦕</button>
                 <button id="vista-toggle" type="button" title="Ver como estantería">📚</button>
+                <button id="share-shelf-btn" type="button" title="Compartir mi estantería como imagen">📸</button>
                 <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
@@ -520,6 +521,16 @@
             <p id="export-notes" class="ec-notes"></p>
         </div>
         <div class="ec-footer">Mi Rincón de Lectura</div>
+    </div>
+
+    <div id="share-shelf-card" aria-hidden="true">
+        <div class="ss-head">
+            <p class="ss-brand">🦕 Mi Rincón de Lectura</p>
+            <h2 id="ss-title">Mi estantería</h2>
+            <p id="ss-sub"></p>
+        </div>
+        <div id="ss-bands"></div>
+        <p class="ss-foot">Crea tu estantería gratis en <b>rinconlectura.es</b></p>
     </div>
 
     <script type="module" src="auth.js"></script>

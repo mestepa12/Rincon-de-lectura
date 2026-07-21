@@ -2810,3 +2810,129 @@ body.dark-mode {
 @media (prefers-reduced-motion: reduce) {
     .shelf-book-inner { transition: none; }
 }
+
+/* ======== TARJETA "COMPARTIR MI ESTANTERÍA" (story 9:16) ========
+   Colores fijos (sin variables de tema): la imagen exportada debe salir
+   idéntica en modo claro y oscuro. Todo en 2D: html2canvas no soporta
+   los transforms 3D de la vista estantería. */
+#share-shelf-card {
+    display: none;
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 540px;
+    height: 960px;
+    flex-direction: column;
+    background:
+        radial-gradient(130% 70% at 50% 0%, rgba(255, 214, 150, 0.12), transparent 55%),
+        radial-gradient(140% 90% at 50% 115%, rgba(0, 0, 0, 0.55), transparent 60%),
+        linear-gradient(165deg, #2e1d10 0%, #3d2817 55%, #4a3018 100%);
+    padding: 34px 30px 26px;
+    box-sizing: border-box;
+    font-family: var(--font-body);
+}
+.ss-head { text-align: center; margin-bottom: 18px; }
+.ss-brand {
+    margin: 0 0 6px;
+    font-size: 14px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 228, 190, 0.75);
+}
+#ss-title {
+    margin: 0;
+    font-family: var(--font-title);
+    font-size: 34px;
+    color: #FDF6EA;
+    border: none;
+    padding: 0;
+}
+#ss-sub { margin: 6px 0 0; font-size: 15px; color: rgba(255, 228, 190, 0.85); }
+
+#ss-bands { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
+
+.ss-band {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    padding: 0 10px 14px;
+    min-height: 96px;
+}
+/* Balda de madera */
+.ss-band::after {
+    content: '';
+    position: absolute;
+    left: -6px;
+    right: -6px;
+    bottom: 0;
+    height: 13px;
+    background: linear-gradient(#8a613f, #6b4630 60%, #4a2f1c);
+    border-radius: 2px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+}
+/* Guirnalda: bombillas alternas sobre el canto de la balda */
+.ss-band::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 16px;
+    z-index: 2;
+    background-image:
+        radial-gradient(circle at 9px 4px, #FFF3D0 0px, rgba(255, 202, 100, 0.9) 2px, rgba(255, 170, 60, 0.32) 4.5px, transparent 6px),
+        radial-gradient(circle at 35px 11px, #FFF3D0 0px, rgba(255, 202, 100, 0.9) 2px, rgba(255, 170, 60, 0.32) 4.5px, transparent 6px);
+    background-size: 52px 16px;
+    background-repeat: repeat-x;
+}
+
+.ss-spine {
+    position: relative;
+    border-radius: 2px 3px 3px 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: 1px 0 2px rgba(0, 0, 0, 0.4);
+}
+.ss-spine i {
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    height: 2px;
+    background: rgba(255, 224, 160, 0.5);
+}
+.ss-spine i:first-child { top: 6px; }
+.ss-spine i:nth-child(2) { bottom: 6px; }
+.ss-spine b {
+    writing-mode: vertical-rl;
+    font-family: var(--font-title);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    color: #FDF6EA;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+    max-height: calc(100% - 20px);
+    overflow: hidden;
+    white-space: nowrap;
+}
+.ss-face {
+    object-fit: cover;
+    border-radius: 3px;
+    box-shadow: 0 4px 9px rgba(0, 0, 0, 0.5);
+    background: #FDFBF7;
+}
+.ss-deco {
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 2px 2px;
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
+}
+.ss-foot {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 15px;
+    color: rgba(255, 228, 190, 0.85);
+}
+.ss-foot b { color: #FFD98A; }

@@ -3432,6 +3432,123 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // === COMPARTIR MI ESTANTERÍA COMO IMAGEN (story 9:16) ===
+        let miUsernameCache = null;
+        const compartirEstanteria = async () => {
+            const card = document.getElementById('share-shelf-card');
+            const bandsWrap = document.getElementById('ss-bands');
+            if (!card || !bandsWrap) return;
+            const libros = booksData.filter(b => b.section !== 'libros-abandonados');
+            if (libros.length === 0) {
+                notify('Añade algún libro antes de compartir tu estantería.', 'info');
+                return;
+            }
+            mostrarToastShare();
+
+            if (miUsernameCache === null) {
+                try {
+                    const snap = await getDoc(doc(db, 'users', user.uid));
+                    miUsernameCache = snap.data()?.username || '';
+                } catch { miUsernameCache = ''; }
+            }
+            document.getElementById('ss-title').textContent =
+                miUsernameCache ? `La estantería de @${miUsernameCache}` : 'Mi estantería';
+            document.getElementById('ss-sub').textContent =
+                `${libros.length} ${libros.length === 1 ? 'libro' : 'libros'}`;
+
+            // Rellenar hasta 4 baldas por anchura acumulada. Los libros "de
+            // cara" (~1 de cada 6) enseñan su portada real; el resto, lomo 2D
+            // con el mismo color que la vista estantería.
+            bandsWrap.innerHTML = '';
+            const ANCHO_BALDA = 460;
+            const cargasPortadas = [];
+            let banda = null;
+            let anchoAcum = Infinity;
+            let bandas = 0;
+            for (const book of libros) {
+                const h = hashLibro(book.id || book.title || '');
+                const cara = h % 6 === 2 && book.cover;
+                const ancho = cara ? 74 : Math.round(Math.min(40, Math.max(22, 18 + (book.totalPages || 250) / 16)));
+                if (anchoAcum + ancho > ANCHO_BALDA) {
+                    if (bandas === 4) break;
+                    banda = document.createElement('div');
+                    banda.className = 'ss-band';
+                    bandsWrap.appendChild(banda);
+                    bandas++;
+                    anchoAcum = 0;
+                }
+                anchoAcum += ancho + 3;
+                if (cara) {
+                    const img = document.createElement('img');
+                    img.className = 'ss-face';
+                    img.style.width = `${ancho}px`;
+                    img.style.height = `${100 + (h % 14)}px`;
+                    banda.appendChild(img);
+                    // Portada como data URL: html2canvas no puede con CORS
+                    cargasPortadas.push(fetchImageAsDataUrl(book.cover).then(dataUrl => {
+                        img.src = dataUrl || portadaPlaceholder(book.title);
+                        return img.decode().catch(() => {});
+                    }));
+                } else {
+                    const spine = document.createElement('div');
+                    spine.className = 'ss-spine';
+                    spine.style.width = `${ancho}px`;
+                    spine.style.height = `${92 + (h % 22)}px`;
+                    spine.style.background =
+                        'linear-gradient(90deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 22%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.42) 100%), ' +
+                        (coloresLomoCache[book.cover] || PALETA_LOMOS[h % PALETA_LOMOS.length]);
+                    const titulo = document.createElement('b');
+                    titulo.textContent = book.title || '';
+                    spine.append(document.createElement('i'), document.createElement('i'), titulo);
+                    banda.appendChild(spine);
+                }
+                // Adorno ocasional, como en la vista estantería
+                const hd = hashLibro((book.id || book.title || '') + 'deco');
+                if (hd % 5 === 0 && anchoAcum + 30 <= ANCHO_BALDA) {
+                    const deco = document.createElement('span');
+                    deco.className = 'ss-deco';
+                    deco.textContent = DECOS_ESTANTERIA[hd % DECOS_ESTANTERIA.length];
+                    banda.appendChild(deco);
+                    anchoAcum += 30;
+                }
+            }
+
+            card.style.display = 'flex';
+            try {
+                await Promise.all(cargasPortadas);
+                const html2canvas = await loadHtml2canvas();
+                const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
+                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+                const file = new File([blob], 'mi_estanteria.png', { type: 'image/png' });
+                // En móvil, hoja de compartir nativa (directo a stories/TikTok).
+                // Si falla (p. ej. la activación de usuario caducó mientras se
+                // generaba la imagen) o no existe, descarga clásica.
+                let compartido = false;
+                if (navigator.canShare?.({ files: [file] })) {
+                    try {
+                        await navigator.share({ files: [file], title: 'Mi estantería 📚' });
+                        compartido = true;
+                    } catch (err) {
+                        if (err.name === 'AbortError') compartido = true; // el usuario cerró la hoja
+                    }
+                }
+                if (!compartido) {
+                    const link = document.createElement('a');
+                    link.download = 'mi_estanteria.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }
+            } catch (err) {
+                console.error('Error generando la imagen de la estantería:', err);
+                notify('No se pudo generar la imagen.', 'error');
+            } finally {
+                card.style.display = 'none';
+            }
+        };
+
+        const shareShelfBtn = document.getElementById('share-shelf-btn');
+        if (shareShelfBtn) shareShelfBtn.addEventListener('click', compartirEstanteria);
+
 
         const handleSaveObjetivos = async () => {
             const diarias = parseInt(document.getElementById('objetivo-diario-input').value, 10) || 0;
