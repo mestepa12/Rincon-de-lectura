@@ -4468,7 +4468,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const importGoodreadsBtn = document.getElementById('import-goodreads-btn');
         const importCsvInput     = document.getElementById('import-csv');
         if (importGoodreadsBtn && importCsvInput) {
-            importGoodreadsBtn.addEventListener('click', () => importCsvInput.click());
+            importGoodreadsBtn.addEventListener('click', () => {
+                if (viewingFriendLibrary) { notify('Solo puedes importar en tu propia biblioteca.', 'info'); return; }
+                importCsvInput.click();
+            });
             importCsvInput.addEventListener('change', async (e) => {
                 const file = e.target.files[0];
                 if (!file) return;
