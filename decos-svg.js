@@ -104,13 +104,6 @@ const PIEZAS = {
         '<path d="M24 8 L27.3 17.5 L37.3 17.7 L29.3 23.7 L32.2 33.3 L24 27.6 Z" fill="#D9A75F"/>' +
         '<rect x="20" y="36" width="8" height="9" fill="#8A613F"/>' +
         '<rect x="14" y="45" width="20" height="6" rx="2" fill="#6B4630"/>' },
-    pluma_tintero: { w: 52, h: 64, alto: 32, svg:
-        '<path d="M30 54 C34 40 40 22 48 10 C46 26 42 42 34 56 z" fill="#F2E4C8"/>' +
-        '<path d="M47 12 C42 28 38 42 33 54" stroke="#C9B491" stroke-width="1.5" fill="none"/>' +
-        '<rect x="15" y="26" width="8" height="7" rx="2" fill="#A98A50"/>' +
-        '<rect x="13" y="32" width="12" height="7" fill="#4A3020"/>' +
-        '<rect x="8" y="38" width="22" height="20" rx="4" fill="#4A3020"/>' +
-        '<rect x="11" y="42" width="5" height="9" rx="2" fill="rgba(255,255,255,0.10)"/>' },
     mascaras: { w: 56, h: 58, alto: 30, svg:
         '<path d="M8 12 C7 32 14 44 24 41 C27 31 27 18 25 9 C18 7 11 8 8 12 z" fill="#F2E4C8"/>' +
         '<ellipse cx="14.5" cy="20" rx="2.6" ry="1.8" fill="#4A2F1C"/>' +
@@ -149,15 +142,6 @@ const PIEZAS = {
         '<rect x="32.6" y="19" width="2.4" height="44" fill="#4A3020"/>' +
         '<rect x="10" y="62" width="28" height="5" rx="2" fill="#4A3020"/>' +
         '<rect x="15" y="67" width="18" height="4" rx="2" fill="#5C3D26"/>' },
-    gema: { w: 48, h: 54, alto: 26, svg:
-        '<path d="M10 20 L18 10 L30 10 L38 20 L24 40 Z" fill="#7A4A6E"/>' +
-        '<path d="M18 10 L24 20 L30 10 Z" fill="#9A6B8E"/>' +
-        '<path d="M10 20 L24 20 L24 40 Z" fill="#8A5A7E"/>' +
-        '<path d="M38 20 L24 20 L24 40 Z" fill="#5C3552"/>' +
-        '<path d="M14 13 l1.2 2.6 l2.6 1.2 l-2.6 1.2 l-1.2 2.6 l-1.2 -2.6 l-2.6 -1.2 l2.6 -1.2 z" fill="rgba(253,246,234,0.9)"/>' +
-        '<ellipse cx="24" cy="44" rx="16" ry="5" fill="#9A3B3B"/>' +
-        '<ellipse cx="24" cy="42.6" rx="16" ry="4.4" fill="#B04848"/>' },
-
     // — Club de lectura —
     tetera: { w: 60, h: 58, alto: 30, svg:
         '<path d="M46 24 C56 26 56 38 45 40" stroke="#C9B491" stroke-width="3.5" fill="none"/>' +

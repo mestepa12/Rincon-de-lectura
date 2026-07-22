@@ -105,17 +105,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // — Objetivos —
             { id: 'objetivo_diario',        icono: '🎯', nombre: 'Meta Cumplida',       descripcion: 'Alcanza tu objetivo diario de páginas.', isSecret: false, deco: 'estrella' },
             // — Valoraciones —
-            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.', isSecret: false, deco: 'pluma_tintero' },
+            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.', isSecret: false, deco: 'mascaras' },
             { id: 'critico_pro',            icono: '🎭', nombre: 'Crítico Pro',          descripcion: 'Valora 10 libros terminados.', isSecret: false, deco: 'mascaras' },
             { id: 'perfeccionista',         icono: '✨', nombre: 'Perfeccionista',       descripcion: 'Valora 3 libros con 5 estrellas.', isSecret: false, deco: 'estrella' },
             // — Notas y lista de deseos —
-            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.', isSecret: false, deco: 'pluma_tintero' },
+            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.', isSecret: false, deco: 'taza' },
             { id: 'deseos_10',              icono: '💭', nombre: 'Soñador de Libros',   descripcion: 'Añade 10 libros a tu lista de deseos.', isSecret: false, deco: 'bola_cristal' },
             // — Racha —
             { id: 'racha_7',                icono: '🔥', nombre: 'Una Semana',           descripcion: 'Mantén una racha de 7 días.', isSecret: false, deco: 'vela' },
             { id: 'racha_14',               icono: '🗓️',  nombre: 'Dos Semanas',        descripcion: 'Mantén una racha de 14 días.', isSecret: false, deco: 'vela' },
             { id: 'racha_30',               icono: '💥', nombre: 'Imparable',            descripcion: 'Mantén una racha de 30 días.', isSecret: false, deco: 'farolillo' },
-            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.', isSecret: false, deco: 'gema' },
+            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.', isSecret: false, deco: 'estrella' },
             { id: 'racha_365',              icono: '🏆', nombre: 'Año Legendario',       descripcion: 'Mantén una racha de 365 días. Un año entero leyendo.', isSecret: false, deco: 'trofeo' },
             // — Club de Lectura —
             { id: 'primer_comentario',      icono: '💬', nombre: 'Tertulia Iniciada',    descripcion: 'Deja tu primer comentario en el Club de Lectura.', isSecret: false, deco: 'tetera' },
