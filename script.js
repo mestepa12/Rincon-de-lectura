@@ -3732,7 +3732,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 const h = hashLibro(book.id || book.title || '');
                 const cara = h % 6 === 2 && book.cover;
                 const ancho = cara ? 74 : Math.round(Math.min(40, Math.max(22, 18 + (book.totalPages || 250) / 16)));
-                if (anchoAcum + ancho > ANCHO_BALDA) {
+                // Adorno de este libro (colocación manual o reparto automático).
+                // Se resuelve antes del salto de balda para reservar su ancho:
+                // así el adorno nunca se descarta y queda pegado a su libro.
+                const hd = hashLibro((book.id || book.title || '') + 'deco');
+                const pieza = mapaDecosCard
+                    ? (mapaDecosCard[book.id] || null)
+                    : (hd % 5 === 0 ? decosPool[hd % decosPool.length] : null);
+                const anchoDeco = (pieza && decoUrl(pieza)) ? 30 : 0;
+                if (anchoAcum + ancho + anchoDeco > ANCHO_BALDA) {
                     if (bandas === 4) break;
                     banda = document.createElement('div');
                     banda.className = 'ss-band';
@@ -3779,21 +3787,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     spine.append(document.createElement('i'), document.createElement('i'), titulo);
                     banda.appendChild(spine);
                 }
-                // Adorno ocasional, como en la vista estantería
-                const hd = hashLibro((book.id || book.title || '') + 'deco');
-                const pieza = mapaDecosCard
-                    ? (mapaDecosCard[book.id] || null)
-                    : (hd % 5 === 0 ? decosPool[hd % decosPool.length] : null);
-                if (pieza && decoUrl(pieza) && anchoAcum + 30 <= ANCHO_BALDA) {
+                // El ancho ya está reservado arriba: se dibuja siempre junto
+                // a su libro, sin descartarse por balda llena.
+                if (anchoDeco) {
                     const deco = document.createElement('img');
-                    deco.className = 'ss-deco';
+                    deco.className = 'ss-deco' + (decoConHalo(pieza) ? ' halo' : '');
                     deco.src = decoUrl(pieza);
                     deco.alt = '';
                     // La tarjeta es más pequeña que la vista: piezas al ~60%
                     deco.style.height = `${Math.round(decoAlto(pieza) * 0.6)}px`;
                     cargasPortadas.push(deco.decode().catch(() => {})); // lista antes de capturar
                     banda.appendChild(deco);
-                    anchoAcum += 30;
+                    anchoAcum += anchoDeco;
                 }
             }
 

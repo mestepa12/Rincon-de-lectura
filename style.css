@@ -2892,6 +2892,22 @@ body.dark-mode {
 .decorar-opcion.activa { border-color: #FFD98A; }
 .decorar-opcion img { width: auto; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)); }
 
+/* Botones del pie del selector de adornos */
+#decorar-modal .btn-cancel {
+    flex: 1;
+    padding: 0.6rem 0.7rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-color);
+    font-family: var(--font-title);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color var(--transition-speed), color var(--transition-speed);
+}
+#decorar-modal .btn-cancel:hover { border-color: var(--accent-color-interactive); color: var(--accent-color-interactive); }
+#decorar-quitar:hover { border-color: #C05A4E; color: #C05A4E; }
+
 @media (prefers-reduced-motion: reduce) {
     .shelf-book-inner { transition: none; }
 }
@@ -3021,6 +3037,9 @@ body.dark-mode {
     align-self: flex-end;
     padding: 0 2px 2px;
     filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
+}
+.ss-deco.halo {
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 7px rgba(255, 175, 70, 0.7));
 }
 .ss-foot {
     margin: 14px 0 0;
