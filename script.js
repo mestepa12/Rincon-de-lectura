@@ -3717,31 +3717,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
             card.style.setProperty('--ss-guirnalda', `url(${guirnaldaPng()})`);
 
-            // Rellenar hasta 4 baldas por anchura acumulada. Los libros "de
-            // cara" (~1 de cada 6) enseñan su portada real; el resto, lomo 2D
-            // con el mismo color que la vista estantería.
+            // Rellenar baldas por anchura acumulada. Los libros "de cara"
+            // (~1 de cada 6) enseñan su portada real; el resto, lomo 2D con el
+            // mismo color que la vista estantería. Los lomos se encogen (escala)
+            // para que toda la biblioteca quepa: antes 4 baldas fijas cortaban
+            // sobre ~50 libros.
             bandsWrap.innerHTML = '';
             const ANCHO_BALDA = 460;
+            const MAX_BANDAS = 5;
             const decosPool = decosDesbloqueados(); // mismos adornos que la vista
             const mapaDecosCard = mapaDecos();      // colocación manual, si la hay
             const cargasPortadas = [];
+
+            // Medidas base y adorno de cada libro. El adorno se resuelve aquí
+            // para reservar su ancho: nunca se descarta y queda junto a su libro.
+            const items = libros.map(book => {
+                const h = hashLibro(book.id || book.title || '');
+                const cara = h % 6 === 2 && book.cover;
+                const anchoBase = cara ? 74 : Math.round(Math.min(40, Math.max(22, 18 + (book.totalPages || 250) / 16)));
+                const altoBase = cara ? (100 + (h % 14)) : (92 + (h % 22));
+                const hd = hashLibro((book.id || book.title || '') + 'deco');
+                const cand = mapaDecosCard
+                    ? (mapaDecosCard[book.id] || null)
+                    : (hd % 5 === 0 ? decosPool[hd % decosPool.length] : null);
+                const pieza = (cand && decoUrl(cand)) ? cand : null;
+                return { book, h, cara, anchoBase, altoBase, pieza };
+            });
+
+            // Escala global para meter toda la biblioteca en MAX_BANDAS baldas.
+            // No baja de 0.5 para no volver ilegibles los lomos; por encima de
+            // ~135 libros la cola sí se recorta (biblioteca enorme, caso raro).
+            const totalIdeal = items.reduce((s, it) => s + it.anchoBase + 3 + (it.pieza ? 30 : 0), 0);
+            const escala = totalIdeal > MAX_BANDAS * ANCHO_BALDA
+                ? Math.max(0.5, (MAX_BANDAS * ANCHO_BALDA) / totalIdeal)
+                : 1;
+
             let banda = null;
             let anchoAcum = Infinity;
             let bandas = 0;
-            for (const book of libros) {
-                const h = hashLibro(book.id || book.title || '');
-                const cara = h % 6 === 2 && book.cover;
-                const ancho = cara ? 74 : Math.round(Math.min(40, Math.max(22, 18 + (book.totalPages || 250) / 16)));
-                // Adorno de este libro (colocación manual o reparto automático).
-                // Se resuelve antes del salto de balda para reservar su ancho:
-                // así el adorno nunca se descarta y queda pegado a su libro.
-                const hd = hashLibro((book.id || book.title || '') + 'deco');
-                const pieza = mapaDecosCard
-                    ? (mapaDecosCard[book.id] || null)
-                    : (hd % 5 === 0 ? decosPool[hd % decosPool.length] : null);
-                const anchoDeco = (pieza && decoUrl(pieza)) ? 30 : 0;
+            for (const it of items) {
+                const { book, h, cara } = it;
+                const ancho = Math.max(9, Math.round(it.anchoBase * escala));
+                const anchoDeco = it.pieza ? Math.round(30 * escala) : 0;
                 if (anchoAcum + ancho + anchoDeco > ANCHO_BALDA) {
-                    if (bandas === 4) break;
+                    if (bandas === MAX_BANDAS) break;
                     banda = document.createElement('div');
                     banda.className = 'ss-band';
                     bandsWrap.appendChild(banda);
@@ -3753,7 +3772,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const img = document.createElement('img');
                     img.className = 'ss-face';
                     img.style.width = `${ancho}px`;
-                    img.style.height = `${100 + (h % 14)}px`;
+                    img.style.height = `${Math.round(it.altoBase * escala)}px`;
                     banda.appendChild(img);
                     // Portada como data URL: html2canvas no puede con CORS
                     cargasPortadas.push(fetchImageAsDataUrl(book.cover).then(dataUrl => {
@@ -3763,7 +3782,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     const spine = document.createElement('div');
                     spine.className = 'ss-spine';
-                    const altoLomo = 92 + (h % 22);
+                    const altoLomo = Math.round(it.altoBase * escala);
                     spine.style.width = `${ancho}px`;
                     spine.style.height = `${altoLomo}px`;
                     spine.style.background = `${OVERLAY_LOMO}, ` +
@@ -3783,7 +3802,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     titulo.textContent = book.title || '';
                     // Ancho = altura del lomo: tras el rotate(90deg) del CSS
                     // se convierte en el recorrido vertical del texto
-                    titulo.style.width = `${altoLomo - 18}px`;
+                    titulo.style.width = `${Math.max(20, altoLomo - 18)}px`;
                     spine.append(document.createElement('i'), document.createElement('i'), titulo);
                     banda.appendChild(spine);
                 }
@@ -3791,11 +3810,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // a su libro, sin descartarse por balda llena.
                 if (anchoDeco) {
                     const deco = document.createElement('img');
-                    deco.className = 'ss-deco' + (decoConHalo(pieza) ? ' halo' : '');
-                    deco.src = decoUrl(pieza);
+                    deco.className = 'ss-deco' + (decoConHalo(it.pieza) ? ' halo' : '');
+                    deco.src = decoUrl(it.pieza);
                     deco.alt = '';
-                    // La tarjeta es más pequeña que la vista: piezas al ~60%
-                    deco.style.height = `${Math.round(decoAlto(pieza) * 0.6)}px`;
+                    // La tarjeta es más pequeña que la vista: piezas al ~60%,
+                    // y encogidas con la misma escala que los lomos
+                    deco.style.height = `${Math.round(decoAlto(it.pieza) * 0.6 * escala)}px`;
                     cargasPortadas.push(deco.decode().catch(() => {})); // lista antes de capturar
                     banda.appendChild(deco);
                     anchoAcum += anchoDeco;
