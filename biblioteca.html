@@ -43,18 +43,12 @@
 
     <header class="site-header">
         <div class="header-main">
-            <h1 id="site-title">Mi Rincón de Lectura</h1>
+            <div class="header-left">
+                <button id="menu-btn" class="menu-btn" type="button" aria-label="Abrir menú" title="Menú">☰</button>
+                <h1 id="site-title">Mi Rincón de Lectura</h1>
+            </div>
             <div class="header-controls">
                 <button id="add-book-btn" type="button">Añadir Libro</button>
-                <details class="hmenu" id="menu-datos">
-                    <summary title="Importar y exportar datos" aria-label="Datos">&#128193;</summary>
-                    <div class="hmenu-panel">
-                        <button id="import-goodreads-btn" type="button"
-                            title="Importar biblioteca desde Goodreads CSV">&#128229; Importar de Goodreads</button>
-                        <button id="export-csv-btn" type="button"
-                            title="Exportar mi biblioteca a CSV">&#128228; Exportar CSV</button>
-                    </div>
-                </details>
                 <details class="hmenu" id="menu-vistas">
                     <summary title="Cambiar la vista de la biblioteca" aria-label="Vistas">&#128444;&#65039;</summary>
                     <div class="hmenu-panel">
@@ -64,21 +58,43 @@
                         <button id="decorar-btn" type="button" title="Decorar mi estantería" style="display:none;">🪄 Decorar</button>
                     </div>
                 </details>
-                <button id="toggle-friends-btn" type="button" title="Amigos">👥</button>
-                <button id="toggle-theme" type="button">🌙</button>
-                <button id="recommend-btn" type="button" title="¿Qué leo ahora? Págino te recomienda">🦕</button>
-                <button id="stats-btn" type="button" title="Estadísticas">📊</button>
-                <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
-                <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
-                <a href="quiz.html" class="header-link" title="Test: ¿cuál es tu tropo literario dominante?">🎭</a>
                 <button id="streak-counter" class="streak-counter" title="Ver tu racha de lectura" type="button">🔥 0</button>
-                <button id="logout-btn" type="button">Cerrar Sesión</button>
             </div>
         </div>
         <div class="header-search">
             <input type="search" id="search-bar" placeholder="Buscar en mi biblioteca...">
         </div>
     </header>
+
+    <!-- Menú lateral: acciones secundarias con etiqueta (entra por la izquierda) -->
+    <div id="menu-overlay" class="sidebar-overlay"></div>
+    <aside id="menu-sidebar" class="menu-sidebar" aria-label="Menú principal">
+        <div class="sidebar-header">
+            <h3>☰ Menú</h3>
+            <button id="close-menu-btn" class="btn-icon" type="button" aria-label="Cerrar menú">✕</button>
+        </div>
+        <nav class="menu-nav">
+            <div class="menu-group-label">Tu lectura</div>
+            <button id="stats-btn" class="menu-item" type="button"><span class="mi-ico">📊</span> Estadísticas</button>
+            <button id="logros-btn" class="menu-item" type="button"><span class="mi-ico">🏅</span> Mis logros</button>
+            <button id="objetivos-btn" class="menu-item" type="button"><span class="mi-ico">🎯</span> Objetivos de lectura</button>
+            <button id="recommend-btn" class="menu-item" type="button"><span class="mi-ico">🦕</span> Recomiéndame un libro</button>
+
+            <div class="menu-group-label">Social</div>
+            <button id="toggle-friends-btn" class="menu-item" type="button"><span class="mi-ico">👥</span> Amigos</button>
+            <a href="quiz.html" class="menu-item" title="Test: ¿cuál es tu tropo literario dominante?"><span class="mi-ico">🎭</span> Test del tropo literario</a>
+
+            <div class="menu-group-label">Datos</div>
+            <button id="import-goodreads-btn" class="menu-item" type="button" title="Importar biblioteca desde Goodreads CSV"><span class="mi-ico">&#128229;</span> Importar de Goodreads</button>
+            <button id="export-csv-btn" class="menu-item" type="button" title="Exportar mi biblioteca a CSV"><span class="mi-ico">&#128228;</span> Exportar a CSV</button>
+
+            <div class="menu-group-label">Ajustes</div>
+            <button id="toggle-theme" class="menu-item" type="button"><span class="mi-ico">🌙</span> Tema claro / oscuro</button>
+
+            <div class="menu-divider"></div>
+            <button id="logout-btn" class="menu-item menu-logout" type="button"><span class="mi-ico">🚪</span> Cerrar sesión</button>
+        </nav>
+    </aside>
 
     <main id="main-content">
         <section id="leyendo-ahora" aria-labelledby="leyendo-ahora-title">

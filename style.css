@@ -65,6 +65,43 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
     box-sizing: border-box;
 }
 .header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 0.75rem; min-width: 0; }
+.header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.menu-btn {
+    background: transparent; border: 2px solid #a1887f; color: white;
+    font-size: 1.2rem; line-height: 1; padding: 0.4rem 0.7rem; border-radius: 5px;
+    cursor: pointer; flex: none;
+    transition: background-color var(--transition-speed), border-color var(--transition-speed);
+}
+.menu-btn:hover, .menu-btn:focus-visible { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); outline: none; }
+
+/* ── Menú lateral izquierdo (acciones secundarias etiquetadas) ── */
+.menu-sidebar {
+    position: fixed; top: 0; left: 0; width: 300px; max-width: 85vw; height: 100vh;
+    background-color: var(--card-bg-color);
+    box-shadow: 2px 0 10px var(--shadow-color);
+    z-index: 2000;
+    transform: translateX(calc(-100% - 30px));
+    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex; flex-direction: column;
+}
+.menu-sidebar.open { transform: translateX(0); }
+.menu-sidebar .sidebar-header h3 { margin: 0; font-family: var(--font-title); color: #fff; font-size: 1.15rem; }
+.menu-nav { padding: 0.8rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+.menu-group-label {
+    font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent-color); font-weight: 700; padding: 0.85rem 0.7rem 0.35rem;
+}
+.menu-item {
+    display: flex; align-items: center; gap: 0.8rem; width: 100%;
+    padding: 0.7rem; border: none; background: transparent;
+    color: var(--text-color); font-size: 0.95rem; font-weight: 600;
+    font-family: var(--font-body); border-radius: 8px; cursor: pointer;
+    text-align: left; text-decoration: none;
+}
+.menu-item:hover, .menu-item:focus-visible { background: var(--bg-color); outline: none; }
+.menu-item .mi-ico { font-size: 1.2rem; width: 1.6rem; text-align: center; flex: none; }
+.menu-item.menu-logout { color: #C05A4E; }
+.menu-divider { height: 1px; background: var(--border-color); margin: 0.5rem 0.4rem; }
 #site-title { color: var(--bg-color); font-family: var(--font-title); margin: 0; font-size: clamp(1.2rem, 4vw, 2rem); min-width: 0; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode #site-title { color: #fff; }
 

@@ -3930,16 +3930,22 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // --- TEMA CLARO/OSCURO ---
+        // El botón del tema vive en el menú lateral con etiqueta: se cambia
+        // solo el icono interior (.mi-ico), no el textContent (borraría el texto)
+        const setThemeIcon = (dark) => {
+            const ico = toggleThemeBtn?.querySelector('.mi-ico');
+            if (ico) ico.textContent = dark ? '☀️' : '🌙';
+        };
         const setupTheme = () => {
             const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             document.body.classList.toggle('dark-mode', savedTheme === 'dark');
-            toggleThemeBtn.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+            setThemeIcon(savedTheme === 'dark');
         };
 
         const toggleTheme = () => {
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            toggleThemeBtn.textContent = isDark ? '☀️' : '🌙';
+            setThemeIcon(isDark);
             if (statsModal?.open) renderStats();
         };
 
@@ -4475,7 +4481,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     notify('Error durante la importación:\n' + err.message, 'error');
                 } finally {
                     importGoodreadsBtn.disabled = false;
-                    importGoodreadsBtn.innerHTML = '&#128229; Goodreads';
+                    importGoodreadsBtn.innerHTML = '<span class="mi-ico">&#128229;</span> Importar de Goodreads';
                     importCsvInput.value = '';
                 }
             });
@@ -4513,6 +4519,26 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const exportCsvBtn = document.getElementById('export-csv-btn');
         if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportarCSV);
+
+        // === MENÚ LATERAL (acciones secundarias, entra por la izquierda) ===
+        // Reutiliza el patrón del panel de amigos. Los botones conservan sus
+        // IDs, así que sus listeners de siempre siguen funcionando; aquí solo
+        // se gestiona abrir/cerrar el panel.
+        const menuBtn = document.getElementById('menu-btn');
+        const menuSidebar = document.getElementById('menu-sidebar');
+        const menuOverlay = document.getElementById('menu-overlay');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+        const abrirMenu = (v) => {
+            menuSidebar?.classList.toggle('open', v);
+            menuOverlay?.classList.toggle('active', v);
+        };
+        menuBtn?.addEventListener('click', () => abrirMenu(true));
+        closeMenuBtn?.addEventListener('click', () => abrirMenu(false));
+        menuOverlay?.addEventListener('click', () => abrirMenu(false));
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrirMenu(false); });
+        // Al elegir cualquier opción, el menú se cierra (la acción sigue su curso)
+        menuSidebar?.querySelectorAll('.menu-item').forEach(el =>
+            el.addEventListener('click', () => abrirMenu(false)));
 
         setupTheme(); // (Esta línea ya la tenías al final)
     }
