@@ -79,6 +79,61 @@ body.dark-mode #site-title { color: #fff; }
 .header-controls .header-link:hover, .header-controls .header-link:focus-visible { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); outline: none; }
 #add-book-btn { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); }
 
+/* ── Menús desplegables de la cabecera (Datos, Vistas) ── */
+.hmenu { position: relative; }
+.hmenu > summary {
+    list-style: none;
+    background-color: transparent;
+    border: 2px solid #a1887f;
+    color: white;
+    padding: 0.5rem 0.85rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background-color var(--transition-speed), border-color var(--transition-speed);
+}
+.hmenu > summary::-webkit-details-marker { display: none; }
+.hmenu > summary::after { content: ' ▾'; opacity: 0.8; }
+.hmenu[open] > summary::after { content: ' ▴'; }
+.hmenu > summary:hover, .hmenu > summary:focus-visible,
+.hmenu[open] > summary { background-color: var(--accent-color-interactive); border-color: var(--accent-color-interactive); outline: none; }
+.hmenu-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 1100;
+    min-width: 210px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    background: var(--card-bg-color);
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 10px 28px var(--shadow-color);
+}
+/* Botones dentro del panel: fila ancha, alineada a la izquierda, con texto */
+.hmenu-panel button, .hmenu-panel .header-link {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-color);
+    border-color: var(--border-color);
+    padding: 0.55rem 0.7rem;
+    font-size: 0.9rem;
+}
+.hmenu-panel button:hover, .hmenu-panel button:focus-visible {
+    background-color: var(--accent-color-interactive);
+    border-color: var(--accent-color-interactive);
+    color: white;
+}
+.hmenu-ico { font-size: 1.05em; line-height: 1; }
+
 .header-search { width: 100%; }
 #search-bar { width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border-radius: 5px; border: 2px solid var(--border-color); background-color: var(--bg-color); color: var(--text-color); transition: border-color var(--transition-speed); }
 #search-bar:focus { outline: none; border-color: var(--accent-color-interactive); }

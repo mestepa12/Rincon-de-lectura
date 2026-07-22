@@ -771,7 +771,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const actualizarBotonVista = () => {
             if (!vistaToggleBtn) return;
             const activa = document.body.classList.contains('vista-estanteria');
-            vistaToggleBtn.textContent = activa ? '🔳' : '📚';
+            // El botón vive dentro del menú "Vistas": solo cambia el icono y la
+            // etiqueta interiores, no todo el textContent (borraría el texto)
+            const ico = vistaToggleBtn.querySelector('.hmenu-ico');
+            const lbl = vistaToggleBtn.lastChild;
+            if (ico) ico.textContent = activa ? '🔳' : '📚';
+            if (lbl && lbl.nodeType === Node.TEXT_NODE) lbl.textContent = activa ? ' Cuadrícula' : ' Estantería';
             vistaToggleBtn.title = activa ? 'Ver como cuadrícula' : 'Ver como estantería';
         };
         if (localStorage.getItem('vista_biblioteca') === 'estanteria') {
@@ -4130,9 +4135,24 @@ document.addEventListener('DOMContentLoaded', () => {
         
         addBookForm.addEventListener('submit', handleAddBook);
         toggleViewBtn.addEventListener('click', () => {
-            mainContent.classList.toggle('list-view');
-            toggleViewBtn.textContent = mainContent.classList.contains('list-view') ? '⊞' : '☰';
+            const lista = mainContent.classList.toggle('list-view');
+            // Vive en el menú "Vistas": solo se cambia el icono interior
+            const ico = toggleViewBtn.querySelector('.hmenu-ico');
+            if (ico) ico.textContent = lista ? '⊞' : '☰';
         });
+
+        // Menús desplegables de la cabecera: cerrar al hacer clic fuera, con
+        // Escape, o al elegir una opción; solo uno abierto a la vez.
+        const hmenus = [...document.querySelectorAll('.hmenu')];
+        const cerrarMenus = (excepto) => hmenus.forEach(m => { if (m !== excepto) m.open = false; });
+        hmenus.forEach(menu => {
+            menu.addEventListener('toggle', () => { if (menu.open) cerrarMenus(menu); });
+            menu.querySelector('.hmenu-panel')?.addEventListener('click', (e) => {
+                if (e.target.closest('button, a')) menu.open = false;
+            });
+        });
+        document.addEventListener('click', (e) => { if (!e.target.closest('.hmenu')) cerrarMenus(null); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenus(null); });
         toggleThemeBtn.addEventListener('click', toggleTheme);
         mainContent.addEventListener('click', handleMainContentClick);
         searchBar.addEventListener('input', handleSearch);
