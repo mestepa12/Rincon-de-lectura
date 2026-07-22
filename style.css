@@ -1137,6 +1137,9 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 .logro-icono { font-size: 2rem; line-height: 1; }
 .logro-nombre { font-weight: 700; font-size: 0.82rem; color: var(--text-color); line-height: 1.2; }
 .logro-desc { font-size: 0.72rem; color: var(--accent-color); line-height: 1.3; }
+/* Adorno de estantería asociado al logro */
+.logro-deco { font-size: 0.72rem; margin-top: 0.2rem; opacity: 0.9; }
+.logro-deco-bloqueada { filter: grayscale(1); opacity: 0.55; }
 .logro-estado { font-size: 0.78rem; font-weight: bold; color: var(--accent-color-interactive); margin-top: 0.25rem; }
 
 /* Toast logro */
@@ -1169,6 +1172,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 .logro-toast-icono { font-size: 2.2rem; line-height: 1; }
 .logro-toast-titulo { font-size: 0.72rem; color: var(--accent-color); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 .logro-toast-nombre { font-size: 1rem; font-weight: 700; color: var(--text-color); }
+.logro-toast-deco { font-size: 0.78rem; color: var(--accent-color); margin-top: 2px; }
 
 /* ======== MODAL RACHA / PÁGINO ======== */
 .racha-modal-dialog { border: none; border-radius: 20px; padding: 0; background: transparent; max-width: 340px; width: 92%; }

@@ -79,58 +79,60 @@ document.addEventListener('DOMContentLoaded', () => {
         // isSecret: true  → si está bloqueado, el requisito se oculta ("???")
         // isSecret: false → el requisito es visible aunque esté bloqueado,
         //                   para que el usuario sepa qué meta perseguir.
+        // Cada logro desbloquea un adorno (deco) para la vista estantería y la
+        // captura compartida. El pool se construye en decosDesbloqueados().
         const LOGROS = [
             // — Biblioteca —
-            { id: 'primer_libro',           icono: '📖', nombre: 'Rompehielos',        descripcion: 'Añade tu primer libro.', isSecret: false },
-            { id: 'cinco_libros',           icono: '📚', nombre: 'Coleccionista',       descripcion: 'Acumula 5 libros.', isSecret: false },
-            { id: 'diez_libros',            icono: '🗂️',  nombre: 'Bibliófilo',          descripcion: 'Acumula 10 libros.', isSecret: false },
-            { id: 'veinticinco_libros',     icono: '🏛️',  nombre: 'Gran Biblioteca',    descripcion: 'Acumula 25 libros.', isSecret: false },
-            { id: 'cincuenta_libros',       icono: '🌐',  nombre: 'Archivo Personal',   descripcion: 'Acumula 50 libros.', isSecret: false },
+            { id: 'primer_libro',           icono: '📖', nombre: 'Rompehielos',        descripcion: 'Añade tu primer libro.', isSecret: false, deco: '🌱' },
+            { id: 'cinco_libros',           icono: '📚', nombre: 'Coleccionista',       descripcion: 'Acumula 5 libros.', isSecret: false, deco: '🌵' },
+            { id: 'diez_libros',            icono: '🗂️',  nombre: 'Bibliófilo',          descripcion: 'Acumula 10 libros.', isSecret: false, deco: '☕' },
+            { id: 'veinticinco_libros',     icono: '🏛️',  nombre: 'Gran Biblioteca',    descripcion: 'Acumula 25 libros.', isSecret: false, deco: '🏺' },
+            { id: 'cincuenta_libros',       icono: '🌐',  nombre: 'Archivo Personal',   descripcion: 'Acumula 50 libros.', isSecret: false, deco: '🌍' },
             // — Libros terminados —
-            { id: 'primer_terminado',       icono: '✅', nombre: 'Primera Victoria',   descripcion: 'Termina tu primer libro.', isSecret: false },
-            { id: 'cinco_terminados',       icono: '🎖️',  nombre: 'Lector Constante',  descripcion: 'Termina 5 libros.', isSecret: false },
-            { id: 'diez_terminados',        icono: '🏆', nombre: 'Devorador de Libros',descripcion: 'Termina 10 libros.', isSecret: false },
-            { id: 'veinticinco_terminados', icono: '👑', nombre: 'Gran Lector',         descripcion: 'Termina 25 libros.', isSecret: false },
+            { id: 'primer_terminado',       icono: '✅', nombre: 'Primera Victoria',   descripcion: 'Termina tu primer libro.', isSecret: false, deco: '🏵️' },
+            { id: 'cinco_terminados',       icono: '🎖️',  nombre: 'Lector Constante',  descripcion: 'Termina 5 libros.', isSecret: false, deco: '🏅' },
+            { id: 'diez_terminados',        icono: '🏆', nombre: 'Devorador de Libros',descripcion: 'Termina 10 libros.', isSecret: false, deco: '🏆' },
+            { id: 'veinticinco_terminados', icono: '👑', nombre: 'Gran Lector',         descripcion: 'Termina 25 libros.', isSecret: false, deco: '👑' },
             // — Páginas —
-            { id: 'maraton',                icono: '🏃', nombre: 'Maratón Lector',      descripcion: 'Lee más de 1.000 páginas en total.', isSecret: false },
-            { id: 'paginas_2000',           icono: '📜', nombre: 'Expedición Literaria',descripcion: 'Lee más de 2.000 páginas en total.', isSecret: false },
-            { id: 'paginas_5000',           icono: '🗺️',  nombre: 'Lector Épico',       descripcion: 'Lee más de 5.000 páginas en total.', isSecret: false },
-            { id: 'paginas_10000',          icono: '🌟', nombre: 'Leyenda Lectora',     descripcion: 'Lee más de 10.000 páginas en total.', isSecret: false },
-            { id: 'lector_voraz',           icono: '⚡', nombre: 'Lector Voraz',        descripcion: 'Lee más de 100 páginas en un solo día.', isSecret: true },
+            { id: 'maraton',                icono: '🏃', nombre: 'Maratón Lector',      descripcion: 'Lee más de 1.000 páginas en total.', isSecret: false, deco: '⏳' },
+            { id: 'paginas_2000',           icono: '📜', nombre: 'Expedición Literaria',descripcion: 'Lee más de 2.000 páginas en total.', isSecret: false, deco: '📜' },
+            { id: 'paginas_5000',           icono: '🗺️',  nombre: 'Lector Épico',       descripcion: 'Lee más de 5.000 páginas en total.', isSecret: false, deco: '🕰️' },
+            { id: 'paginas_10000',          icono: '🌟', nombre: 'Leyenda Lectora',     descripcion: 'Lee más de 10.000 páginas en total.', isSecret: false, deco: '🔭' },
+            { id: 'lector_voraz',           icono: '⚡', nombre: 'Lector Voraz',        descripcion: 'Lee más de 100 páginas en un solo día.', isSecret: true, deco: '🍪' },
             // — Objetivos —
-            { id: 'objetivo_diario',        icono: '🎯', nombre: 'Meta Cumplida',       descripcion: 'Alcanza tu objetivo diario de páginas.', isSecret: false },
+            { id: 'objetivo_diario',        icono: '🎯', nombre: 'Meta Cumplida',       descripcion: 'Alcanza tu objetivo diario de páginas.', isSecret: false, deco: '🎯' },
             // — Valoraciones —
-            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.', isSecret: false },
-            { id: 'critico_pro',            icono: '🎭', nombre: 'Crítico Pro',          descripcion: 'Valora 10 libros terminados.', isSecret: false },
-            { id: 'perfeccionista',         icono: '✨', nombre: 'Perfeccionista',       descripcion: 'Valora 3 libros con 5 estrellas.', isSecret: false },
+            { id: 'critico',                icono: '⭐', nombre: 'Crítico Literario',   descripcion: 'Valora 3 libros terminados.', isSecret: false, deco: '🧐' },
+            { id: 'critico_pro',            icono: '🎭', nombre: 'Crítico Pro',          descripcion: 'Valora 10 libros terminados.', isSecret: false, deco: '🎭' },
+            { id: 'perfeccionista',         icono: '✨', nombre: 'Perfeccionista',       descripcion: 'Valora 3 libros con 5 estrellas.', isSecret: false, deco: '🌟' },
             // — Notas y lista de deseos —
-            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.', isSecret: false },
-            { id: 'deseos_10',              icono: '💭', nombre: 'Soñador de Libros',   descripcion: 'Añade 10 libros a tu lista de deseos.', isSecret: false },
+            { id: 'anotador',               icono: '✍️',  nombre: 'El Anotador',        descripcion: 'Añade notas a 5 libros distintos.', isSecret: false, deco: '🖋️' },
+            { id: 'deseos_10',              icono: '💭', nombre: 'Soñador de Libros',   descripcion: 'Añade 10 libros a tu lista de deseos.', isSecret: false, deco: '🔮' },
             // — Racha —
-            { id: 'racha_7',                icono: '🔥', nombre: 'Una Semana',           descripcion: 'Mantén una racha de 7 días.', isSecret: false },
-            { id: 'racha_14',               icono: '🗓️',  nombre: 'Dos Semanas',        descripcion: 'Mantén una racha de 14 días.', isSecret: false },
-            { id: 'racha_30',               icono: '💥', nombre: 'Imparable',            descripcion: 'Mantén una racha de 30 días.', isSecret: false },
-            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.', isSecret: false },
-            { id: 'racha_365',              icono: '🏆', nombre: 'Año Legendario',       descripcion: 'Mantén una racha de 365 días. Un año entero leyendo.', isSecret: false },
+            { id: 'racha_7',                icono: '🔥', nombre: 'Una Semana',           descripcion: 'Mantén una racha de 7 días.', isSecret: false, deco: '🕯️' },
+            { id: 'racha_14',               icono: '🗓️',  nombre: 'Dos Semanas',        descripcion: 'Mantén una racha de 14 días.', isSecret: false, deco: '🪔' },
+            { id: 'racha_30',               icono: '💥', nombre: 'Imparable',            descripcion: 'Mantén una racha de 30 días.', isSecret: false, deco: '🏮' },
+            { id: 'racha_100',              icono: '💎', nombre: 'Centurión',            descripcion: 'Mantén una racha de 100 días.', isSecret: false, deco: '💎' },
+            { id: 'racha_365',              icono: '🏆', nombre: 'Año Legendario',       descripcion: 'Mantén una racha de 365 días. Un año entero leyendo.', isSecret: false, deco: '🗿' },
             // — Club de Lectura —
-            { id: 'primer_comentario',      icono: '💬', nombre: 'Tertulia Iniciada',    descripcion: 'Deja tu primer comentario en el Club de Lectura.', isSecret: false },
-            { id: 'comentarista_10',        icono: '📣', nombre: 'Alma del Club',        descripcion: 'Deja 10 comentarios en el Club de Lectura.', isSecret: false },
+            { id: 'primer_comentario',      icono: '💬', nombre: 'Tertulia Iniciada',    descripcion: 'Deja tu primer comentario en el Club de Lectura.', isSecret: false, deco: '🍵' },
+            { id: 'comentarista_10',        icono: '📣', nombre: 'Alma del Club',        descripcion: 'Deja 10 comentarios en el Club de Lectura.', isSecret: false, deco: '🔔' },
             // — Amigos —
-            { id: 'primer_amigo',           icono: '🤝', nombre: 'Mejor Acompañado',     descripcion: 'Añade a tu primer amigo.', isSecret: false },
-            { id: 'circulo_lector',         icono: '👥', nombre: 'Círculo Lector',       descripcion: 'Forma un círculo de 5 amigos.', isSecret: false },
+            { id: 'primer_amigo',           icono: '🤝', nombre: 'Mejor Acompañado',     descripcion: 'Añade a tu primer amigo.', isSecret: false, deco: '🧸' },
+            { id: 'circulo_lector',         icono: '👥', nombre: 'Círculo Lector',       descripcion: 'Forma un círculo de 5 amigos.', isSecret: false, deco: '🖼️' },
             // — Exploración —
-            { id: 'explorador_generos',     icono: '🧭', nombre: 'Explorador de Géneros',descripcion: 'Ten libros de 5 géneros distintos en tu biblioteca.', isSecret: false },
-            { id: 'autor_fiel',             icono: '🖋️',  nombre: 'Fan Incondicional',  descripcion: 'Acumula 3 libros del mismo autor.', isSecret: false },
-            { id: 'biblioteca_completa',    icono: '🗃️',  nombre: 'Orden Total',        descripcion: 'Ten al menos un libro en cada una de las 5 secciones.', isSecret: false },
+            { id: 'explorador_generos',     icono: '🧭', nombre: 'Explorador de Géneros',descripcion: 'Ten libros de 5 géneros distintos en tu biblioteca.', isSecret: false, deco: '🧭' },
+            { id: 'autor_fiel',             icono: '🖋️',  nombre: 'Fan Incondicional',  descripcion: 'Acumula 3 libros del mismo autor.', isSecret: false, deco: '💌' },
+            { id: 'biblioteca_completa',    icono: '🗃️',  nombre: 'Orden Total',        descripcion: 'Ten al menos un libro en cada una de las 5 secciones.', isSecret: false, deco: '🪆' },
             // — Hazañas (secretas: la sorpresa es parte del premio) —
-            { id: 'mata_tochos',            icono: '🧱', nombre: 'Mata-Tochos',          descripcion: 'Termina un libro de más de 800 páginas.', isSecret: true },
-            { id: 'semana_500',             icono: '📆', nombre: 'Semana de Vicio',      descripcion: 'Lee 500 páginas en una misma semana.', isSecret: true },
-            { id: 'buho_nocturno',          icono: '🦉', nombre: 'Búho Nocturno',        descripcion: 'Registra lectura entre medianoche y las 6 de la mañana.', isSecret: true },
-            { id: 'paginas_25000',          icono: '🌌', nombre: 'Universo de Páginas',  descripcion: 'Lee más de 25.000 páginas en total.', isSecret: true },
+            { id: 'mata_tochos',            icono: '🧱', nombre: 'Mata-Tochos',          descripcion: 'Termina un libro de más de 800 páginas.', isSecret: true, deco: '🧱' },
+            { id: 'semana_500',             icono: '📆', nombre: 'Semana de Vicio',      descripcion: 'Lee 500 páginas en una misma semana.', isSecret: true, deco: '🍿' },
+            { id: 'buho_nocturno',          icono: '🦉', nombre: 'Búho Nocturno',        descripcion: 'Registra lectura entre medianoche y las 6 de la mañana.', isSecret: true, deco: '🦉' },
+            { id: 'paginas_25000',          icono: '🌌', nombre: 'Universo de Páginas',  descripcion: 'Lee más de 25.000 páginas en total.', isSecret: true, deco: '🪐' },
             // — Crítica fina (secretas) —
-            { id: 'media_estrella',         icono: '✂️',  nombre: 'Precisión Quirúrgica',descripcion: 'Valora un libro usando media estrella.', isSecret: true },
-            { id: 'sin_piedad',             icono: '🧐', nombre: 'Sin Piedad',           descripcion: 'Valora un libro con 1 estrella o menos.', isSecret: true },
-            { id: 'cazador_vibes',          icono: '🎭', nombre: 'Cazador de Vibes',     descripcion: 'Asigna ritmo narrativo o estados de ánimo a 5 libros.', isSecret: true },
+            { id: 'media_estrella',         icono: '✂️',  nombre: 'Precisión Quirúrgica',descripcion: 'Valora un libro usando media estrella.', isSecret: true, deco: '⚖️' },
+            { id: 'sin_piedad',             icono: '🧐', nombre: 'Sin Piedad',           descripcion: 'Valora un libro con 1 estrella o menos.', isSecret: true, deco: '🗡️' },
+            { id: 'cazador_vibes',          icono: '🎭', nombre: 'Cazador de Vibes',     descripcion: 'Asigna ritmo narrativo o estados de ánimo a 5 libros.', isSecret: true, deco: '🎐' },
         ];
 
         let booksData = [];
@@ -667,12 +669,18 @@ document.addEventListener('DOMContentLoaded', () => {
             return el;
         };
 
-        // Decoración de estantería: plantitas, velas y jarrones entre los libros
-        const DECOS_ESTANTERIA = ['🪴', '🕯️', '🌵', '🏺', '🌿'];
-        const crearDecoEstanteria = (h) => {
-            const emoji = DECOS_ESTANTERIA[h % DECOS_ESTANTERIA.length];
+        // Decoración de estantería: un par de plantitas de serie y el resto
+        // son adornos que desbloquean los logros (campo deco de LOGROS).
+        const DECOS_BASE = ['🪴', '🌿'];
+        const DECOS_CON_HALO = ['🕯️', '🪔', '🏮']; // velas y farolillos brillan
+        const decosDesbloqueados = () => {
+            const ids = new Set((viewingFriendLibrary ? currentFriendData?.logrosDesbloqueados : lastUserData?.logrosDesbloqueados) || []);
+            return [...DECOS_BASE, ...LOGROS.filter(l => l.deco && ids.has(l.id)).map(l => l.deco)];
+        };
+        const crearDecoEstanteria = (h, pool = DECOS_BASE) => {
+            const emoji = pool[h % pool.length];
             const d = document.createElement('div');
-            d.className = 'shelf-deco' + (emoji === '🕯️' ? ' vela' : '');
+            d.className = 'shelf-deco' + (DECOS_CON_HALO.includes(emoji) ? ' vela' : '');
             d.setAttribute('aria-hidden', 'true');
             const s = document.createElement('span');
             s.textContent = emoji;
@@ -683,6 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const renderBooks = () => {
             const enEstanteria = document.body.classList.contains('vista-estanteria');
+            const decosPool = enEstanteria ? decosDesbloqueados() : DECOS_BASE;
             document.querySelectorAll('.books-container').forEach(c => {
                 c.innerHTML = '';
                 c.classList.toggle('estanteria', enEstanteria);
@@ -695,15 +704,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     // ~1 de cada 5 libros trae un adorno detrás, determinista
                     // por libro para que la estantería no baile entre renders
                     const hd = hashLibro((book.id || book.title || '') + 'deco');
-                    if (hd % 5 === 0) container.appendChild(crearDecoEstanteria(hd));
+                    if (hd % 5 === 0) container.appendChild(crearDecoEstanteria(hd, decosPool));
                 }
             });
             if (enEstanteria) {
-                // Estantería sin libros: una plantita y una vela de compañía
+                // Estantería sin libros: un par de adornos de compañía
                 document.querySelectorAll('.books-container.estanteria').forEach(c => {
                     if (!c.childElementCount) {
-                        c.appendChild(crearDecoEstanteria(0));
-                        c.appendChild(crearDecoEstanteria(1));
+                        c.appendChild(crearDecoEstanteria(0, decosPool));
+                        c.appendChild(crearDecoEstanteria(1, decosPool));
                     }
                 });
             }
@@ -1401,8 +1410,13 @@ document.addEventListener('DOMContentLoaded', () => {
         onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
             if (!docSnap.exists()) return;
             const userData = docSnap.data();
+            const logrosAntes = lastUserData ? (lastUserData.logrosDesbloqueados || []).length : null;
             lastUserData = userData;
             if (viewingFriendLibrary) return; // Don't overwrite friend's UI
+            // Logro nuevo con la estantería a la vista: re-render para que
+            // su adorno recién desbloqueado aparezca en las baldas
+            if (logrosAntes !== null && (userData.logrosDesbloqueados || []).length !== logrosAntes &&
+                document.body.classList.contains('vista-estanteria')) renderBooks();
             if (streakCounter) {
                 const racha = userData.rachaActual || 0;
                 const prev = streakCounter.textContent;
@@ -2058,7 +2072,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mostrarToastLogro = (logro) => {
             const t = document.createElement('div');
             t.className = 'logro-toast';
-            t.innerHTML = `<span class="logro-toast-icono">${logro.icono}</span><div><div class="logro-toast-titulo">¡Logro desbloqueado!</div><div class="logro-toast-nombre">${logro.nombre}</div></div>`;
+            t.innerHTML = `<span class="logro-toast-icono">${logro.icono}</span><div><div class="logro-toast-titulo">¡Logro desbloqueado!</div><div class="logro-toast-nombre">${logro.nombre}</div>${logro.deco ? `<div class="logro-toast-deco">${logro.deco} nuevo adorno en tu estantería</div>` : ''}</div>`;
             document.body.appendChild(t);
             setTimeout(() => t.classList.add('logro-toast-visible'), 10);
             setTimeout(() => { t.classList.remove('logro-toast-visible'); setTimeout(() => t.remove(), 500); }, 4500);
@@ -2076,9 +2090,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!ok && logro.isSecret) {
                     desc = '??? Logro secreto. ¡Sigue leyendo para descubrirlo!';
                 }
+                // Adorno asociado: visible si está ganado o si el logro es
+                // público (meta a perseguir); los secretos no lo enseñan.
+                const deco = logro.deco
+                    ? (ok
+                        ? `<div class="logro-deco">${logro.deco} en tu estantería</div>`
+                        : (logro.isSecret ? '' : `<div class="logro-deco logro-deco-bloqueada">premio: ${logro.deco}</div>`))
+                    : '';
                 const div = document.createElement('div');
                 div.className = `logro-card ${ok ? 'logro-desbloqueado' : 'logro-bloqueado'}`;
-                div.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-nombre">${logro.nombre}</div><div class="logro-desc">${desc}</div><div class="logro-estado">${ok ? '✓ Obtenido' : '🔒'}</div>`;
+                div.innerHTML = `<div class="logro-icono">${logro.icono}</div><div class="logro-nombre">${logro.nombre}</div><div class="logro-desc">${desc}</div>${deco}<div class="logro-estado">${ok ? '✓ Obtenido' : '🔒'}</div>`;
                 grid.appendChild(div);
             });
         };
@@ -3573,6 +3594,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // con el mismo color que la vista estantería.
             bandsWrap.innerHTML = '';
             const ANCHO_BALDA = 460;
+            const decosPool = decosDesbloqueados(); // mismos adornos que la vista
             const cargasPortadas = [];
             let banda = null;
             let anchoAcum = Infinity;
@@ -3633,7 +3655,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (hd % 5 === 0 && anchoAcum + 30 <= ANCHO_BALDA) {
                     const deco = document.createElement('span');
                     deco.className = 'ss-deco';
-                    deco.textContent = DECOS_ESTANTERIA[hd % DECOS_ESTANTERIA.length];
+                    deco.textContent = decosPool[hd % decosPool.length];
                     banda.appendChild(deco);
                     anchoAcum += 30;
                 }
