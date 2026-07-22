@@ -9,7 +9,7 @@ import { app, auth, db } from './firebase-init.js';
 
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
-import { exportarCanvas } from './share-export.js';
+import { exportarCanvas, descargarBlob } from './share-export.js';
 import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 
 
@@ -4460,6 +4460,39 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+
+        // === EXPORTAR BIBLIOTECA A CSV ===
+        const SECCIONES_CSV = {
+            'leyendo-ahora': 'Leyendo ahora',
+            'proximas-lecturas': 'Próximas lecturas',
+            'libros-terminados': 'Terminados',
+            'lista-deseos': 'Lista de deseos',
+            'libros-abandonados': 'Abandonados',
+        };
+        // Escape CSV (RFC 4180): entrecomilla si hay coma, comilla o salto.
+        const csvCampo = (v) => {
+            const s = v == null ? '' : String(v);
+            return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+        };
+        const exportarCSV = () => {
+            if (viewingFriendLibrary) { notify('Solo puedes exportar tu propia biblioteca.', 'info'); return; }
+            if (!booksData.length) { notify('No tienes libros que exportar.', 'info'); return; }
+            const cols = ['Título', 'Autor', 'Estado', 'Páginas totales', 'Página actual',
+                'Valoración', 'Género', 'Notas', 'Ritmo narrativo', 'Estados de ánimo', 'Portada', 'Enlace'];
+            const filas = booksData.map(b => [
+                b.title, b.author, SECCIONES_CSV[b.section] || b.section || '',
+                b.totalPages, b.currentPage, b.rating, b.genre, b.notes, b.ritmoNarrativo,
+                Array.isArray(b.estadosDeAnimo) ? b.estadosDeAnimo.join('; ') : (b.estadosDeAnimo || ''),
+                b.cover, b.googleLink,
+            ].map(csvCampo).join(','));
+            // BOM inicial (U+FEFF): Excel abre el UTF-8 con acentos correctos
+            const csv = '﻿' + [cols.join(','), ...filas].join('\r\n');
+            const fecha = new Date().toISOString().slice(0, 10);
+            descargarBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `mi-rincon-de-lectura-${fecha}.csv`);
+            notify(`Exportados ${booksData.length} libro${booksData.length !== 1 ? 's' : ''} a CSV.`, 'success');
+        };
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportarCSV);
 
         setupTheme(); // (Esta línea ya la tenías al final)
     }
