@@ -91,6 +91,7 @@
             "Rachas de lectura diarias con Págino, la mascota lectora",
             "33 logros desbloqueables, incluidos logros secretos",
             "Retos configurables: objetivos de páginas diarias y semanales",
+            "Registro de sesiones de lectura con cronómetro y estimación de cuándo terminarás el libro",
             "Recomendaciones personalizadas según tus gustos y los favoritos de tus amigos",
             "Lecturas conjuntas: lee el mismo libro que un amigo y comparad el progreso",
             "Club de lectura con comentarios anti-spoiler por libro",
@@ -337,6 +338,7 @@
                     <li>Racha diaria de lectura con Págino, tu mascota lectora, que celebra cada día que lees.</li>
                     <li>33 logros desbloqueables, incluidos logros secretos por descubrir.</li>
                     <li>Retos configurables: objetivos de páginas diarias y semanales con seguimiento automático.</li>
+                    <li>Registro de sesiones con cronómetro: cuenta el tiempo que lees y estima cuándo terminarás el libro.</li>
                     <li>Estadísticas visuales por sección, páginas, géneros, ritmo y estados de ánimo.</li>
                 </ul>
             </div>
@@ -364,6 +366,26 @@
         </div>
     </section>
 
+    <!-- ==================== LANDING: CAPTURAS ==================== -->
+    <section class="landing-capturas reveal">
+        <h2 class="landing-section-title">Así se ve por dentro</h2>
+        <p class="capturas-intro">Capturas reales de la app. Nada de mockups.</p>
+        <figure class="captura-figura captura-wide">
+            <img src="pantalla-estanteria.png" alt="Vista estantería de Mi Rincón de Lectura: los libros como lomos en baldas de madera con luces y adornos" width="1500" height="650" loading="lazy">
+            <figcaption>Tu biblioteca como una estantería real: cada libro es un lomo generado desde su portada, con luces y adornos que desbloqueas leyendo.</figcaption>
+        </figure>
+        <div class="capturas-duo">
+            <figure class="captura-figura">
+                <img src="pantalla-estadisticas.png" alt="Panel de estadísticas: libros totales, terminados, páginas leídas, valoración media y finalización" width="760" height="371" loading="lazy">
+                <figcaption>Tus estadísticas de un vistazo: libros, páginas, valoración media, ritmo de finalización y más.</figcaption>
+            </figure>
+            <figure class="captura-figura">
+                <img src="pantalla-logros.png" alt="Rejilla de logros con medallas desbloqueadas y bloqueadas" width="560" height="925" loading="lazy">
+                <figcaption>33 logros con medallas y adornos por desbloquear, incluidos varios secretos.</figcaption>
+            </figure>
+        </div>
+    </section>
+
     <!-- ==================== LANDING: VS GOODREADS ==================== -->
     <section class="landing-vs reveal">
         <h2 class="landing-section-title">¿En qué se diferencia de Goodreads?</h2>
@@ -378,49 +400,79 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <th scope="row">Anuncios</th>
-                        <td class="vs-si">Ninguno</td>
-                        <td>Entre tus estanterías</td>
+                        <th scope="row">Sin anuncios</th>
+                        <td class="vs-si">✅</td>
+                        <td class="vs-no">❌</td>
                     </tr>
                     <tr>
-                        <th scope="row">Idioma</th>
-                        <td class="vs-si">Español, de arriba abajo</td>
-                        <td>Inglés, con traducción a medias</td>
+                        <th scope="row">En español</th>
+                        <td class="vs-si">✅ De arriba abajo</td>
+                        <td class="vs-warn">⚠️ Traducción a medias</td>
                     </tr>
                     <tr>
-                        <th scope="row">Rachas, logros y retos</th>
-                        <td class="vs-si">Sí, con dinosaurio incluido</td>
-                        <td>No tiene</td>
+                        <th scope="row">Rachas de lectura</th>
+                        <td class="vs-si">✅</td>
+                        <td class="vs-no">❌</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Logros y medallas</th>
+                        <td class="vs-si">✅ 33, con secretos</td>
+                        <td class="vs-no">❌</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Retos configurables</th>
+                        <td class="vs-si">✅ Diarios y semanales</td>
+                        <td class="vs-no">❌</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Registro de sesiones (cronómetro)</th>
+                        <td class="vs-si">✅</td>
+                        <td class="vs-no">❌</td>
                     </tr>
                     <tr>
                         <th scope="row">Estadísticas visuales</th>
-                        <td class="vs-si">Gráficos por sección, páginas, géneros y vibes</td>
-                        <td>Básicas</td>
+                        <td class="vs-si">✅ Gráficos y desgloses</td>
+                        <td class="vs-warn">⚠️ Básicas</td>
                     </tr>
                     <tr>
                         <th scope="row">Recomendaciones personalizadas</th>
-                        <td class="vs-si">Según tus gustos y los de tus amigos</td>
-                        <td>Genéricas</td>
+                        <td class="vs-si">✅ Según tus gustos y amigos</td>
+                        <td class="vs-warn">⚠️ Genéricas</td>
                     </tr>
                     <tr>
-                        <th scope="row">Lectura conjunta y chat</th>
-                        <td class="vs-si">Lecturas a la vez y mensajes directos</td>
-                        <td>No tiene</td>
+                        <th scope="row">Chat entre amigos</th>
+                        <td class="vs-si">✅</td>
+                        <td class="vs-no">❌</td>
                     </tr>
                     <tr>
-                        <th scope="row">Importar / exportar tus datos</th>
-                        <td class="vs-si">Importa de Goodreads y exporta a CSV</td>
-                        <td>Exporta a CSV; no importa fácil</td>
+                        <th scope="row">Club de lectura</th>
+                        <td class="vs-si">✅ Anti-spoiler</td>
+                        <td class="vs-warn">⚠️ Grupos</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Lecturas conjuntas</th>
+                        <td class="vs-si">✅ Progreso compartido</td>
+                        <td class="vs-no">❌</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Importar de Goodreads</th>
+                        <td class="vs-si">✅ CSV</td>
+                        <td class="vs-muted">—</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Exportar tus datos (CSV)</th>
+                        <td class="vs-si">✅</td>
+                        <td class="vs-si">✅</td>
                     </tr>
                     <tr>
                         <th scope="row">Modo offline</th>
-                        <td class="vs-si">Completo</td>
-                        <td>No tiene</td>
+                        <td class="vs-si">✅ Completo</td>
+                        <td class="vs-no">❌</td>
                     </tr>
                     <tr>
                         <th scope="row">Precio</th>
-                        <td class="vs-si">Gratis</td>
-                        <td>Gratis a cambio de tus datos y anuncios</td>
+                        <td class="vs-si">✅ Gratis</td>
+                        <td class="vs-warn">Gratis con anuncios y tus datos</td>
                     </tr>
                 </tbody>
             </table>

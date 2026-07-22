@@ -2501,6 +2501,53 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
     .landing-capacidades, .landing-faq { padding: 2.8rem 1.2rem; }
 }
 
+/* ======== LANDING: CAPTURAS "ASÍ SE VE POR DENTRO" ======== */
+.landing-capturas {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+}
+.capturas-intro {
+    text-align: center;
+    font-size: 1.02rem;
+    color: var(--text-color);
+    opacity: 0.8;
+    margin: -1.2rem 0 2.4rem;
+}
+.captura-figura { margin: 0; }
+.captura-figura img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 14px 40px var(--shadow-color);
+    background: var(--card-bg-color);
+}
+.captura-figura figcaption {
+    margin: 0.8rem 0.2rem 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--text-color);
+    opacity: 0.82;
+    text-align: center;
+}
+.captura-wide { margin-bottom: 2.4rem; }
+.capturas-duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+}
+/* La de logros es vertical: se limita su alto para que no domine */
+.capturas-duo .captura-figura:last-child img { max-height: 620px; width: auto; margin: 0 auto; }
+.capturas-duo .captura-figura:last-child { text-align: center; }
+
+@media (max-width: 720px) {
+    .landing-capturas { padding: 2.8rem 1.2rem; }
+    .capturas-duo { grid-template-columns: 1fr; gap: 2.2rem; }
+}
+
 .landing-vs {
     max-width: 860px;
     margin: 0 auto;
@@ -2531,6 +2578,9 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
 .vs-tabla tbody tr:last-child th, .vs-tabla tbody tr:last-child td { border-bottom: none; }
 .vs-tabla tbody th { font-weight: 700; width: 34%; }
 .vs-tabla .vs-si { color: var(--accent-color-interactive); font-weight: 700; }
+.vs-tabla .vs-no { color: #b06a5f; font-weight: 700; opacity: 0.85; }
+.vs-tabla .vs-warn { color: var(--text-color); opacity: 0.7; }
+.vs-tabla .vs-muted { color: var(--text-color); opacity: 0.4; }
 .vs-nota {
     font-size: 0.9rem;
     line-height: 1.6;
