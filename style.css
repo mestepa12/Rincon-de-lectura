@@ -866,7 +866,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     .header-main { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
     .header-controls {
         width: 100%;
-        justify-content: flex-start;
+        justify-content: flex-end;
         gap: 0.3rem;
     }
     .header-controls button, .header-controls .header-link {
