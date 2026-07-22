@@ -484,22 +484,24 @@ document.addEventListener('DOMContentLoaded', () => {
         // a la derecha): se superpone tanto al color plano como a la textura.
         const OVERLAY_LOMO = 'linear-gradient(90deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.05) 22%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.42) 100%)';
 
-        // Caché persistente de lomos generados: color dominante + textura
-        // sintetizada desde la portada. Los lomos reales no existen en ninguna
-        // API; se fabrican con canvas y se guardan como JPEG pequeño (~3KB).
+        // Caché persistente de lomos generados: color de fondo + textura
+        // sintetizada desde la paleta de la portada. Los lomos reales no
+        // existen en ninguna API; se fabrican con canvas y se guardan como
+        // JPEG pequeño (~2KB). x = 1 si el lomo es claro y pide texto oscuro.
         let lomosCache = {};
-        try { lomosCache = JSON.parse(localStorage.getItem('rincon_lomos_v1') || '{}') || {}; } catch { /* caché corrupta: se regenera */ }
+        try { lomosCache = JSON.parse(localStorage.getItem('rincon_lomos_v2') || '{}') || {}; } catch { /* caché corrupta: se regenera */ }
         localStorage.removeItem('rincon_colores_lomo'); // clave antigua, ya integrada aquí
+        localStorage.removeItem('rincon_lomos_v1');     // v1: textura de franja estirada, retirada
         let guardarLomosTimer;
         const guardarLomos = () => {
             clearTimeout(guardarLomosTimer);
             guardarLomosTimer = setTimeout(() => {
                 try {
-                    localStorage.setItem('rincon_lomos_v1', JSON.stringify(lomosCache));
+                    localStorage.setItem('rincon_lomos_v2', JSON.stringify(lomosCache));
                 } catch {
                     // Almacenamiento lleno: soltar la caché y seguir sin persistir
                     lomosCache = {};
-                    try { localStorage.removeItem('rincon_lomos_v1'); } catch { /* nada más que hacer */ }
+                    try { localStorage.removeItem('rincon_lomos_v2'); } catch { /* nada más que hacer */ }
                 }
             }, 800);
         };
@@ -507,80 +509,100 @@ document.addEventListener('DOMContentLoaded', () => {
         const lomosEnVuelo = new Map(); // dedupe: vista y tarjeta pueden pedir a la vez
 
         const generarLomo = (coverUrl) => {
-            if (!coverUrl || !/^https?:/i.test(coverUrl)) return Promise.resolve({ color: null, textura: null });
+            if (!coverUrl || !/^https?:/i.test(coverUrl)) return Promise.resolve({ color: null, textura: null, textoOscuro: false });
             const cacheada = lomosCache[coverUrl];
-            if (cacheada) return Promise.resolve({ color: cacheada.c, textura: cacheada.t });
+            if (cacheada) return Promise.resolve({ color: cacheada.c, textura: cacheada.t, textoOscuro: !!cacheada.x });
             if (lomosEnVuelo.has(coverUrl)) return lomosEnVuelo.get(coverUrl);
 
             const promesa = new Promise((resolve) => {
                 const img = new Image();
                 img.crossOrigin = 'anonymous'; // wsrv.nl sirve CORS abierto; el canvas no queda contaminado
-                img.onerror = () => { lomosEnVuelo.delete(coverUrl); resolve({ color: null, textura: null }); };
+                img.onerror = () => { lomosEnVuelo.delete(coverUrl); resolve({ color: null, textura: null, textoOscuro: false }); };
                 img.onload = () => {
                     lomosEnVuelo.delete(coverUrl);
                     try {
+                        // 1. Paleta real de la portada en miniatura. El fondo se
+                        // vota entre los píxeles del borde (el "papel" del
+                        // diseño); el acento, entre los saturados de toda la
+                        // portada. Nada de estirar el arte: sale borroso y
+                        // arrastra trozos de título.
+                        const SW = 40, SH = 60;
+                        const mini = document.createElement('canvas');
+                        mini.width = SW; mini.height = SH;
+                        const mctx = mini.getContext('2d', { willReadFrequently: true });
+                        mctx.drawImage(img, 0, 0, SW, SH);
+                        const px = mctx.getImageData(0, 0, SW, SH).data;
+
+                        const bordes = new Map(), todos = new Map();
+                        const votar = (m, i, peso) => {
+                            const k = ((px[i] >> 4) << 8) | ((px[i + 1] >> 4) << 4) | (px[i + 2] >> 4);
+                            let e = m.get(k);
+                            if (!e) m.set(k, e = { w: 0, n: 0, r: 0, g: 0, b: 0 });
+                            e.w += peso; e.n++; e.r += px[i]; e.g += px[i + 1]; e.b += px[i + 2];
+                        };
+                        for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) {
+                            const i = (y * SW + x) * 4;
+                            if (x < 3 || x >= SW - 3 || y < 3 || y >= SH - 3) votar(bordes, i, 1);
+                            const mx = Math.max(px[i], px[i + 1], px[i + 2]);
+                            const sat = mx ? (mx - Math.min(px[i], px[i + 1], px[i + 2])) / mx : 0;
+                            votar(todos, i, 0.05 + sat); // los saturados pesan más: candidatos a acento
+                        }
+                        const media = (e) => [e.r / e.n, e.g / e.n, e.b / e.n];
+                        const top = (m, filtro) => {
+                            let mejor = null;
+                            for (const e of m.values()) if ((!filtro || filtro(media(e))) && (!mejor || e.w > mejor.w)) mejor = e;
+                            return mejor && media(mejor);
+                        };
+                        let fondo = top(bordes) || [90, 60, 50];
+                        // Blanco puro sobre madera queda estridente: rebajar a crema
+                        if (Math.min(...fondo) > 235) fondo = fondo.map(v => v * 0.93);
+                        const dist = (a, b2) => Math.abs(a[0] - b2[0]) + Math.abs(a[1] - b2[1]) + Math.abs(a[2] - b2[2]);
+                        const satDe = (c) => { const mx = Math.max(...c); return mx ? (mx - Math.min(...c)) / mx : 0; };
+                        const acento = top(todos, (c) => dist(c, fondo) > 110 && satDe(c) > 0.28);
+                        const rgb = (c) => `rgb(${c.map(v => Math.round(v)).join(', ')})`;
+                        const rgba = (c, a) => `rgba(${c.map(v => Math.round(v)).join(', ')}, ${a})`;
+
+                        // 2. Lomo dibujado: fondo plano, sombreado vertical de
+                        // encuadernación, tinte y bandas del acento, y grano.
                         const W = 48, H = 192;
                         const cv = document.createElement('canvas');
                         cv.width = W; cv.height = H;
                         const ctx = cv.getContext('2d', { willReadFrequently: true });
-
-                        // Franja izquierda de la portada estirada a lo alto: en
-                        // muchas portadas el arte envuelve el borde y esto se
-                        // parece mucho al lomo real de imprenta.
-                        const franja = Math.max(4, Math.round(img.width * 0.12));
-                        ctx.drawImage(img, 0, 0, franja, img.height, 0, 0, W, H);
-
-                        const media = () => {
-                            const px = ctx.getImageData(0, 0, W, H).data;
-                            let r = 0, g = 0, b = 0;
-                            for (let i = 0; i < px.length; i += 4) { r += px[i]; g += px[i + 1]; b += px[i + 2]; }
-                            const n = px.length / 4 * 255;
-                            return [r / n, g / n, b / n];
-                        };
-                        let [r, g, b] = media();
-
-                        // Franja casi blanca (borde vacío de la portada): mejor
-                        // la portada entera comprimida y desenfocada — hereda
-                        // el arte y la paleta del diseño original.
-                        if ((Math.max(r, g, b) + Math.min(r, g, b)) / 2 > 0.86) {
-                            ctx.save();
-                            try { ctx.filter = 'blur(3px) brightness(0.85)'; } catch { /* sin soporte de filter: vale igual */ }
-                            ctx.drawImage(img, 0, 0, img.width, img.height, -6, -6, W + 12, H + 12);
-                            ctx.restore();
-                            [r, g, b] = media();
-                        }
-
-                        // Velo oscuro suave: garantiza contraste del título blanco
-                        ctx.fillStyle = 'rgba(20, 10, 5, 0.16)';
+                        ctx.fillStyle = rgb(fondo);
                         ctx.fillRect(0, 0, W, H);
-
-                        // Grano de papel
+                        const sombra = ctx.createLinearGradient(0, 0, 0, H);
+                        sombra.addColorStop(0, 'rgba(255, 255, 255, 0.10)');
+                        sombra.addColorStop(0.3, 'rgba(255, 255, 255, 0)');
+                        sombra.addColorStop(0.78, 'rgba(0, 0, 0, 0)');
+                        sombra.addColorStop(1, 'rgba(0, 0, 0, 0.18)');
+                        ctx.fillStyle = sombra;
+                        ctx.fillRect(0, 0, W, H);
+                        if (acento) {
+                            const tinte = ctx.createLinearGradient(0, 0, 0, H);
+                            tinte.addColorStop(0.55, rgba(acento, 0));
+                            tinte.addColorStop(1, rgba(acento, 0.26));
+                            ctx.fillStyle = tinte;
+                            ctx.fillRect(0, 0, W, H);
+                            ctx.fillStyle = rgba(acento, 0.8);
+                            ctx.fillRect(0, 12, W, 3);
+                            ctx.fillRect(0, H - 15, W, 3);
+                        }
                         const data = ctx.getImageData(0, 0, W, H);
                         const d = data.data;
                         for (let i = 0; i < d.length; i += 8) {
-                            const ruido = (Math.random() - 0.5) * 14;
+                            const ruido = (Math.random() - 0.5) * 12;
                             d[i] += ruido; d[i + 1] += ruido; d[i + 2] += ruido;
                         }
                         ctx.putImageData(data, 0, 0);
 
-                        // Color medio en HSL acotado (fallback sin textura)
-                        const max = Math.max(r, g, b), min = Math.min(r, g, b), dif = max - min;
-                        const l = (max + min) / 2;
-                        const s = dif === 0 ? 0 : dif / (1 - Math.abs(2 * l - 1));
-                        let hue = 0;
-                        if (dif > 0) {
-                            if (max === r) hue = 60 * (((g - b) / dif) % 6);
-                            else if (max === g) hue = 60 * ((b - r) / dif + 2);
-                            else hue = 60 * ((r - g) / dif + 4);
-                        }
-                        if (hue < 0) hue += 360;
-                        const color = `hsl(${Math.round(hue)}, ${Math.round(Math.max(0.22, Math.min(0.75, s)) * 100)}%, ${Math.round(Math.min(0.50, Math.max(0.24, l)) * 100)}%)`;
-
+                        // Lomo claro → el título pasa a tinta oscura (clase CSS)
+                        const textoOscuro = (0.2126 * fondo[0] + 0.7152 * fondo[1] + 0.0722 * fondo[2]) > 155;
+                        const color = rgb(fondo);
                         const textura = cv.toDataURL('image/jpeg', 0.72);
-                        lomosCache[coverUrl] = { c: color, t: textura };
+                        lomosCache[coverUrl] = { c: color, t: textura, x: textoOscuro ? 1 : 0 };
                         guardarLomos();
-                        resolve({ color, textura });
-                    } catch { resolve({ color: null, textura: null }); }
+                        resolve({ color, textura, textoOscuro });
+                    } catch { resolve({ color: null, textura: null, textoOscuro: false }); }
                 };
                 img.src = `https://wsrv.nl/?url=${encodeURIComponent(coverUrl)}&w=200&h=300&fit=cover`;
             });
@@ -633,11 +655,12 @@ document.addEventListener('DOMContentLoaded', () => {
             el.appendChild(inner);
 
             if (!caraVista && book.cover && /^https?:/i.test(book.cover)) {
-                generarLomo(book.cover).then(({ color, textura }) => {
+                generarLomo(book.cover).then(({ color, textura, textoOscuro }) => {
                     if (color) el.style.setProperty('--lomo', color);
                     if (textura && spineEl) {
                         spineEl.style.backgroundImage = `${OVERLAY_LOMO}, url(${textura})`;
                         spineEl.style.backgroundSize = '100% 100%';
+                        spineEl.classList.toggle('lomo-claro', textoOscuro);
                     }
                 });
             }
@@ -3589,10 +3612,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Textura sintetizada desde la portada (async, cacheada):
                     // se espera junto a las portadas antes de exportar
                     if (book.cover && /^https?:/i.test(book.cover)) {
-                        cargasPortadas.push(generarLomo(book.cover).then(({ textura }) => {
+                        cargasPortadas.push(generarLomo(book.cover).then(({ textura, textoOscuro }) => {
                             if (textura) {
                                 spine.style.backgroundImage = `${OVERLAY_LOMO}, url(${textura})`;
                                 spine.style.backgroundSize = '100% 100%';
+                                spine.classList.toggle('lomo-claro', textoOscuro);
                             }
                         }));
                     }

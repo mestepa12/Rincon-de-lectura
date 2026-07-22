@@ -2754,6 +2754,19 @@ body.dark-mode {
     white-space: nowrap;
 }
 
+/* Lomos claros (portadas de fondo blanco/crema): tinta oscura y filetes
+   tostados. La clase la pone generarLomo según la luminancia del fondo. */
+.spine.lomo-claro .spine-title,
+.ss-spine.lomo-claro b {
+    color: #3B2A1E;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.35);
+}
+.spine.lomo-claro::before,
+.spine.lomo-claro::after,
+.ss-spine.lomo-claro i {
+    background: rgba(96, 62, 30, 0.38);
+}
+
 /* Portada colocada perpendicular al lomo (invisible hasta sacar el libro) */
 .shelf-book:not(.cara) .shelf-cover {
     position: absolute;
