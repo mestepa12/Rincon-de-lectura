@@ -1140,6 +1140,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 /* Adorno de estantería asociado al logro */
 .logro-deco { font-size: 0.72rem; margin-top: 0.2rem; opacity: 0.9; }
 .logro-deco-bloqueada { filter: grayscale(1); opacity: 0.55; }
+.logro-deco-img { height: 1.3em; width: auto; vertical-align: -0.35em; }
 .logro-estado { font-size: 0.78rem; font-weight: bold; color: var(--accent-color-interactive); margin-top: 0.25rem; }
 
 /* Toast logro */
@@ -2811,16 +2812,16 @@ body.dark-mode {
     pointer-events: none;
     user-select: none;
 }
-.shelf-deco span {
+.shelf-deco img {
     position: absolute;
-    bottom: 18px;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
-    line-height: 1;
+    width: auto;
     filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
 }
-/* Halo cálido para las velas */
-.shelf-deco.vela span {
+/* Halo cálido para velas y farolillos */
+.shelf-deco.vela img {
     filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 9px rgba(255, 175, 70, 0.75));
 }
 
@@ -2949,8 +2950,8 @@ body.dark-mode {
     background: #FDFBF7;
 }
 .ss-deco {
-    font-size: 24px;
-    line-height: 1;
+    width: auto;
+    align-self: flex-end;
     padding: 0 2px 2px;
     filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
 }
