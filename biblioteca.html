@@ -54,6 +54,7 @@
                 <button id="recommend-btn" type="button" title="¿Qué leo ahora? Págino te recomienda">🦕</button>
                 <button id="vista-toggle" type="button" title="Ver como estantería">📚</button>
                 <button id="share-shelf-btn" type="button" title="Compartir mi estantería como imagen">📸</button>
+                <button id="decorar-btn" type="button" title="Decorar mi estantería" style="display:none;">🪄</button>
                 <button id="stats-btn" type="button" title="Estadísticas">📊</button>
                 <button id="logros-btn" type="button" title="Mis Logros">🏅</button>
                 <button id="objetivos-btn" type="button" title="Objetivos de lectura">🎯</button>
@@ -374,6 +375,21 @@
                 style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-color); line-height:1;">✕</button>
         </div>
         <div id="logros-grid" class="logros-grid"></div>
+    </dialog>
+
+    <!-- Selector de adorno para el modo decorar (V2 de adornos por logros) -->
+    <dialog id="decorar-modal"
+        style="max-width:420px; width:92%; border-radius:12px; padding:0; border:2px solid var(--border-color); background:var(--card-bg-color); color:var(--text-color);">
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem; border-bottom:2px solid var(--border-color);">
+            <h2 style="margin:0; font-size:1.05rem; font-family:var(--font-title);">🪄 Elige un adorno</h2>
+            <button id="close-decorar-modal" type="button"
+                style="background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-color); line-height:1;">✕</button>
+        </div>
+        <div id="decorar-grid" class="decorar-grid"></div>
+        <div style="display:flex; justify-content:space-between; gap:0.6rem; padding:0.9rem 1.2rem; border-top:2px solid var(--border-color);">
+            <button id="decorar-quitar" type="button" class="btn-cancel" style="font-size:0.82rem;">Quitar de este hueco</button>
+            <button id="decorar-auto" type="button" class="btn-cancel" style="font-size:0.82rem;" title="Olvidar la colocación manual y volver al reparto automático">↺ Modo automático</button>
+        </div>
     </dialog>
 
     <dialog id="stats-modal" class="stats-modal-dialog">

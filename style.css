@@ -2825,6 +2825,73 @@ body.dark-mode {
     filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)) drop-shadow(0 0 9px rgba(255, 175, 70, 0.75));
 }
 
+/* ── Modo decorar (V2): hueco pulsable tras cada libro ── */
+.shelf-deco-slot {
+    position: relative;
+    width: 46px;
+    height: 196px;
+    flex: none;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0 0 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255, 224, 160, 0.85);
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 3.2;
+}
+.shelf-deco-slot::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: 18px;
+    height: 62px;
+    border: 2px dashed rgba(255, 224, 160, 0.5);
+    border-radius: 8px;
+    pointer-events: none;
+}
+.shelf-deco-slot.ocupado::after { border-style: solid; border-color: rgba(255, 224, 160, 0.35); }
+.shelf-deco-slot:hover::after { border-color: #FFD98A; }
+.shelf-deco-slot img {
+    position: relative;
+    z-index: 1;
+    width: auto;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+}
+#decorar-btn.activo {
+    box-shadow: 0 0 0 2px var(--accent-color-interactive) inset;
+    border-radius: 8px;
+}
+
+/* Selector de adorno: piezas sobre fondo de madera, su contexto real */
+.decorar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+    gap: 8px;
+    padding: 1rem 1.2rem;
+    max-height: 46vh;
+    overflow-y: auto;
+    background: #3d2817;
+}
+.decorar-opcion {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 74px;
+    padding: 6px;
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.decorar-opcion:hover { border-color: rgba(255, 224, 160, 0.45); }
+.decorar-opcion.activa { border-color: #FFD98A; }
+.decorar-opcion img { width: auto; filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45)); }
+
 @media (prefers-reduced-motion: reduce) {
     .shelf-book-inner { transition: none; }
 }

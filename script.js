@@ -680,6 +680,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set: varios logros de una familia comparten pieza (tiers)
             return [...new Set([...DECOS_BASE, ...LOGROS.filter(l => l.deco && ids.has(l.id)).map(l => l.deco)])];
         };
+
+        // Colocación manual (V2): users/{uid}.decosColocados = { bookId: pieza }.
+        // Sin campo → reparto automático por hash. La estantería de un amigo
+        // usa su propio mapa.
+        let modoDecorar = false;
+        const mapaDecos = () => {
+            const m = viewingFriendLibrary ? currentFriendData?.decosColocados : lastUserData?.decosColocados;
+            return (m && typeof m === 'object') ? m : null;
+        };
         const crearDecoEstanteria = (h, pool = DECOS_BASE) => {
             const pieza = pool[h % pool.length];
             const d = document.createElement('div');
@@ -694,9 +703,34 @@ document.addEventListener('DOMContentLoaded', () => {
             return d;
         };
 
+        // Hueco pulsable del modo decorar: enseña la pieza colocada o un "+"
+        const crearSlotDecorar = (bookId, pieza, h) => {
+            const slot = document.createElement('button');
+            slot.type = 'button';
+            slot.className = 'shelf-deco-slot' + (pieza ? ' ocupado' : '');
+            slot.title = pieza ? 'Cambiar o quitar adorno' : 'Añadir adorno';
+            if (pieza && decoUrl(pieza)) {
+                const img = document.createElement('img');
+                img.src = decoUrl(pieza);
+                img.alt = '';
+                img.style.height = `${Math.round(decoAlto(pieza) * (0.92 + (h % 5) * 0.045))}px`;
+                slot.appendChild(img);
+            } else {
+                slot.textContent = '+';
+            }
+            slot.addEventListener('click', () => abrirPickerDeco(bookId));
+            return slot;
+        };
+
         const renderBooks = () => {
             const enEstanteria = document.body.classList.contains('vista-estanteria');
+            // El modo decorar solo tiene sentido en la estantería propia
+            if (modoDecorar && (!enEstanteria || viewingFriendLibrary)) {
+                modoDecorar = false;
+                document.getElementById('decorar-btn')?.classList.remove('activo');
+            }
             const decosPool = enEstanteria ? decosDesbloqueados() : DECOS_BASE;
+            const mapa = enEstanteria ? mapaDecos() : null;
             document.querySelectorAll('.books-container').forEach(c => {
                 c.innerHTML = '';
                 c.classList.toggle('estanteria', enEstanteria);
@@ -706,10 +740,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!container) return;
                 container.appendChild(enEstanteria ? crearLibroEstanteria(book) : createBookElement(book));
                 if (enEstanteria) {
-                    // ~1 de cada 5 libros trae un adorno detrás, determinista
-                    // por libro para que la estantería no baile entre renders
+                    // Manual: lo que diga el mapa. Automático: ~1 de cada 5
+                    // libros, determinista por hash para que no baile.
                     const hd = hashLibro((book.id || book.title || '') + 'deco');
-                    if (hd % 5 === 0) container.appendChild(crearDecoEstanteria(hd, decosPool));
+                    const pieza = mapa
+                        ? (mapa[book.id] || null)
+                        : (hd % 5 === 0 ? decosPool[hd % decosPool.length] : null);
+                    if (modoDecorar) {
+                        container.appendChild(crearSlotDecorar(book.id, pieza, hd));
+                    } else if (pieza && decoUrl(pieza)) {
+                        container.appendChild(crearDecoEstanteria(hd, [pieza]));
+                    }
                 }
             });
             if (enEstanteria) {
@@ -721,6 +762,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+            const decorarBtn = document.getElementById('decorar-btn');
+            if (decorarBtn) decorarBtn.style.display = (enEstanteria && !viewingFriendLibrary) ? '' : 'none';
         };
 
         // Conmutador cuadrícula ↔ estantería (persistido)
@@ -743,6 +786,85 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderBooks();
             });
         }
+
+        // === MODO DECORAR (V2): colocar adornos a mano ===
+        const decorarBtn = document.getElementById('decorar-btn');
+        const decorarModal = document.getElementById('decorar-modal');
+        const decorarGrid = document.getElementById('decorar-grid');
+        let decorarBookId = null; // hueco (libro) que está editando el picker
+
+        // Al editar por primera vez se parte del reparto automático actual,
+        // para que el usuario retoque lo que ya ve en vez de empezar de cero.
+        const sembrarMapaAuto = () => {
+            const pool = decosDesbloqueados();
+            const m = {};
+            booksData.forEach(b => {
+                const hd = hashLibro((b.id || b.title || '') + 'deco');
+                if (hd % 5 === 0 && b.id) m[b.id] = pool[hd % pool.length];
+            });
+            return m;
+        };
+        const mapaEditable = () => ({ ...(mapaDecos() || sembrarMapaAuto()) });
+
+        const guardarMapaDecos = async (mapa) => {
+            if (lastUserData) lastUserData.decosColocados = mapa; // reflejo inmediato
+            renderBooks();
+            try {
+                await updateDoc(doc(db, 'users', user.uid), { decosColocados: mapa });
+            } catch (e) {
+                console.error('Error guardando la decoración:', e);
+                notify('No se pudo guardar la decoración.', 'error');
+            }
+        };
+
+        const abrirPickerDeco = (bookId) => {
+            if (!decorarModal || !decorarGrid) return;
+            decorarBookId = bookId;
+            decorarGrid.innerHTML = '';
+            const actual = mapaDecos()?.[bookId];
+            decosDesbloqueados().forEach(pieza => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'decorar-opcion' + (pieza === actual ? ' activa' : '');
+                b.title = pieza.replace(/_/g, ' ');
+                const img = document.createElement('img');
+                img.src = decoUrl(pieza);
+                img.alt = pieza;
+                img.style.height = `${Math.round(decoAlto(pieza) * 0.8)}px`;
+                b.appendChild(img);
+                b.addEventListener('click', () => {
+                    const m = mapaEditable();
+                    m[decorarBookId] = pieza;
+                    decorarModal.close();
+                    guardarMapaDecos(m);
+                });
+                decorarGrid.appendChild(b);
+            });
+            decorarModal.showModal();
+        };
+
+        if (decorarBtn) {
+            decorarBtn.addEventListener('click', () => {
+                modoDecorar = !modoDecorar;
+                decorarBtn.classList.toggle('activo', modoDecorar);
+                renderBooks();
+            });
+        }
+        document.getElementById('close-decorar-modal')?.addEventListener('click', () => decorarModal.close());
+        document.getElementById('decorar-quitar')?.addEventListener('click', () => {
+            const m = mapaEditable();
+            delete m[decorarBookId];
+            decorarModal.close();
+            guardarMapaDecos(m);
+        });
+        document.getElementById('decorar-auto')?.addEventListener('click', async () => {
+            decorarModal.close();
+            if (lastUserData) delete lastUserData.decosColocados;
+            renderBooks();
+            try {
+                await updateDoc(doc(db, 'users', user.uid), { decosColocados: deleteField() });
+            } catch (e) { console.error('Error restaurando el reparto automático:', e); }
+        });
         
         const updateProgressVisuals = (currentPage, totalPages) => {
             if (!totalPages || totalPages <= 0) {
@@ -3601,6 +3723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bandsWrap.innerHTML = '';
             const ANCHO_BALDA = 460;
             const decosPool = decosDesbloqueados(); // mismos adornos que la vista
+            const mapaDecosCard = mapaDecos();      // colocación manual, si la hay
             const cargasPortadas = [];
             let banda = null;
             let anchoAcum = Infinity;
@@ -3658,8 +3781,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 // Adorno ocasional, como en la vista estantería
                 const hd = hashLibro((book.id || book.title || '') + 'deco');
-                if (hd % 5 === 0 && anchoAcum + 30 <= ANCHO_BALDA) {
-                    const pieza = decosPool[hd % decosPool.length];
+                const pieza = mapaDecosCard
+                    ? (mapaDecosCard[book.id] || null)
+                    : (hd % 5 === 0 ? decosPool[hd % decosPool.length] : null);
+                if (pieza && decoUrl(pieza) && anchoAcum + 30 <= ANCHO_BALDA) {
                     const deco = document.createElement('img');
                     deco.className = 'ss-deco';
                     deco.src = decoUrl(pieza);

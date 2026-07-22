@@ -18,7 +18,8 @@ service cloud.firestore {
               'ultimaFechaLectura', 'lastReadTimestamp', 'totalPaginasLeidas',
               'paginasLeidasHoy', 'paginasLeidasSemana', 'fechaDia',
               'fechaSemana', 'objetivoPaginasDiarias', 'objetivoPaginasSemanales',
-              'logrosDesbloqueados', 'fcmTokens', 'fcmToken', 'quizResults'];
+              'logrosDesbloqueados', 'fcmTokens', 'fcmToken', 'quizResults',
+              'decosColocados'];
     }
 
     function validUser(d, a) {
@@ -36,7 +37,8 @@ service cloud.firestore {
           && (!a.hasAny(['logrosDesbloqueados']) || !('logrosDesbloqueados' in d) || (d.logrosDesbloqueados is list && d.logrosDesbloqueados.size() <= 200))
           && (!a.hasAny(['fcmTokens'])     || !('fcmTokens' in d)     || (d.fcmTokens is list && d.fcmTokens.size() <= 20))
           && (!a.hasAny(['fcmToken'])      || !('fcmToken' in d)      || (d.fcmToken is string && d.fcmToken.size() <= 4096))
-          && (!a.hasAny(['quizResults'])   || !('quizResults' in d)   || (d.quizResults is map && d.quizResults.size() <= 50));
+          && (!a.hasAny(['quizResults'])   || !('quizResults' in d)   || (d.quizResults is map && d.quizResults.size() <= 50))
+          && (!a.hasAny(['decosColocados'])|| !('decosColocados' in d)|| (d.decosColocados is map && d.decosColocados.size() <= 500));
     }
 
     function bookFields() {
