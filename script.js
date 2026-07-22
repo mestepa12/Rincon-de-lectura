@@ -3745,11 +3745,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             // Escala global para meter toda la biblioteca en MAX_BANDAS baldas.
-            // No baja de 0.5 para no volver ilegibles los lomos; por encima de
-            // ~135 libros la cola sí se recorta (biblioteca enorme, caso raro).
+            // Al divisor se le suma MAX_BANDAS · (hueco más ancho): el reparto
+            // greedy desperdicia hasta un hueco al final de cada balda (un libro
+            // que no cabe abre balda nueva), y sin reservarlo la cola se cortaba
+            // antes de tiempo. No baja de 0.5 para no volver ilegibles los lomos;
+            // por encima de ~135 libros la cola sí se recorta (caso raro).
             const totalIdeal = items.reduce((s, it) => s + it.anchoBase + 3 + (it.pieza ? 30 : 0), 0);
-            const escala = totalIdeal > MAX_BANDAS * ANCHO_BALDA
-                ? Math.max(0.5, (MAX_BANDAS * ANCHO_BALDA) / totalIdeal)
+            const maxHueco = items.reduce((m, it) => Math.max(m, it.anchoBase + 3 + (it.pieza ? 30 : 0)), 0);
+            const divisor = totalIdeal + MAX_BANDAS * maxHueco;
+            const escala = divisor > MAX_BANDAS * ANCHO_BALDA
+                ? Math.max(0.5, (MAX_BANDAS * ANCHO_BALDA) / divisor)
                 : 1;
 
             let banda = null;
