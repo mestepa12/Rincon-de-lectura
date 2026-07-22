@@ -3496,6 +3496,30 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         // === COMPARTIR MI ESTANTERÍA COMO IMAGEN (story 9:16) ===
+        // Guirnalda de la tarjeta pre-rasterizada a PNG (tile de 52x16 CSS px,
+        // dibujado a 2x). html2canvas repinta los radial-gradient del CSS a
+        // partir del estilo computado y en Chrome/Android las bombillas salen
+        // deformes; un PNG tileado se dibuja igual en todas las plataformas.
+        let guirnaldaPngCache = null;
+        const guirnaldaPng = () => {
+            if (guirnaldaPngCache) return guirnaldaPngCache;
+            const c = document.createElement('canvas');
+            c.width = 104; c.height = 32;
+            const cx = c.getContext('2d');
+            cx.scale(2, 2);
+            for (const [x, y] of [[9, 4], [35, 11]]) {
+                const g = cx.createRadialGradient(x, y, 0, x, y, 6);
+                g.addColorStop(0, '#FFF3D0');
+                g.addColorStop(0.33, 'rgba(255, 202, 100, 0.9)');
+                g.addColorStop(0.75, 'rgba(255, 170, 60, 0.32)');
+                g.addColorStop(1, 'rgba(255, 170, 60, 0)');
+                cx.fillStyle = g;
+                cx.fillRect(0, 0, 52, 16);
+            }
+            guirnaldaPngCache = c.toDataURL('image/png');
+            return guirnaldaPngCache;
+        };
+
         let miUsernameCache = null;
         const compartirEstanteria = async () => {
             const card = document.getElementById('share-shelf-card');
@@ -3518,6 +3542,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 miUsernameCache ? `La estantería de @${miUsernameCache}` : 'Mi estantería';
             document.getElementById('ss-sub').textContent =
                 `${libros.length} ${libros.length === 1 ? 'libro' : 'libros'}`;
+
+            card.style.setProperty('--ss-guirnalda', `url(${guirnaldaPng()})`);
 
             // Rellenar hasta 4 baldas por anchura acumulada. Los libros "de
             // cara" (~1 de cada 6) enseñan su portada real; el resto, lomo 2D

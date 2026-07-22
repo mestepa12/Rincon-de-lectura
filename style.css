@@ -2871,7 +2871,10 @@ body.dark-mode {
     border-radius: 2px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
 }
-/* Guirnalda: bombillas alternas sobre el canto de la balda */
+/* Guirnalda: bombillas alternas sobre el canto de la balda.
+   Nada de radial-gradient aquí: html2canvas los repinta a mano a partir del
+   estilo computado y en Chrome/Android salen deformes. El JS inyecta la
+   guirnalda ya rasterizada como PNG tileado en --ss-guirnalda. */
 .ss-band::before {
     content: '';
     position: absolute;
@@ -2880,9 +2883,7 @@ body.dark-mode {
     bottom: -1px;
     height: 16px;
     z-index: 2;
-    background-image:
-        radial-gradient(circle at 9px 4px, #FFF3D0 0px, rgba(255, 202, 100, 0.9) 2px, rgba(255, 170, 60, 0.32) 4.5px, transparent 6px),
-        radial-gradient(circle at 35px 11px, #FFF3D0 0px, rgba(255, 202, 100, 0.9) 2px, rgba(255, 170, 60, 0.32) 4.5px, transparent 6px);
+    background-image: var(--ss-guirnalda, none);
     background-size: 52px 16px;
     background-repeat: repeat-x;
 }
