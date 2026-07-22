@@ -7,8 +7,8 @@
     <title>Mi Rincón de Lectura | Convierte la lectura en tu mejor hábito</title>
 
     <link rel="canonical" href="https://rinconlectura.es/">
-    <meta name="description" content="Convierte la lectura en tu mejor hábito: estadísticas visuales, rachas diarias, logros, amigos y modo offline. La alternativa a Goodreads en español, sin anuncios y gratis.">
-    <meta name="keywords" content="seguimiento de lectura, registro de libros, biblioteca virtual, hábito de lectura, racha de lectura, alternativa a Goodreads en español, app para leer más, reseñas de libros, club de lectura">
+    <meta name="description" content="App de lectura en español, gratis y sin anuncios: estadísticas visuales, rachas, logros, retos configurables, club de lectura con chat, lecturas conjuntas, recomendaciones personalizadas, importación desde Goodreads, exportación a CSV y modo offline. La alternativa completa a Goodreads en español.">
+    <meta name="keywords" content="seguimiento de lectura, registro de libros, biblioteca virtual, hábito de lectura, racha de lectura, alternativa a Goodreads en español, app para leer más, reseñas de libros, club de lectura, importar Goodreads, exportar CSV libros, recomendaciones de libros, lectura conjunta, retos de lectura, estadísticas de lectura, app lectura offline">
     <meta name="robots" content="index, follow">
     <meta name="author" content="Mi Rincón de Lectura">
     <meta name="theme-color" content="#8c6f5a">
@@ -17,8 +17,8 @@
     <link rel="manifest" href="/manifest.json">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Mi Rincón de Lectura">
-    <meta property="og:title" content="Mi Rincón de Lectura | La mejor alternativa a Goodreads en español">
-    <meta property="og:description" content="Rastreador de lectura sin anuncios. Estadísticas visuales, rachas diarias, logros y una red social de libros en español. Gratis y con modo offline.">
+    <meta property="og:title" content="Mi Rincón de Lectura | La alternativa completa a Goodreads en español">
+    <meta property="og:description" content="Rastreador de lectura social sin anuncios: estadísticas, rachas, logros, retos, club de lectura con chat, lecturas conjuntas, recomendaciones e importación/exportación. Gratis, en español y con modo offline.">
     <meta property="og:image" content="https://rinconlectura.es/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -26,8 +26,8 @@
     <meta property="og:url" content="https://rinconlectura.es/">
     <meta property="og:locale" content="es_ES">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Mi Rincón de Lectura | La mejor alternativa a Goodreads en español">
-    <meta name="twitter:description" content="Rastreador de lectura sin anuncios. Estadísticas visuales, rachas diarias, logros y una red social de libros en español. Gratis y con modo offline.">
+    <meta name="twitter:title" content="Mi Rincón de Lectura | La alternativa completa a Goodreads en español">
+    <meta name="twitter:description" content="Rastreador de lectura social sin anuncios: estadísticas, rachas, logros, retos, club de lectura con chat, lecturas conjuntas, recomendaciones e importación/exportación. Gratis, en español y con modo offline.">
     <meta name="twitter:image" content="https://rinconlectura.es/og-image.png">
     <meta name="twitter:image:alt" content="Mi Rincón de Lectura: tu biblioteca personal con estadísticas, rachas y logros">
 
@@ -66,7 +66,7 @@
           "@id": "https://rinconlectura.es/#app",
           "name": "Mi Rincón de Lectura",
           "url": "https://rinconlectura.es/",
-          "description": "Aplicación web gratuita para registrar tus lecturas: organiza tu biblioteca, sigue tu progreso página a página, mantén rachas diarias, desbloquea logros y comparte reseñas con amigos. Funciona offline y no tiene anuncios.",
+          "description": "Aplicación web gratuita para registrar tus lecturas: organiza tu biblioteca por secciones, sigue tu progreso página a página, mantén rachas diarias, cumple retos configurables, desbloquea logros, recibe recomendaciones personalizadas, lee a la vez que tus amigos, chatea con ellos, importa tu biblioteca de Goodreads y exporta tus datos a CSV. Funciona offline y no tiene anuncios.",
           "applicationCategory": "LifestyleApplication",
           "applicationSubCategory": "Seguimiento de lectura",
           "operatingSystem": "Web",
@@ -75,18 +75,120 @@
           "author": { "@id": "https://rinconlectura.es/#org" },
           "image": "https://rinconlectura.es/og-image.png",
           "screenshot": "https://rinconlectura.es/og-image.png",
+          "isAccessibleForFree": true,
           "offers": {
             "@type": "Offer",
             "price": "0",
             "priceCurrency": "EUR"
           },
           "featureList": [
-            "Estadísticas visuales de lectura",
-            "Rachas y logros diarios",
-            "Biblioteca personal por secciones",
-            "Club de lectura con comentarios anti-spoiler",
-            "Mensajes directos entre amigos",
-            "Modo offline total (PWA)"
+            "Biblioteca personal organizada en 5 secciones (Leyendo ahora, Próximas lecturas, Terminados, Lista de deseos, Abandonados)",
+            "Seguimiento del progreso página a página con barra de avance",
+            "Búsqueda y alta de libros desde Google Books con portada automática",
+            "Importación de la biblioteca desde un CSV de Goodreads",
+            "Exportación de toda tu biblioteca a CSV (tus datos son tuyos)",
+            "Estadísticas visuales: libros por sección, páginas leídas, géneros, ritmo narrativo y estados de ánimo",
+            "Rachas de lectura diarias con Págino, la mascota lectora",
+            "33 logros desbloqueables, incluidos logros secretos",
+            "Retos configurables: objetivos de páginas diarias y semanales",
+            "Recomendaciones personalizadas según tus gustos y los favoritos de tus amigos",
+            "Lecturas conjuntas: lee el mismo libro que un amigo y comparad el progreso",
+            "Club de lectura con comentarios anti-spoiler por libro",
+            "Chat directo entre amigos",
+            "Ranking de páginas entre amigos",
+            "Vista estantería con lomos generados desde la portada y adornos desbloqueables",
+            "Compartir reseñas, estadísticas y tu estantería como imagen para Stories (Instagram, TikTok)",
+            "Valoración con media estrella, notas, ritmo narrativo y estados de ánimo por libro",
+            "Test del tropo literario dominante",
+            "Modo offline total (PWA): lee sin conexión y se sincroniza al volver",
+            "Sin anuncios, gratis y en español"
+          ]
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://rinconlectura.es/#faq",
+          "inLanguage": "es-ES",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "¿Qué es Mi Rincón de Lectura?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Es una aplicación web gratuita en español para registrar tus lecturas y convertirlas en un hábito. Organiza tu biblioteca por secciones, sigue el progreso página a página, y añade estadísticas, rachas diarias, logros, retos, recomendaciones y una capa social (club de lectura, chat, lecturas conjuntas). Funciona en el navegador y también offline."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Es gratis? ¿Tiene anuncios?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí, es gratis de verdad y no tiene anuncios ni versión de pago. No hay banners entre tus libros ni funciones bloqueadas tras un muro de pago, y tus datos no se venden."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Puedo importar mi biblioteca desde Goodreads?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Exportas tu biblioteca de Goodreads como CSV y la importas en Mi Rincón de Lectura desde el menú Datos. Se trasladan tus libros, estanterías, valoraciones y reseñas, y las portadas se recuperan automáticamente."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Puedo exportar mis datos?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Desde el menú Datos puedes exportar toda tu biblioteca a un archivo CSV (título, autor, estado, páginas, valoración, género, notas y más). No hay bloqueo de proveedor: tus datos son tuyos y te los puedes llevar cuando quieras."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Funciona sin conexión?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Es una PWA con modo offline total: puedes registrar tu progreso sin cobertura (por ejemplo en el metro) y todo se sincroniza solo cuando vuelve la conexión. Puedes añadirla a la pantalla de inicio del móvil como una app más."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Puedo leer con amigos?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Puedes añadir amigos, ver sus bibliotecas, competir en un ranking de páginas, comentar en un club de lectura con protección anti-spoiler, chatear por mensajes directos y hacer lecturas conjuntas: el mismo libro a la vez, comparando el progreso de cada uno."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Recomienda libros?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. El recomendador construye un perfil con tus géneros, ritmos y estados de ánimo favoritos (ponderando lo que lees y cómo lo valoras) y te sugiere libros de tu lista de pendientes y de los favoritos mejor valorados de tus amigos."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Qué estadísticas ofrece?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Gráficos de libros por sección y páginas leídas, además de desgloses por género, ritmo narrativo y estados de ánimo, media de valoración, porcentaje de libros terminados, autor y género favoritos, y tu racha. Puedes compartir un resumen como imagen."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Puedo ponerme retos u objetivos de lectura?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Configuras tus propios objetivos de páginas diarias y semanales, y la app hace el seguimiento y te avisa cuando los cumples. Sumado a las rachas y los 33 logros, convierte leer en un reto continuo."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿En qué se diferencia de Goodreads?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Está en español de arriba abajo, no tiene anuncios y añade lo que a Goodreads le falta: rachas, logros, retos configurables, estadísticas visuales, recomendaciones personalizadas, lecturas conjuntas, chat, modo offline y compartir para Stories. Goodreads gana en tamaño de catálogo y comunidad; Mi Rincón de Lectura gana en experiencia, gamificación y funciones."
+              }
+            }
           ]
         }
       ]
@@ -132,9 +234,9 @@
     <section class="landing-hero">
         <div class="hero-inner">
             <div class="hero-copy">
-                <p class="hero-eyebrow">La alternativa a Goodreads en español, sin anuncios</p>
+                <p class="hero-eyebrow">La alternativa completa a Goodreads en español, sin anuncios</p>
                 <h1 class="hero-title">Convierte leer en tu mejor hábito.</h1>
-                <p class="hero-sub">Registra tus libros, mantén tu racha diaria y comparte reseñas que dan gusto ver. Gratis.</p>
+                <p class="hero-sub">Tu biblioteca, estadísticas, rachas, retos, recomendaciones y una comunidad lectora con chat y lecturas conjuntas. En español, offline y gratis.</p>
                 <div class="hero-ctas">
                     <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
                     <a href="#demo" class="cta-btn cta-secondary">Probar la demo</a>
@@ -159,7 +261,9 @@
     <!-- ==================== LANDING: QUÉ ES ==================== -->
     <section class="landing-que-es reveal">
         <h2 class="landing-section-title">¿Qué es Mi Rincón de Lectura?</h2>
-        <p class="que-es-texto">Mi Rincón de Lectura es una aplicación web gratuita para llevar el seguimiento de tus lecturas. Apuntas qué libro tienes entre manos y por qué página vas, y la app convierte eso en estadísticas, rachas diarias y logros que luego da pena abandonar. Tienes tu biblioteca organizada por secciones, reseñas con estrellas listas para compartir, un club de lectura con tus amigos (con comentarios anti-spoiler, porque hay cosas sagradas) y a Págino, un dinosaurio que celebra cada día que lees. Funciona en el navegador sin instalar nada, aunque puedes añadirla a tu móvil como una app más. Y funciona sin conexión: si lees en el metro, tu progreso se guarda y se sincroniza cuando vuelve la cobertura. Nació como alternativa a Goodreads en español: sin anuncios entre tus libros, con todo en tu idioma y gratis de verdad, no gratis con sorpresas.</p>
+        <p class="que-es-texto">Mi Rincón de Lectura es una aplicación web gratuita en español para llevar el seguimiento de tus lecturas y convertirlas en un hábito. Apuntas qué libro tienes entre manos y por qué página vas, y la app lo convierte en estadísticas, rachas diarias, logros y retos que luego da pena abandonar. Organizas tu biblioteca en cinco secciones, buscas libros en Google Books con su portada, y valoras cada lectura con estrellas, notas, ritmo narrativo y estados de ánimo.</p>
+        <p class="que-es-texto">Y no lees en soledad: puedes añadir amigos, ver sus bibliotecas, competir en un ranking de páginas, comentar en un club de lectura con protección anti-spoiler, chatear por mensajes directos y hacer lecturas conjuntas, leyendo el mismo libro a la vez y picándote con su progreso. La app te recomienda qué leer a partir de tus gustos y de los favoritos de tus amigos, y a Págino, tu mascota lectora, le brillan los ojos cada día que lees.</p>
+        <p class="que-es-texto">Tus datos son tuyos: importas tu biblioteca de Goodreads desde un CSV y exportas la tuya a CSV cuando quieras, sin bloqueos. Funciona en el navegador sin instalar nada, puedes añadirla al móvil como una app más, y funciona sin conexión: si lees en el metro, tu progreso se guarda y se sincroniza al volver la cobertura. Nació como alternativa a Goodreads en español, sin anuncios entre tus libros, con todo en tu idioma y gratis de verdad, no gratis con sorpresas.</p>
     </section>
 
     <!-- ==================== LANDING: BENEFICIOS ==================== -->
@@ -189,6 +293,74 @@
                 <h3>Modo offline total</h3>
                 <p>En el metro o sin cobertura: tu registro funciona offline y se sincroniza solo al volver la conexión.</p>
             </div>
+            <div class="feature-card">
+                <div class="feature-icon">🦕</div>
+                <h3>Recomendaciones que aciertan</h3>
+                <p>Aprende tus géneros, ritmos y vibes favoritos y te sugiere qué leer, incluidos los libros mejor valorados por tus amigos.</p>
+            </div>
+            <div class="feature-card feature-card-tinted">
+                <div class="feature-icon">🤝</div>
+                <h3>Lecturas conjuntas y chat</h3>
+                <p>Leed el mismo libro a la vez y comparad el progreso, con mensajes directos y un club de lectura anti-spoiler.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Retos a tu medida</h3>
+                <p>Fija tus objetivos de páginas diarias y semanales. La app lleva la cuenta y te avisa cuando los cumples.</p>
+            </div>
+            <div class="feature-card feature-card-wide">
+                <div class="feature-icon">🔄</div>
+                <h3>Tus datos, sin ataduras</h3>
+                <p>Importa tu biblioteca de Goodreads desde un CSV y exporta la tuya a CSV cuando quieras. Sin bloqueos ni letra pequeña.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== LANDING: TODO LO QUE PUEDES HACER ==================== -->
+    <section class="landing-capacidades reveal">
+        <h2 class="landing-section-title">Todo lo que puedes hacer</h2>
+        <p class="capacidades-intro">La lista completa, sin humo. Todo esto ya funciona, es gratis y está en español.</p>
+        <div class="capacidades-grid">
+            <div class="capacidad-col">
+                <h3>📚 Tu biblioteca</h3>
+                <ul>
+                    <li>Organiza tus libros en 5 secciones: Leyendo ahora, Próximas lecturas, Terminados, Lista de deseos y Abandonados.</li>
+                    <li>Busca y añade libros desde Google Books con portada, autor y páginas automáticas.</li>
+                    <li>Sigue tu progreso página a página con barra de avance.</li>
+                    <li>Valora con media estrella y guarda notas, ritmo narrativo y estados de ánimo por libro.</li>
+                    <li>Vista estantería con lomos generados desde la portada de cada libro, y adornos que decoras a tu gusto.</li>
+                </ul>
+            </div>
+            <div class="capacidad-col">
+                <h3>🔥 Hábito y retos</h3>
+                <ul>
+                    <li>Racha diaria de lectura con Págino, tu mascota lectora, que celebra cada día que lees.</li>
+                    <li>33 logros desbloqueables, incluidos logros secretos por descubrir.</li>
+                    <li>Retos configurables: objetivos de páginas diarias y semanales con seguimiento automático.</li>
+                    <li>Estadísticas visuales por sección, páginas, géneros, ritmo y estados de ánimo.</li>
+                </ul>
+            </div>
+            <div class="capacidad-col">
+                <h3>👥 Comunidad lectora</h3>
+                <ul>
+                    <li>Añade amigos y curiosea sus bibliotecas y valoraciones.</li>
+                    <li>Ranking de páginas para picaros sanamente.</li>
+                    <li>Club de lectura con comentarios y protección anti-spoiler por libro.</li>
+                    <li>Chat directo entre amigos.</li>
+                    <li>Lecturas conjuntas: el mismo libro a la vez, con el progreso de cada uno a la vista.</li>
+                    <li>Recomendaciones personalizadas según tus gustos y los favoritos de tus amigos.</li>
+                </ul>
+            </div>
+            <div class="capacidad-col">
+                <h3>📤 Tus datos y compartir</h3>
+                <ul>
+                    <li>Importa tu biblioteca completa desde un CSV de Goodreads.</li>
+                    <li>Exporta la tuya a CSV cuando quieras, sin bloqueos.</li>
+                    <li>Comparte reseñas, estadísticas y tu estantería como imagen para Stories de Instagram y TikTok.</li>
+                    <li>Descubre tu tropo literario dominante con el test.</li>
+                    <li>Modo offline total (PWA) y sin un solo anuncio.</li>
+                </ul>
+            </div>
         </div>
     </section>
 
@@ -216,9 +388,29 @@
                         <td>Inglés, con traducción a medias</td>
                     </tr>
                     <tr>
-                        <th scope="row">Rachas y logros</th>
+                        <th scope="row">Rachas, logros y retos</th>
                         <td class="vs-si">Sí, con dinosaurio incluido</td>
                         <td>No tiene</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Estadísticas visuales</th>
+                        <td class="vs-si">Gráficos por sección, páginas, géneros y vibes</td>
+                        <td>Básicas</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Recomendaciones personalizadas</th>
+                        <td class="vs-si">Según tus gustos y los de tus amigos</td>
+                        <td>Genéricas</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Lectura conjunta y chat</th>
+                        <td class="vs-si">Lecturas a la vez y mensajes directos</td>
+                        <td>No tiene</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Importar / exportar tus datos</th>
+                        <td class="vs-si">Importa de Goodreads y exporta a CSV</td>
+                        <td>Exporta a CSV; no importa fácil</td>
                     </tr>
                     <tr>
                         <th scope="row">Modo offline</th>
@@ -310,6 +502,45 @@
             <div class="books-container" data-section="libros-abandonados"></div>
         </section>
     </main>
+
+    <!-- ==================== LANDING: PREGUNTAS FRECUENTES ==================== -->
+    <section class="landing-faq reveal">
+        <h2 class="landing-section-title">Preguntas frecuentes</h2>
+        <div class="faq-list">
+            <details class="faq-item">
+                <summary>¿Es gratis? ¿Tiene anuncios?</summary>
+                <p>Sí, es gratis de verdad y no tiene anuncios ni versión de pago. No hay banners entre tus libros ni funciones bloqueadas tras un muro de pago, y tus datos no se venden.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Puedo importar mi biblioteca desde Goodreads?</summary>
+                <p>Sí. Exportas tu biblioteca de Goodreads como CSV y la importas desde el menú Datos. Se trasladan tus libros, estanterías, valoraciones y reseñas, y las portadas se recuperan automáticamente.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Puedo exportar mis datos?</summary>
+                <p>Sí. Desde el menú Datos exportas toda tu biblioteca a un archivo CSV (título, autor, estado, páginas, valoración, género, notas y más). Sin bloqueo de proveedor: tus datos son tuyos y te los llevas cuando quieras.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Funciona sin conexión?</summary>
+                <p>Sí. Es una PWA con modo offline total: registras tu progreso sin cobertura y todo se sincroniza solo al volver la conexión. Puedes añadirla a la pantalla de inicio del móvil como una app más.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Puedo leer con amigos?</summary>
+                <p>Sí. Añades amigos, ves sus bibliotecas, competís en un ranking de páginas, comentáis en un club de lectura anti-spoiler, chateáis por mensajes directos y hacéis lecturas conjuntas: el mismo libro a la vez, comparando el progreso de cada uno.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Recomienda libros?</summary>
+                <p>Sí. El recomendador construye un perfil con tus géneros, ritmos y estados de ánimo favoritos (ponderando lo que lees y cómo lo valoras) y te sugiere libros de tu lista de pendientes y de los favoritos mejor valorados de tus amigos.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿Puedo ponerme retos u objetivos de lectura?</summary>
+                <p>Sí. Configuras tus objetivos de páginas diarias y semanales, y la app hace el seguimiento y te avisa cuando los cumples. Con las rachas y los 33 logros, leer se convierte en un reto continuo.</p>
+            </details>
+            <details class="faq-item">
+                <summary>¿En qué se diferencia de Goodreads?</summary>
+                <p>Está en español de arriba abajo, no tiene anuncios y añade lo que a Goodreads le falta: rachas, logros, retos configurables, estadísticas visuales, recomendaciones personalizadas, lecturas conjuntas, chat, modo offline y compartir para Stories. Goodreads gana en tamaño de catálogo y comunidad; Mi Rincón de Lectura gana en experiencia, gamificación y funciones.</p>
+            </details>
+        </div>
+    </section>
 
     <!-- ==================== LANDING: QUIÉN ESTÁ DETRÁS ==================== -->
     <section class="landing-about reveal">

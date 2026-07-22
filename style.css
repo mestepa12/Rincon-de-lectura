@@ -2376,7 +2376,92 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
     line-height: 1.75;
     color: var(--text-color);
     opacity: 0.88;
-    margin: 0;
+    margin: 0 0 1rem;
+}
+.que-es-texto:last-child { margin-bottom: 0; }
+
+/* ======== LANDING: TODO LO QUE PUEDES HACER ======== */
+.landing-capacidades {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+}
+.capacidades-intro {
+    text-align: center;
+    font-size: 1.02rem;
+    line-height: 1.6;
+    color: var(--text-color);
+    opacity: 0.82;
+    margin: -1.2rem auto 2.4rem;
+    max-width: 52ch;
+}
+.capacidades-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+.capacidad-col {
+    background: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.5rem 1.6rem;
+}
+.capacidad-col h3 {
+    font-family: var(--font-title);
+    font-size: 1.15rem;
+    margin: 0 0 0.9rem;
+    color: var(--text-color);
+}
+.capacidad-col ul { margin: 0; padding-left: 1.1rem; }
+.capacidad-col li {
+    font-size: 0.96rem;
+    line-height: 1.55;
+    color: var(--text-color);
+    opacity: 0.86;
+    margin-bottom: 0.55rem;
+}
+.capacidad-col li:last-child { margin-bottom: 0; }
+
+/* ======== LANDING: PREGUNTAS FRECUENTES ======== */
+.landing-faq {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+}
+.faq-list { display: flex; flex-direction: column; gap: 0.7rem; }
+.faq-item {
+    background: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 0.4rem 1.2rem;
+}
+.faq-item > summary {
+    list-style: none;
+    cursor: pointer;
+    font-family: var(--font-title);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--text-color);
+    padding: 0.7rem 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+.faq-item > summary::-webkit-details-marker { display: none; }
+.faq-item > summary::after { content: '+'; font-size: 1.4rem; color: var(--accent-color-interactive); line-height: 1; }
+.faq-item[open] > summary::after { content: '–'; }
+.faq-item > p {
+    margin: 0 0 0.9rem;
+    font-size: 0.98rem;
+    line-height: 1.65;
+    color: var(--text-color);
+    opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+    .capacidades-grid { grid-template-columns: 1fr; }
+    .landing-capacidades, .landing-faq { padding: 2.8rem 1.2rem; }
 }
 
 .landing-vs {
