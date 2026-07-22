@@ -1,6 +1,7 @@
 import { notify } from './notify.js';
 import { googleBooksApiKey } from './config.js';
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
+import { exportarCanvas } from './share-export.js';
 
 // Entradas suaves de las secciones de la landing al hacer scroll.
 // La clase js-reveal activa el estado oculto SOLO si este script cargó:
@@ -632,10 +633,7 @@ function openModal(id) {
         try {
             const html2canvas = await loadHtml2canvas(); // carga bajo demanda
             const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
-            const link = document.createElement('a');
-            link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
+            await exportarCanvas(canvas, `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`, 'Mi reseña 📖');
         } catch (err) {
             console.error('Error generando imagen:', err);
             notify('No se pudo generar la imagen.', 'error');

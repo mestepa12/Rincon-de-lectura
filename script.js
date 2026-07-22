@@ -9,6 +9,7 @@ import { app, auth, db } from './firebase-init.js';
 
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
+import { exportarCanvas } from './share-export.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3484,10 +3485,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const html2canvas = await loadHtml2canvas(); // carga bajo demanda
                 const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
-                const link = document.createElement('a');
-                link.download = `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                await exportarCanvas(canvas, `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`, 'Mi reseña 📖');
             } catch (err) {
                 console.error('Error generando imagen:', err);
                 notify('No se pudo generar la imagen.', 'error');
@@ -3596,26 +3594,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 await Promise.all(cargasPortadas);
                 const html2canvas = await loadHtml2canvas();
                 const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
-                const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
-                const file = new File([blob], 'mi_estanteria.png', { type: 'image/png' });
-                // En móvil, hoja de compartir nativa (directo a stories/TikTok).
-                // Si falla (p. ej. la activación de usuario caducó mientras se
-                // generaba la imagen) o no existe, descarga clásica.
-                let compartido = false;
-                if (navigator.canShare?.({ files: [file] })) {
-                    try {
-                        await navigator.share({ files: [file], title: 'Mi estantería 📚' });
-                        compartido = true;
-                    } catch (err) {
-                        if (err.name === 'AbortError') compartido = true; // el usuario cerró la hoja
-                    }
-                }
-                if (!compartido) {
-                    const link = document.createElement('a');
-                    link.download = 'mi_estanteria.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                }
+                // Hoja de compartir nativa en móvil (directo a stories/TikTok),
+                // descarga en escritorio; los casos raros de iOS los gestiona
+                // share-export.js (aviso con botón si caducó la activación).
+                await exportarCanvas(canvas, 'mi_estanteria.png', 'Mi estantería 📚');
             } catch (err) {
                 console.error('Error generando la imagen de la estantería:', err);
                 notify('No se pudo generar la imagen.', 'error');
@@ -4207,10 +4189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const html2canvas = await loadHtml2canvas(); // carga bajo demanda
                 const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
-                const link = document.createElement('a');
-                link.download = 'mis_estadisticas_lectura.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                await exportarCanvas(canvas, 'mis_estadisticas_lectura.png', 'Mis estadísticas de lectura 📊');
             } catch (err) {
                 console.error('Error generando imagen stats:', err);
                 notify('No se pudo generar la imagen.', 'error');

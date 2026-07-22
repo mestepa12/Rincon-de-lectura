@@ -10,6 +10,7 @@ import {
 } from "firebase/auth";
 import { auth, db } from './firebase-init.js';
 import { loadHtml2canvas } from './lazy-libs.js';
+import { exportarBlob } from './share-export.js';
 import { QUIZ_TROPOS } from './quiz-data.js';
 
 const QUIZ_ID = 'tropo-literario';
@@ -213,7 +214,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const generarImagen = async () => {
         const html2canvas = await loadHtml2canvas();
         const canvas = await html2canvas(document.getElementById('resultado-card'), { scale: 2, logging: false });
-        return new Promise(res => canvas.toBlob(res, 'image/png'));
+        return new Promise((res, rej) =>
+            canvas.toBlob(b => (b ? res(b) : rej(new Error('canvas.toBlob devolvió null'))), 'image/png'));
     };
 
     // IG Stories y TikTok no tienen API web de publicación directa: el camino
@@ -223,18 +225,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         estadoEl.textContent = 'Generando tu tarjeta...';
         try {
             const blob = await generarImagen();
-            const file = new File([blob], 'mi-tropo-literario.png', { type: 'image/png' });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({ files: [file], title: quiz.titulo, text: 'Mi tropo literario dominante 🎭 rinconlectura.es/quiz' });
-                estadoEl.textContent = '';
-            } else {
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'mi-tropo-literario.png';
-                a.click();
-                URL.revokeObjectURL(a.href);
-                estadoEl.textContent = `Imagen descargada: súbela a ${textoApp} desde tu galería.`;
-            }
+            const resultado = await exportarBlob(blob, 'mi-tropo-literario.png',
+                quiz.titulo, 'Mi tropo literario dominante 🎭 rinconlectura.es/quiz');
+            estadoEl.textContent = resultado === 'descargado'
+                ? `Imagen descargada: súbela a ${textoApp} desde tu galería.`
+                : '';
         } catch (e) {
             if (e.name !== 'AbortError') estadoEl.textContent = 'No se pudo generar la imagen. Inténtalo de nuevo.';
         }
