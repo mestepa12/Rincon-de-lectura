@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elige tu nombre - Mi Rincón de Lectura</title>
+    <meta name="description" content="Elige tu nombre de usuario para Mi Rincón de Lectura.">
+    <link rel="canonical" href="https://rinconlectura.es/onboarding">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-C3LTR2R6B5');
+</script>
+</head>
+<body class="login-page">
+
+    <div class="login-container">
+        <h1>¡Casi listo!</h1>
+        <p style="margin-bottom: 1.2rem; line-height: 1.5;">Elige tu nombre de usuario para Rincón de Lectura. Así te encontrarán tus amigos.</p>
+        <form id="onboarding-form">
+            <label for="username">Nombre de usuario</label>
+            <input type="text" id="username" required autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="30" placeholder="p. ej. lector_nocturno">
+            <p style="margin: 4px 0 0; font-size: 12px; color: #777;">Entre 3 y 30 caracteres: letras, números y guion bajo.</p>
+
+            <button type="submit" class="btn-primary" id="onboarding-submit" style="margin-top: 16px;">Empezar a leer</button>
+            <p id="onboarding-error" class="error-message"></p>
+        </form>
+    </div>
+
+    <script type="module" src="onboarding.js"></script>
+    <script src="cookies.js" defer></script>
+
+    <div id="cookie-banner" class="cookie-banner">
+        <p>
+            Utilizamos cookies y almacenamiento local para mejorar tu experiencia,
+            guardar tus preferencias de tema y mantener tu sesión iniciada.
+            Al continuar, aceptas nuestro uso de cookies.
+        </p>
+        <button id="accept-cookies-btn" class="btn-primary">Aceptar</button>
+    </div>
+    </body>
+</html>

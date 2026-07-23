@@ -16,9 +16,18 @@ import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- EL PORTERO: Vigilando la entrada ---
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user && user.emailVerified) {
-            runApp(user); 
+            // Guard anti-abandono: un usuario de Google que cerró la pantalla
+            // de onboarding tiene sesión viva pero ningún perfil ni username
+            // en Firestore. Sin nombre la app no funciona bien, así que lo
+            // devolvemos a elegirlo antes de abrir la biblioteca.
+            const perfil = await getDoc(doc(db, 'users', user.uid));
+            if (!perfil.exists()) {
+                window.location.replace('onboarding.html');
+                return;
+            }
+            runApp(user);
         }
     });
         // --- FUNCIÓN DE MIGRACIÓN (SOLO PARA TRASPASAR DATOS) ---

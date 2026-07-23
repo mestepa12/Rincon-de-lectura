@@ -113,26 +113,15 @@ const iniciarAuth = () => {
                 // Comprobamos si el usuario ya existe en Firestore
                 const profileSnap = await getDoc(doc(db, "users", userCred.user.uid));
 
-                // Si es nuevo, lo creamos en la base de datos.
-                // PRIVACIDAD: el email NO se guarda en Firestore — Firebase
-                // Auth ya lo custodia y la colección users es legible por
-                // otros usuarios autenticados.
-                if (!profileSnap.exists()) {
-                    // Truncado a 26 chars: las reglas de Firestore limitan username a 30
-                    const nombreGoogle = userCred.user.displayName ? userCred.user.displayName.replace(/\s+/g, '').slice(0, 26) : 'Lector';
-                    const usernameGenerado = nombreGoogle + Math.floor(Math.random() * 1000);
-
-                    await setDoc(doc(db, "users", userCred.user.uid), {
-                        username: usernameGenerado,
-                        searchKey: usernameGenerado.toLowerCase(),
-                        uid: userCred.user.uid
-                    });
-                    // Reservar el username (uniqueness + chequeo público de registro)
-                    await setDoc(doc(db, "usernames", usernameGenerado.toLowerCase()), {
-                        uid: userCred.user.uid
-                    });
-                }
                 localStorage.setItem('rincon_logged_in', '1');
+
+                // Cuenta nueva: aún no tiene perfil ni username. En vez de
+                // autogenerar un nombre feo ("Miguel742"), lo mandamos al
+                // onboarding a elegirlo. El perfil se crea allí, no aquí.
+                if (!profileSnap.exists()) {
+                    window.location.href = 'onboarding.html';
+                    return;
+                }
                 window.location.href = destinoTrasAuth();
             })
             .catch(err => {

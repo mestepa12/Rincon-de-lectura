@@ -82,7 +82,7 @@
         ]
       },
       {
-        "source": "/@(login|register|quiz|vs-goodreads|privacidad|biblioteca|404)",
+        "source": "/@(login|register|onboarding|quiz|vs-goodreads|privacidad|biblioteca|404)",
         "headers": [
           {
             "key": "Cache-Control",

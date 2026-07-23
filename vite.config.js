@@ -25,6 +25,7 @@ export default defineConfig({
         biblioteca: 'biblioteca.html',
         login: 'login.html',
         register: 'register.html',
+        onboarding: 'onboarding.html',
         privacidad: 'privacidad.html',
         quiz: 'quiz.html',
         vsgoodreads: 'vs-goodreads.html',
