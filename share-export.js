@@ -27,9 +27,11 @@ const compartir = (file, titulo, texto) =>
 // Aviso con botón: el click del usuario renueva la activación que share() necesita.
 const pedirToqueParaCompartir = (file, titulo, texto, nombre) => {
     const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:80px;right:1rem;background:#2D3748;color:white;' +
+    // bottom:150px (no 80): así no lo tapa el toast de "Generando imagen…"
+    // que sigue visible en su esquina cuando el render fue rápido.
+    t.style.cssText = 'position:fixed;bottom:150px;right:1rem;background:#2D3748;color:white;' +
         'padding:0.9rem 1.2rem;border-radius:10px;font-size:0.85rem;max-width:290px;' +
-        'z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.35);line-height:1.4;' +
+        'z-index:10001;box-shadow:0 4px 16px rgba(0,0,0,0.35);line-height:1.4;' +
         'border-left:4px solid #60A5FA;display:flex;flex-direction:column;gap:0.6rem;';
     const txt = document.createElement('span');
     txt.textContent = '📸 Tu imagen está lista.';
@@ -56,11 +58,21 @@ const pedirToqueParaCompartir = (file, titulo, texto, nombre) => {
 export const exportarBlob = async (blob, nombre, titulo, texto) => {
     const file = new File([blob], nombre, { type: 'image/png' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        const t0 = performance.now();
         try {
             await compartir(file, titulo, texto);
             return 'compartido';
         } catch (err) {
-            if (err.name === 'AbortError') return 'compartido'; // el usuario cerró la hoja
+            // La hoja de compartir tarda: si el rechazo llega casi instantáneo,
+            // es que NUNCA llegó a abrirse. iOS Safari lanza en ese caso tanto
+            // NotAllowedError como AbortError cuando la activación del toque ya
+            // caducó (html2canvas se comió el gesto original). Solo tratamos el
+            // AbortError como "cerrada a propósito" si el usuario tuvo tiempo de
+            // verla; si no, mostramos el botón para reintentar con un toque
+            // nuevo. Antes un AbortError instantáneo se tragaba en silencio y
+            // no aparecía nada (la captura "no hacía nada").
+            const hojaSeAbrio = performance.now() - t0 >= 500;
+            if (err.name === 'AbortError' && hojaSeAbrio) return 'compartido';
             pedirToqueParaCompartir(file, titulo, texto, nombre);
             return 'pendiente';
         }
