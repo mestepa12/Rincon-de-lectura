@@ -10,6 +10,35 @@ import { app, auth, db } from './firebase-init.js';
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 import { exportarCanvas, descargarBlob } from './share-export.js';
+
+// iOS Safari mata en silencio el canvas de html2canvas cuando se queda sin
+// memoria; con bibliotecas grandes (decenas de portadas) el scale 2 sobre la
+// tarjeta 540x960 lo dispara y la captura "no hace nada". En iOS bajamos el
+// scale para no exceder su presupuesto de memoria de canvas.
+const ES_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const ESCALA_CAPTURA = ES_IOS ? 1 : 2;
+
+// html2canvas clona el documento ENTERO para renderizar; con decenas de libros
+// en el DOM el clon es demasiado pesado para iOS Safari y cuelga (falla hasta
+// capturando un div trivial de 20px). Desmontamos temporalmente todo lo que no
+// contenga la tarjeta a capturar, dejando un comentario-marcador en su sitio, y
+// lo restauramos exacto al terminar. Así html2canvas clona un documento ligero.
+async function renderTarjetaAislada(card) {
+    const html2canvas = await loadHtml2canvas();
+    const ocultados = [];
+    for (const el of Array.from(document.body.children)) {
+        if (el.contains(card)) continue; // conserva la tarjeta y sus ancestros
+        const ph = document.createComment('cap');
+        el.replaceWith(ph);
+        ocultados.push([ph, el]);
+    }
+    try {
+        return await html2canvas(card, { scale: ESCALA_CAPTURA, useCORS: false, allowTaint: false, logging: false });
+    } finally {
+        for (const [ph, el] of ocultados) ph.replaceWith(el);
+    }
+}
 import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 
 
@@ -3669,8 +3698,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 : ''; // sin valoración no se pintan cinco estrellas vacías
             card.style.display = 'flex';
             try {
-                const html2canvas = await loadHtml2canvas(); // carga bajo demanda
-                const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
+                const canvas = await renderTarjetaAislada(card);
                 await exportarCanvas(canvas, `${(book.title || 'libro').replace(/[^a-z0-9]/gi,'_')}_resena.png`, 'Mi reseña 📖');
             } catch (err) {
                 console.error('Error generando imagen:', err);
@@ -3844,8 +3872,7 @@ document.addEventListener('DOMContentLoaded', () => {
             card.style.display = 'flex';
             try {
                 await Promise.all(cargasPortadas);
-                const html2canvas = await loadHtml2canvas();
-                const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
+                const canvas = await renderTarjetaAislada(card);
                 // Hoja de compartir nativa en móvil (directo a stories/TikTok),
                 // descarga en escritorio; los casos raros de iOS los gestiona
                 // share-export.js (aviso con botón si caducó la activación).
@@ -4460,8 +4487,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const card = document.getElementById('export-stats-card');
             card.style.display = 'flex';
             try {
-                const html2canvas = await loadHtml2canvas(); // carga bajo demanda
-                const canvas = await html2canvas(card, { scale: 2, useCORS: false, allowTaint: false, logging: false });
+                const canvas = await renderTarjetaAislada(card);
                 await exportarCanvas(canvas, 'mis_estadisticas_lectura.png', 'Mis estadísticas de lectura 📊');
             } catch (err) {
                 console.error('Error generando imagen stats:', err);
