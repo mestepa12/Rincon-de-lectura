@@ -299,18 +299,42 @@ exports.onReadingGoalMet = onDocumentUpdated("users/{uid}", async (event) => {
   return null;
 });
 
+// Zona horaria de referencia de la app. Los cron corren en esta zona y el
+// cliente cuenta días con la medianoche local (Madrid), así que el conteo de
+// días del servidor debe usar la misma frontera civil, no la de UTC.
+const MADRID_TZ = "Europe/Madrid";
+
 /**
- * Días de calendario (UTC) transcurridos entre un Timestamp y ahora.
+ * Componentes de fecha civil (año, mes, día) de un instante en Europe/Madrid.
+ * @param {Date} date Instante a convertir.
+ * @return {{y:number, m:number, d:number}} Fecha civil en Madrid.
+ */
+function madridYMD(date) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: MADRID_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type) => Number(parts.find((p) => p.type === type).value);
+  return {y: get("year"), m: get("month"), d: get("day")};
+}
+
+/**
+ * Días de calendario (Europe/Madrid) transcurridos entre un Timestamp y ahora.
+ * Cuenta fronteras civiles de Madrid para cuadrar con los cron (que corren en
+ * esa zona) y con el cliente, que usa la medianoche local del dispositivo.
  * @param {object|undefined} ts Timestamp de Firestore.
  * @return {number|null} Días completos de diferencia, o null si no hay fecha.
  */
 function calendarDaysSince(ts) {
   if (!ts || typeof ts.toDate !== "function") return null;
-  const d = ts.toDate();
-  const last = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-  const now = new Date();
-  const today = Date.UTC(
-      now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const a = madridYMD(ts.toDate());
+  const b = madridYMD(new Date());
+  // Date.UTC sobre componentes civiles = número de serie de día estable para
+  // restar, sin aritmética de husos ni saltos de horario de verano.
+  const last = Date.UTC(a.y, a.m - 1, a.d);
+  const today = Date.UTC(b.y, b.m - 1, b.d);
   return Math.round((today - last) / 86400000);
 }
 
