@@ -3276,3 +3276,117 @@ body.dark-mode {
     color: rgba(255, 228, 190, 0.85);
 }
 .ss-foot b { color: #FFD98A; }
+
+/* ==================== PAGINAS DE CONTENIDO SEO ==================== */
+/* Reutilizan .vs-page como base; esto solo anade lo que esa clase no cubre. */
+
+.vs-page h3 {
+    font-family: var(--font-title);
+    font-size: 1.08rem;
+    margin: 1.5rem 0 0.5rem;
+}
+.vs-page h2 { scroll-margin-top: 1.5rem; }
+.vs-page a { color: var(--accent-color-interactive); }
+.vs-page .cta-btn { color: #fff; }
+
+/* Nombre en espanol dentro del h2 del tropo */
+.tropo-es {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 0.82em;
+    opacity: 0.7;
+}
+
+/* Indice navegable con anclas */
+.tropos-indice {
+    background: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.4rem 1.6rem;
+    margin: 2rem 0 0.5rem;
+    box-shadow: 0 4px 14px var(--shadow-color);
+}
+.tropos-indice-titulo {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin: 0 0 0.9rem;
+    scroll-margin-top: 1.5rem;
+}
+.tropos-indice-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 0.45rem 1.6rem;
+}
+.tropos-indice-lista a {
+    color: var(--accent-color-interactive);
+    text-decoration: none;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+.tropos-indice-lista a:hover { text-decoration: underline; }
+.tropos-indice-lista .tropo-es { font-size: 0.88em; }
+
+/* Parrafo de "por que engancha" */
+.tropo-gancho {
+    border-left: 3px solid var(--accent-color-interactive);
+    padding-left: 0.95rem;
+    margin: 0.9rem 0 1.1rem;
+    opacity: 0.92;
+}
+
+/* Bloque destacado que enlaza al test */
+.tropos-quiz-box {
+    margin: 2.8rem 0 0;
+    background: rgba(154, 59, 59, 0.08);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.9rem 1.5rem;
+    text-align: center;
+}
+.tropos-quiz-eyebrow {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-color-interactive);
+    margin: 0 0 0.5rem;
+}
+.tropos-quiz-titulo {
+    font-family: var(--font-title);
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin: 0 0 0.7rem;
+}
+.tropos-quiz-box p:not(.tropos-quiz-eyebrow):not(.tropos-quiz-titulo) {
+    margin: 0 0 1.3rem;
+}
+
+.tropos-volver {
+    margin-top: 2.2rem;
+    text-align: center;
+    font-size: 0.92rem;
+}
+.tropos-volver a { color: var(--accessible-muted-color); text-decoration: none; }
+.tropos-volver a:hover { text-decoration: underline; }
+
+/* Navegacion de guias en el pie */
+.footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem 1.4rem;
+    max-width: 900px;
+    margin: 0 auto 1rem;
+    padding: 0 1rem;
+}
+.footer-nav a {
+    color: var(--accessible-muted-color);
+    text-decoration: none;
+    font-weight: 400;
+    font-size: 0.88rem;
+}
+.footer-nav a:hover { text-decoration: underline; }

@@ -10,7 +10,7 @@ const cleanInternalUrls = () => ({
   transformIndexHtml(html) {
     return html
       .replace(/href="index\.html"/g, 'href="/"')
-      .replace(/href="(login|register|quiz|privacidad|biblioteca|vs-goodreads)\.html"/g, 'href="/$1"')
+      .replace(/href="(login|register|quiz|privacidad|biblioteca|vs-goodreads|tropos-literarios|app-registro-lecturas|importar-goodreads|cuantas-paginas-leer-al-dia|estadisticas-de-lectura)\.html"/g, 'href="/$1"')
       .replace(/location\.replace\('biblioteca\.html'\)/g, "location.replace('/biblioteca')")
   }
 })
@@ -29,6 +29,11 @@ export default defineConfig({
         privacidad: 'privacidad.html',
         quiz: 'quiz.html',
         vsgoodreads: 'vs-goodreads.html',
+        tropos: 'tropos-literarios.html',
+        appregistrolecturas: 'app-registro-lecturas.html',
+        importargoodreads: 'importar-goodreads.html',
+        cuantaspaginasleeraldia: 'cuantas-paginas-leer-al-dia.html',
+        estadisticasdelectura: 'estadisticas-de-lectura.html',
         404: '404.html',
       }
     }

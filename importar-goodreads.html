@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Importar tu biblioteca de Goodreads: guía paso a paso</title>
+    <meta name="description" content="Cómo exportar el CSV de Goodreads e importar tu biblioteca en otra app, qué datos se conservan y cuáles no. Guía en español. Pruébalo gratis en un minuto.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://rinconlectura.es/importar-goodreads">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="theme-color" content="#8c6f5a">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mi Rincón de Lectura">
+    <meta property="og:title" content="Importar tu biblioteca de Goodreads paso a paso">
+    <meta property="og:description" content="Exportar el CSV, importarlo y saber qué datos sobreviven al viaje. Con los límites contados por delante.">
+    <meta property="og:url" content="https://rinconlectura.es/importar-goodreads">
+    <meta property="og:image" content="https://rinconlectura.es/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Importar la biblioteca de Goodreads a Mi Rincón de Lectura">
+    <meta property="og:locale" content="es_ES">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Importar tu biblioteca de Goodreads paso a paso">
+    <meta name="twitter:description" content="Exportar el CSV, importarlo y saber qué datos sobreviven al viaje. Con los límites contados por delante.">
+    <meta name="twitter:image" content="https://rinconlectura.es/og-image.png">
+    <meta name="twitter:image:alt" content="Importar la biblioteca de Goodreads a Mi Rincón de Lectura">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Article",
+          "@id": "https://rinconlectura.es/importar-goodreads#article",
+          "headline": "Importar tu biblioteca de Goodreads: guía paso a paso",
+          "description": "Cómo exportar el CSV de Goodreads e importarlo en Mi Rincón de Lectura, qué campos se conservan y cuáles se pierden por el camino.",
+          "inLanguage": "es-ES",
+          "url": "https://rinconlectura.es/importar-goodreads",
+          "mainEntityOfPage": { "@type": "WebPage", "@id": "https://rinconlectura.es/importar-goodreads" },
+          "isPartOf": { "@id": "https://rinconlectura.es/#website" },
+          "author": { "@id": "https://rinconlectura.es/#org" },
+          "publisher": { "@id": "https://rinconlectura.es/#org" },
+          "datePublished": "2026-08-22",
+          "dateModified": "2026-08-22",
+          "image": "https://rinconlectura.es/og-image.png",
+          "about": { "@type": "Thing", "name": "Importación de bibliotecas de lectura" }
+        },
+        {
+          "@type": "FAQPage",
+          "@id": "https://rinconlectura.es/importar-goodreads#faq",
+          "inLanguage": "es-ES",
+          "isPartOf": { "@id": "https://rinconlectura.es/#website" },
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "¿Se importa por qué página voy de cada libro?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Todos los libros entran con el progreso a cero, incluidos los que estabas leyendo. Goodreads guarda ese dato en otro sitio y no lo incluye en el CSV de exportación, así que hay que volver a marcar la página a mano en los libros en curso. Suelen ser dos o tres."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Qué pasa con mis estanterías personalizadas de Goodreads?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Se pierden como tales. Solo se reconocen las tres estanterías nativas (read, currently-reading y to-read), que se traducen a Libros Terminados, Leyendo Ahora y Lista de Deseos. Cualquier otra estantería hace que el libro caiga en Próximas Lecturas, desde donde puedes moverlo."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Se importan mis reseñas y valoraciones?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Sí. Las reseñas se conservan hasta 2000 caracteres y se les limpian las etiquetas internas de Goodreads para que se lean bien. Las valoraciones se importan solo en los libros terminados, que es donde tienen sentido."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Puedo importar dos veces sin que se dupliquen los libros?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No conviene. La importación no comprueba si un libro ya existe, así que repetirla crea copias de todo. Impórtalo una sola vez y añade a mano lo que falte."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "¿Cuánto tarda si tengo cientos de libros?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Normalmente menos de un minuto. Los libros se guardan en lotes y las portadas se buscan en paralelo, así que el tamaño de la biblioteca influye poco. Lo que más tarda son los libros sin ISBN, porque hay que buscar su portada por título y autor."
+              }
+            }
+          ]
+        }
+      ]
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-C3LTR2R6B5');
+</script>
+</head>
+<body>
+
+    <main class="vs-page">
+        <a href="index.html" class="back-to-demo">← Volver al inicio</a>
+
+        <h1>Cómo importar tu biblioteca de Goodreads</h1>
+
+        <p class="vs-intro">Lo que frena a casi todo el mundo que quiere cambiar de app de lectura no es la app nueva: son los años de historial acumulado en la vieja. Cuatrocientos libros leídos, con sus notas y sus estrellas, no se copian a mano. La buena noticia es que Goodreads deja exportarlo todo en un archivo, y que ese archivo se puede importar en un par de clics.</p>
+
+        <p>Aquí está el proceso completo, y después la parte que casi nadie cuenta: qué datos sobreviven al viaje y cuáles se quedan por el camino.</p>
+
+        <h2>Paso 1: exportar el CSV desde Goodreads</h2>
+        <p>La exportación está en la web de Goodreads, no en la aplicación móvil. Entra desde un navegador, ve a <em>My Books</em> y busca en la columna de la izquierda, abajo del todo, el enlace de herramientas de importación y exportación. Allí hay un botón para generar la exportación.</p>
+        <p>Goodreads tarda un rato en prepararla: puede ser un minuto o pueden ser varios, según el tamaño de tu biblioteca y lo cargados que estén sus servidores. Cuando termina, aparece un enlace de descarga en esa misma página. Lo que baja es un archivo <code>.csv</code>, que es una tabla de texto plano; puedes abrirlo con cualquier hoja de cálculo si quieres echarle un vistazo antes.</p>
+
+        <h2>Paso 2: importarlo</h2>
+        <p>Con la cuenta ya creada, abre el menú lateral de tu biblioteca y pulsa <strong>Importar de Goodreads</strong>. Se abre el selector de archivos, eliges el CSV que acabas de descargar y ya está: los libros se guardan en lotes y las portadas se buscan a la vez, así que incluso una biblioteca grande suele estar lista en menos de un minuto.</p>
+        <p>Al terminar aparece un aviso con cuántos libros han entrado y de dónde salieron las portadas.</p>
+
+        <h2>Cómo se traducen las estanterías</h2>
+        <p>Goodreads tiene tres estanterías nativas y la importación las traduce así:</p>
+        <div class="vs-tabla-wrap">
+            <table class="vs-tabla">
+                <thead>
+                    <tr>
+                        <th scope="col">Estantería en Goodreads</th>
+                        <th scope="col">Sección resultante</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><th scope="row">read</th><td class="vs-si">Libros Terminados</td></tr>
+                    <tr><th scope="row">currently-reading</th><td class="vs-si">Leyendo Ahora</td></tr>
+                    <tr><th scope="row">to-read</th><td class="vs-si">Lista de Deseos</td></tr>
+                    <tr><th scope="row">Cualquier estantería propia</th><td>Próximas Lecturas</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>Si tenías estanterías personalizadas —«favoritos», «pendientes 2025», «releer»— esos libros aterrizan todos en Próximas Lecturas. No se pierden, pero hay que repartirlos después. Vale la pena saberlo antes de importar y no descubrirlo al ver la sección llena.</p>
+
+        <h2>Qué se conserva y qué no</h2>
+        <div class="vs-tabla-wrap">
+            <table class="vs-tabla">
+                <thead>
+                    <tr>
+                        <th scope="col">Dato</th>
+                        <th scope="col">¿Se importa?</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><th scope="row">Título y autor</th><td class="vs-si">Sí</td></tr>
+                    <tr><th scope="row">Número de páginas</th><td class="vs-si">Sí</td></tr>
+                    <tr><th scope="row">Tu valoración</th><td class="vs-si">Sí, en los libros terminados</td></tr>
+                    <tr><th scope="row">Tus reseñas</th><td class="vs-si">Sí, hasta 2000 caracteres</td></tr>
+                    <tr><th scope="row">Portada</th><td class="vs-si">Sí, buscada automáticamente</td></tr>
+                    <tr><th scope="row">Por qué página vas</th><td class="vs-no">No, todo entra a cero</td></tr>
+                    <tr><th scope="row">Fechas de lectura</th><td class="vs-no">No</td></tr>
+                    <tr><th scope="row">Estanterías personalizadas</th><td class="vs-no">No</td></tr>
+                    <tr><th scope="row">Género, ritmo y estados de ánimo</th><td class="vs-no">No, se ponen después</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p>Las reseñas merecen una nota. Goodreads las guarda con etiquetas internas propias —esas referencias entre corchetes que salen al citar otro libro— y la importación las limpia para que el texto se lea como texto, con los títulos citados en cursiva en lugar de como un churro de código.</p>
+
+        <h2>De dónde salen las portadas</h2>
+        <p>El CSV de Goodreads no incluye imágenes, solo datos, así que las portadas hay que buscarlas. Si el libro trae ISBN, se pide directamente a Open Library. Si no lo trae, se busca en Google Books por título y autor.</p>
+        <p>Algunas no aparecerán. Es lo normal con ediciones antiguas, autopublicados y bastante literatura en español que sencillamente no está en esas bases de datos; esos libros muestran un icono genérico. Se arregla en diez segundos editando el libro y pegando la URL de cualquier imagen de portada.</p>
+
+        <h2>Antes de darle al botón</h2>
+        <ul>
+            <li><strong>Importa una sola vez.</strong> El proceso no comprueba si un libro ya existe, así que una segunda importación duplica la biblioteca entera.</li>
+            <li><strong>Hazlo desde el ordenador</strong> si puedes. La exportación de Goodreads solo está en la web, y manejar el archivo descargado es más cómodo con teclado.</li>
+            <li><strong>Repasa Próximas Lecturas después.</strong> Ahí es donde ha caído todo lo que estaba en estanterías propias.</li>
+            <li><strong>Vuelve a marcar la página</strong> de los dos o tres libros que tuvieras empezados.</li>
+        </ul>
+
+        <h2>Preguntas frecuentes</h2>
+
+        <h3>¿Se importa por qué página voy de cada libro?</h3>
+        <p>No. Todos los libros entran con el progreso a cero, incluidos los que estabas leyendo. Goodreads guarda ese dato en otro sitio y no lo incluye en el CSV de exportación, así que hay que volver a marcar la página a mano en los libros en curso. Suelen ser dos o tres.</p>
+
+        <h3>¿Qué pasa con mis estanterías personalizadas de Goodreads?</h3>
+        <p>Se pierden como tales. Solo se reconocen las tres estanterías nativas (read, currently-reading y to-read), que se traducen a Libros Terminados, Leyendo Ahora y Lista de Deseos. Cualquier otra estantería hace que el libro caiga en Próximas Lecturas, desde donde puedes moverlo.</p>
+
+        <h3>¿Se importan mis reseñas y valoraciones?</h3>
+        <p>Sí. Las reseñas se conservan hasta 2000 caracteres y se les limpian las etiquetas internas de Goodreads para que se lean bien. Las valoraciones se importan solo en los libros terminados, que es donde tienen sentido.</p>
+
+        <h3>¿Puedo importar dos veces sin que se dupliquen los libros?</h3>
+        <p>No conviene. La importación no comprueba si un libro ya existe, así que repetirla crea copias de todo. Impórtalo una sola vez y añade a mano lo que falte.</p>
+
+        <h3>¿Cuánto tarda si tengo cientos de libros?</h3>
+        <p>Normalmente menos de un minuto. Los libros se guardan en lotes y las portadas se buscan en paralelo, así que el tamaño de la biblioteca influye poco. Lo que más tarda son los libros sin ISBN, porque hay que buscar su portada por título y autor.</p>
+
+        <h2>Antes de mudarte, decide si te compensa</h2>
+        <p>Importar es fácil, pero cambiar de plataforma no siempre merece la pena. Si lo que usas de Goodreads son las reseñas masivas de su comunidad, no vas a encontrar eso en ningún otro sitio. Si lo que quieres es leer más, tener las cosas en español y quitarte la publicidad de encima, el cambio tiene sentido. En la <a href="vs-goodreads.html">comparativa entre Mi Rincón de Lectura y Goodreads</a> están los dos lados, incluido dónde perdemos.</p>
+        <p>Y si aún no tienes claro qué esperar de una app de este tipo, en <a href="app-registro-lecturas.html">qué hace una app para registrar tus lecturas</a> está todo explicado sin tecnicismos. También puedes salir por el otro lado cuando quieras: la exportación a CSV está siempre disponible.</p>
+
+        <div class="vs-cta-final">
+            <p>Para importar solo hace falta una cuenta, y crearla lleva un minuto. Es gratis, sin anuncios y sin tarjeta.</p>
+            <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <nav class="footer-nav" aria-label="Guías de lectura">
+            <a href="app-registro-lecturas.html">App de registro de lecturas</a>
+            <a href="tropos-literarios.html">Tropos literarios</a>
+            <a href="vs-goodreads.html">Alternativa a Goodreads en español</a>
+            <a href="importar-goodreads.html">Importar de Goodreads</a>
+            <a href="cuantas-paginas-leer-al-dia.html">Cuántas páginas leer al día</a>
+            <a href="estadisticas-de-lectura.html">Estadísticas de lectura</a>
+            <a href="quiz.html">Test de tropos</a>
+        </nav>
+        <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a></p>
+    </footer>
+
+</body>
+</html>
