@@ -16,7 +16,7 @@ const cleanInternalUrls = () => ({
 })
 
 export default defineConfig({
-  base: process.env.VITE_BASE || '/',
+  base: '/',
   plugins: [cleanInternalUrls()],
   build: {
     rollupOptions: {
