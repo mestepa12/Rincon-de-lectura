@@ -3294,7 +3294,11 @@ body.dark-mode {
     font-family: var(--font-body);
     font-weight: 400;
     font-size: 0.82em;
-    opacity: 0.7;
+    /* 0.7 mezclaba el granate del enlace con la tarjeta hasta #b87573:
+       3,48:1, por debajo del 4,5:1 que pide AA para texto normal. Con 0.85
+       queda en 4,81:1 sobre la tarjeta y 5,56:1 en el h2, y sigue leyendose
+       como texto secundario. */
+    opacity: 0.85;
 }
 
 /* Indice navegable con anclas */
