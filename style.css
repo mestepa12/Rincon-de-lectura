@@ -3477,3 +3477,15 @@ body.dark-mode {
     font-size: 0.92rem;
     line-height: 1.65;
 }
+
+/* Respuesta directa bajo el h1: lo primero que se lee y lo que citan
+   los sistemas de respuesta automatica. Destaca sin gritar. */
+.vs-page .respuesta-directa {
+    background: var(--card-bg-color);
+    border-left: 3px solid var(--accent-color-interactive);
+    border-radius: 0 12px 12px 0;
+    padding: 1rem 1.25rem;
+    margin: 0 0 1.5rem;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
