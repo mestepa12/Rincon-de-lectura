@@ -8,17 +8,46 @@
     <meta name="description" content="Crea tu cuenta gratis en Mi Rincón de Lectura: registra tus libros, mantén tu racha diaria y comparte reseñas con amigos.">
     <link rel="canonical" href="https://rinconlectura.es/register">
     <meta name="robots" content="noindex, follow">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="stylesheet" href="style.css">
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
 <script>
+  // gtag.js pesa 169 KiB. Aunque va async, en 4G lenta ocupa la tuberia
+  // durante toda la ventana del LCP y retrasa la descarga de las fuentes.
+  // La cola de dataLayer se crea aqui mismo, asi que ningun gtag() posterior
+  // se pierde; solo se aplaza la descarga del script hasta que el hilo queda
+  // libre despues de load, o hasta la primera interaccion si llega antes.
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-C3LTR2R6B5');
+  (function () {
+    var pedido = false;
+    function cargarGtag() {
+      if (pedido) return;
+      pedido = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5';
+      document.head.appendChild(s);
+    }
+    function programar() {
+      // El timeout asegura la carga aunque la pagina nunca quede ociosa.
+      if ('requestIdleCallback' in window) requestIdleCallback(cargarGtag, { timeout: 4000 });
+      else setTimeout(cargarGtag, 1500);
+    }
+    if (document.readyState === 'complete') programar();
+    else window.addEventListener('load', programar, { once: true });
+    // Si el usuario interactua o se va antes de que el hilo quede libre,
+    // se carga ya: asi no se pierde la sesion de quien rebota rapido.
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+      window.addEventListener(ev, cargarGtag, { once: true, passive: true });
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') cargarGtag();
+    }, { once: true });
+  })();
 </script>
 </head>
 <body class="login-page">

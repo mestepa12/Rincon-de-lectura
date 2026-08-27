@@ -12,13 +12,13 @@
     <link rel="canonical" href="https://rinconlectura.es/">
     <meta name="description"
         content="Organiza tu biblioteca personal, lleva el control de tus lecturas y descubre nuevos libros en Mi Rincón de Lectura. ¡Únete a nuestra comunidad de lectores!">
-    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
     <meta property="og:title" content="Mi Rincón de Lectura">
     <meta property="og:description" content="Tu biblioteca personal en la palma de tu mano.">
     <meta property="og:image" content="https://rinconlectura.es/og-image.png">
     <meta property="og:url" content="https://rinconlectura.es/">
 
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,14 +29,43 @@
     <!-- Chart.js y html2canvas se cargan de forma diferida (lazy-libs.js)
          solo al abrir estadísticas o exportar tarjetas. -->
     <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-
-        gtag('config', 'G-C3LTR2R6B5');
-    </script>
+  // gtag.js pesa 169 KiB. Aunque va async, en 4G lenta ocupa la tuberia
+  // durante toda la ventana del LCP y retrasa la descarga de las fuentes.
+  // La cola de dataLayer se crea aqui mismo, asi que ningun gtag() posterior
+  // se pierde; solo se aplaza la descarga del script hasta que el hilo queda
+  // libre despues de load, o hasta la primera interaccion si llega antes.
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-C3LTR2R6B5');
+  (function () {
+    var pedido = false;
+    function cargarGtag() {
+      if (pedido) return;
+      pedido = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5';
+      document.head.appendChild(s);
+    }
+    function programar() {
+      // El timeout asegura la carga aunque la pagina nunca quede ociosa.
+      if ('requestIdleCallback' in window) requestIdleCallback(cargarGtag, { timeout: 4000 });
+      else setTimeout(cargarGtag, 1500);
+    }
+    if (document.readyState === 'complete') programar();
+    else window.addEventListener('load', programar, { once: true });
+    // Si el usuario interactua o se va antes de que el hilo quede libre,
+    // se carga ya: asi no se pierde la sesion de quien rebota rapido.
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+      window.addEventListener(ev, cargarGtag, { once: true, passive: true });
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') cargarGtag();
+    }, { once: true });
+  })();
+</script>
 </head>
 
 <body>

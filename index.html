@@ -12,8 +12,8 @@
     <meta name="robots" content="index, follow">
     <meta name="author" content="Mi Rincón de Lectura">
     <meta name="theme-color" content="#8c6f5a">
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Mi Rincón de Lectura">
@@ -197,8 +197,6 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://covers.openlibrary.org">
-    <link rel="preload" as="image" fetchpriority="high" href="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg">
     <!-- Fuentes en asincrono: con display=swap el texto pinta con la fuente
          del sistema y cambia al llegar; asi la hoja de Google no bloquea el LCP -->
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap">
@@ -209,13 +207,42 @@
          solo al abrir estadísticas o exportar tarjetas. -->
 
     <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5"></script>
 <script>
+  // gtag.js pesa 169 KiB. Aunque va async, en 4G lenta ocupa la tuberia
+  // durante toda la ventana del LCP y retrasa la descarga de las fuentes.
+  // La cola de dataLayer se crea aqui mismo, asi que ningun gtag() posterior
+  // se pierde; solo se aplaza la descarga del script hasta que el hilo queda
+  // libre despues de load, o hasta la primera interaccion si llega antes.
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-C3LTR2R6B5');
+  (function () {
+    var pedido = false;
+    function cargarGtag() {
+      if (pedido) return;
+      pedido = true;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5';
+      document.head.appendChild(s);
+    }
+    function programar() {
+      // El timeout asegura la carga aunque la pagina nunca quede ociosa.
+      if ('requestIdleCallback' in window) requestIdleCallback(cargarGtag, { timeout: 4000 });
+      else setTimeout(cargarGtag, 1500);
+    }
+    if (document.readyState === 'complete') programar();
+    else window.addEventListener('load', programar, { once: true });
+    // Si el usuario interactua o se va antes de que el hilo quede libre,
+    // se carga ya: asi no se pierde la sesion de quien rebota rapido.
+    ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
+      window.addEventListener(ev, cargarGtag, { once: true, passive: true });
+    });
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden') cargarGtag();
+    }, { once: true });
+  })();
 </script>
 </head>
 <body> 
@@ -245,7 +272,18 @@
             </div>
             <div class="hero-visual" aria-hidden="true">
                 <div class="story-card-mock">
-                    <div class="ec-cover-wrap"><img src="https://covers.openlibrary.org/b/isbn/9780060883287-M.jpg" alt="" class="ec-cover" width="180" height="271" fetchpriority="high"></div>
+                    <div class="ec-cover-wrap">
+                        <svg class="ec-cover" viewBox="0 0 220 330" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <rect width="220" height="330" fill="#9A3B3B"/>
+                            <rect x="15" y="15" width="190" height="300" fill="none" stroke="#F5EFE6" stroke-opacity="0.45"/>
+                            <rect x="50" y="90" width="21" height="152" rx="2" fill="#F5EFE6" opacity="0.95"/>
+                            <rect x="77" y="112" width="17" height="130" rx="2" fill="#D7CCC8" opacity="0.9"/>
+                            <rect x="100" y="78" width="22" height="164" rx="2" fill="#EADDCE" opacity="0.95"/>
+                            <rect x="128" y="122" width="16" height="120" rx="2" fill="#A1887F" opacity="0.85"/>
+                            <rect x="150" y="100" width="20" height="142" rx="2" fill="#F5EFE6" opacity="0.8"/>
+                            <rect x="40" y="242" width="140" height="6" rx="2" fill="#5E2323"/>
+                        </svg>
+                    </div>
                     <div class="ec-content">
                         <div class="ec-stars">★★★★★</div>
                         <p class="ec-title">Cien Años de Soledad</p>
@@ -371,16 +409,16 @@
         <h2 class="landing-section-title">Así se ve por dentro</h2>
         <p class="capturas-intro">Capturas reales de la app. Nada de mockups.</p>
         <figure class="captura-figura captura-wide">
-            <img src="pantalla-estanteria.png" alt="Vista estantería de Mi Rincón de Lectura: los libros como lomos en baldas de madera con luces y adornos" width="1500" height="650" loading="lazy">
+            <img src="pantalla-estanteria.webp" alt="Vista estantería de Mi Rincón de Lectura: los libros como lomos en baldas de madera con luces y adornos" width="1500" height="650" loading="lazy">
             <figcaption>Tu biblioteca como una estantería real: cada libro es un lomo generado desde su portada, con luces y adornos que desbloqueas leyendo.</figcaption>
         </figure>
         <div class="capturas-duo">
             <figure class="captura-figura">
-                <img src="pantalla-estadisticas.png" alt="Panel de estadísticas: libros totales, terminados, páginas leídas, valoración media y finalización" width="760" height="371" loading="lazy">
+                <img src="pantalla-estadisticas.webp" alt="Panel de estadísticas: libros totales, terminados, páginas leídas, valoración media y finalización" width="760" height="371" loading="lazy">
                 <figcaption>Tus estadísticas de un vistazo: libros, páginas, valoración media, ritmo de finalización y más.</figcaption>
             </figure>
             <figure class="captura-figura">
-                <img src="pantalla-logros.png" alt="Rejilla de logros con medallas desbloqueadas y bloqueadas" width="560" height="925" loading="lazy">
+                <img src="pantalla-logros.webp" alt="Rejilla de logros con medallas desbloqueadas y bloqueadas" width="560" height="925" loading="lazy">
                 <figcaption>39 logros con medallas y adornos por desbloquear, incluidos varios secretos.</figcaption>
             </figure>
         </div>
@@ -750,7 +788,6 @@
 </script>
 <script type="module" src="landing-auth.js"></script>
 <script type="module" src="script-demo.js"></script>
-<script type="module" src="./config.js"></script>
 
 
 </html>
