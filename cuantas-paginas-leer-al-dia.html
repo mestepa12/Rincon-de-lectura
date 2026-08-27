@@ -46,6 +46,24 @@
           "about": { "@type": "Thing", "name": "Hábito de lectura" }
         },
         {
+          "@type": "BreadcrumbList",
+          "@id": "https://rinconlectura.es/cuantas-paginas-leer-al-dia#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://rinconlectura.es/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Cuántas páginas leer al día",
+              "item": "https://rinconlectura.es/cuantas-paginas-leer-al-dia"
+            }
+          ]
+        },
+        {
           "@type": "FAQPage",
           "@id": "https://rinconlectura.es/cuantas-paginas-leer-al-dia#faq",
           "inLanguage": "es-ES",
@@ -108,7 +126,12 @@
 <body>
 
     <main class="vs-page">
-        <a href="index.html" class="back-to-demo">← Volver al inicio</a>
+        <nav class="migas" aria-label="Ruta de navegación">
+            <ol>
+                <li><a href="index.html">Inicio</a></li>
+                <li aria-current="page">Cuántas páginas leer al día</li>
+            </ol>
+        </nav>
 
         <h1>Cuántas páginas leer al día</h1>
 
@@ -186,6 +209,7 @@
         <p>Todo esto vive dentro de la misma <a href="app-registro-lecturas.html">app gratuita para registrar tus lecturas</a>: la biblioteca, los objetivos, la racha y las sesiones son la misma herramienta. Y si lo que te frena es elegir el siguiente libro, el <a href="tropos-literarios.html">glosario de tropos literarios</a> ayuda a saber qué estás buscando en realidad.</p>
 
         <div class="vs-cta-final">
+            <img src="/pagino-volando.webp" alt="Págino con las alas desplegadas, sujetando un libro abierto" class="pagino-ilustra" width="500" height="500" loading="lazy">
             <p>Fijar tu objetivo diario lleva diez segundos y puedes cambiarlo cuando quieras. La cuenta es gratis y no tiene anuncios.</p>
             <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
         </div>

@@ -46,6 +46,24 @@
           "about": { "@type": "Thing", "name": "Importación de bibliotecas de lectura" }
         },
         {
+          "@type": "BreadcrumbList",
+          "@id": "https://rinconlectura.es/importar-goodreads#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://rinconlectura.es/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Importar de Goodreads",
+              "item": "https://rinconlectura.es/importar-goodreads"
+            }
+          ]
+        },
+        {
           "@type": "FAQPage",
           "@id": "https://rinconlectura.es/importar-goodreads#faq",
           "inLanguage": "es-ES",
@@ -116,7 +134,12 @@
 <body>
 
     <main class="vs-page">
-        <a href="index.html" class="back-to-demo">← Volver al inicio</a>
+        <nav class="migas" aria-label="Ruta de navegación">
+            <ol>
+                <li><a href="index.html">Inicio</a></li>
+                <li aria-current="page">Importar de Goodreads</li>
+            </ol>
+        </nav>
 
         <h1>Cómo importar tu biblioteca de Goodreads</h1>
 

@@ -26,14 +26,36 @@
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebPage",
-      "@id": "https://rinconlectura.es/vs-goodreads#webpage",
-      "url": "https://rinconlectura.es/vs-goodreads",
-      "name": "Alternativa a Goodreads en español: comparativa honesta",
-      "description": "Comparativa entre Mi Rincón de Lectura y Goodreads: anuncios, idioma, rachas de lectura, modo offline, estadísticas, catálogo y comunidad.",
-      "inLanguage": "es",
-      "isPartOf": { "@id": "https://rinconlectura.es/#website" },
-      "about": { "@type": "Thing", "name": "aplicaciones de seguimiento de lectura" }
+      "@graph": [
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://rinconlectura.es/vs-goodreads#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://rinconlectura.es/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Alternativa a Goodreads",
+              "item": "https://rinconlectura.es/vs-goodreads"
+            }
+          ]
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://rinconlectura.es/vs-goodreads#webpage",
+          "url": "https://rinconlectura.es/vs-goodreads",
+          "name": "Alternativa a Goodreads en español: comparativa honesta",
+          "description": "Comparativa entre Mi Rincón de Lectura y Goodreads: anuncios, idioma, rachas de lectura, modo offline, estadísticas, catálogo y comunidad.",
+          "inLanguage": "es",
+          "isPartOf": { "@id": "https://rinconlectura.es/#website" },
+          "about": { "@type": "Thing", "name": "aplicaciones de seguimiento de lectura" }
+        }
+      ]
     }
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,7 +77,12 @@
 <body>
 
     <main class="vs-page">
-        <a href="index.html" class="back-to-demo">← Volver al inicio</a>
+        <nav class="migas" aria-label="Ruta de navegación">
+            <ol>
+                <li><a href="index.html">Inicio</a></li>
+                <li aria-current="page">Alternativa a Goodreads</li>
+            </ol>
+        </nav>
 
         <h1>Alternativa a Goodreads en español</h1>
         <p class="vs-intro">Vaya por delante lo obvio: Goodreads es un gigante con casi veinte años de historia y nosotros somos una app española que cabe en un dinosaurio. Aun así, cada vez más lectores buscan una alternativa a Goodreads en español, y creemos que aquí hay una comparación que merece la pena leer entera. Incluida la parte donde perdemos.</p>

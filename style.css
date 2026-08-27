@@ -3318,7 +3318,7 @@ body.dark-mode {
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr));
     gap: 0.45rem 1.6rem;
 }
 .tropos-indice-lista a {
@@ -3390,3 +3390,90 @@ body.dark-mode {
     font-size: 0.88rem;
 }
 .footer-nav a:hover { text-decoration: underline; }
+
+/* Migas de navegacion (breadcrumbs visibles, espejo del BreadcrumbList) */
+.migas { margin: 0 0 1.1rem; }
+.migas ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 0.4rem;
+}
+.migas li { font-size: 0.85rem; line-height: 1.5; }
+.migas li + li::before {
+    content: "\203A";
+    margin-right: 0.4rem;
+    color: var(--accessible-muted-color);
+}
+.migas a { color: var(--accent-color-interactive); text-decoration: none; }
+.migas a:hover { text-decoration: underline; }
+.migas [aria-current="page"] { color: var(--accessible-muted-color); }
+
+/* Fecha de ultima actualizacion, bajo el h1 */
+.vs-page .pagina-fecha {
+    font-size: 0.85rem;
+    color: var(--accessible-muted-color);
+    margin: -0.6rem 0 1.6rem;
+}
+
+/* Mascota ilustrando los bloques de llamada a la accion */
+.pagino-ilustra {
+    display: block;
+    width: 92px;
+    height: auto;
+    margin: 0 auto 0.7rem;
+}
+
+/* Listas de ejemplos de cada tropo */
+.tropo-ejemplos {
+    list-style: none;
+    margin: 0.3rem 0 1.6rem;
+    padding: 0;
+}
+.tropo-ejemplos li {
+    position: relative;
+    padding-left: 1.05rem;
+    margin-bottom: 0.5rem;
+}
+.tropo-ejemplos li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.72em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-color);
+}
+.tropo-ejemplos strong { font-family: var(--font-title); }
+
+/* Matiz: el tropo esta en el libro pero no lo vertebra */
+.tropo-secundario {
+    color: var(--accessible-muted-color);
+    font-size: 0.88em;
+}
+
+/* Aviso de contenido: se distingue sin alarmar, en linea aparte */
+.tropo-aviso {
+    display: block;
+    margin-top: 0.25rem;
+    padding-left: 0.55rem;
+    border-left: 2px solid var(--accent-color);
+    font-size: 0.85em;
+    line-height: 1.5;
+    color: var(--accessible-muted-color);
+}
+
+/* Nota que precede a la lista de un tropo concreto */
+.vs-page .tropo-nota {
+    background: var(--card-bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.7rem 0.95rem;
+    margin: 0.4rem 0 0.9rem;
+    font-size: 0.92rem;
+    line-height: 1.65;
+}

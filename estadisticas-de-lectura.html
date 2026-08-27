@@ -46,6 +46,24 @@
           "about": { "@type": "Thing", "name": "Estadísticas de lectura" }
         },
         {
+          "@type": "BreadcrumbList",
+          "@id": "https://rinconlectura.es/estadisticas-de-lectura#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://rinconlectura.es/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Estadísticas de lectura",
+              "item": "https://rinconlectura.es/estadisticas-de-lectura"
+            }
+          ]
+        },
+        {
           "@type": "FAQPage",
           "@id": "https://rinconlectura.es/estadisticas-de-lectura#faq",
           "inLanguage": "es-ES",
@@ -108,7 +126,12 @@
 <body>
 
     <main class="vs-page">
-        <a href="index.html" class="back-to-demo">← Volver al inicio</a>
+        <nav class="migas" aria-label="Ruta de navegación">
+            <ol>
+                <li><a href="index.html">Inicio</a></li>
+                <li aria-current="page">Estadísticas de lectura</li>
+            </ol>
+        </nav>
 
         <h1>Qué te dicen tus estadísticas de lectura</h1>
 

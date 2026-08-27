@@ -46,6 +46,24 @@
           "about": { "@type": "Thing", "name": "Registro de lecturas" }
         },
         {
+          "@type": "BreadcrumbList",
+          "@id": "https://rinconlectura.es/app-registro-lecturas#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Inicio",
+              "item": "https://rinconlectura.es/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "App de registro de lecturas",
+              "item": "https://rinconlectura.es/app-registro-lecturas"
+            }
+          ]
+        },
+        {
           "@type": "FAQPage",
           "@id": "https://rinconlectura.es/app-registro-lecturas#faq",
           "inLanguage": "es-ES",
@@ -108,7 +126,12 @@
 <body>
 
     <main class="vs-page">
-        <a href="index.html" class="back-to-demo">← Volver al inicio</a>
+        <nav class="migas" aria-label="Ruta de navegación">
+            <ol>
+                <li><a href="index.html">Inicio</a></li>
+                <li aria-current="page">App de registro de lecturas</li>
+            </ol>
+        </nav>
 
         <h1>App para llevar el registro de tus lecturas</h1>
 
@@ -167,6 +190,7 @@
         <p>Sí. Puedes consultar tu biblioteca y anotar el progreso sin cobertura, y los cambios se sincronizan solos cuando el dispositivo vuelve a tener conexión. Lo único que necesita internet es buscar libros nuevos por título.</p>
 
         <div class="vs-cta-final">
+            <img src="/pagino-perfil.webp" alt="Págino, la mascota de Mi Rincón de Lectura, sentado de perfil leyendo un libro" class="pagino-ilustra" width="500" height="500" loading="lazy">
             <p>Si has llegado hasta aquí, probarlo cuesta menos que seguir leyendo sobre ello. Se crea la cuenta en un minuto, es gratis y no pedimos tarjeta.</p>
             <a href="register.html" class="cta-btn cta-primary">Crear cuenta gratis</a>
         </div>
