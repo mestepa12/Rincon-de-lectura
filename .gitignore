@@ -24,3 +24,5 @@ playwright-report/
 test-results/
 # Datos de los emuladores de Firebase (import/export local)
 .emuladores/
+.emuladores-nuevo/
+.emuladores-anterior/

@@ -3,7 +3,7 @@
     "dev": "vite",
     "dev:emu": "node scripts/dev-emuladores.mjs",
     "emu:semilla": "node scripts/seed-emuladores.mjs",
-    "emu:exportar": "firebase emulators:export ./.emuladores --force",
+    "emu:exportar": "node scripts/exportar-emuladores.mjs",
     "emu:limpiar": "node scripts/limpiar-emuladores.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode dev",
@@ -14,8 +14,8 @@
     "indices:dev": "node scripts/deploy-dev.mjs --only firestore:indexes",
     "deploy": "node scripts/deploy-prod.mjs",
     "proyecto": "node scripts/proyecto-actual.mjs",
-    "canales": "firebase hosting:channel:list",
-    "canal:borrar": "firebase hosting:channel:delete",
+    "canales": "firebase hosting:channel:list --project prod",
+    "canal:borrar": "firebase hosting:channel:delete --project prod",
     "android": "npm run build && npx cap sync android && npx cap open android"
   },
   "devDependencies": {

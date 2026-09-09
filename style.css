@@ -2899,6 +2899,52 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
 }
 
 .app-dialog-actions { display: flex; flex-direction: column; gap: 0.6rem; }
+
+/* --- Confirmacion escrita (acciones sin vuelta atras) --- */
+/* Lista de "que se borra y cuantos": el dato concreto, no una advertencia
+   generica, que es lo que hace que se lea. */
+.app-dialog-detalles {
+    margin: 0 0 1rem;
+    padding: 0.7rem 0.9rem;
+    list-style: none;
+    text-align: left;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--text-color);
+}
+.app-dialog-detalles li + li { border-top: 1px solid var(--border-color); padding-top: 0.35rem; margin-top: 0.35rem; }
+
+/* La cuenta, por el mismo motivo que en la cabecera: saber sobre que sesion
+   se esta destruyendo algo. #7D5C51 sobre #F5EFE6 = 5.2:1, cumple AA. */
+.app-dialog-cuenta {
+    margin: 0 0 1rem;
+    font-size: 0.85rem;
+    text-align: left;
+    color: var(--accessible-muted-color);
+    word-break: break-all;
+}
+
+.app-dialog-label {
+    display: block;
+    margin: 0 0 0.4rem;
+    font-size: 0.9rem;
+    text-align: left;
+    color: var(--text-color);
+}
+.app-dialog-label strong { font-family: var(--font-body); letter-spacing: 0.03em; }
+
+/* Deshabilitado mientras la palabra no coincide. Se marca con opacidad Y
+   con el cursor, no solo con color: el color por si solo no vale para quien
+   no lo distingue. */
+.app-dialog-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: none;
+    transform: none;
+}
 .app-dialog-confirm {
     width: 100%;
     padding: 0.85rem;

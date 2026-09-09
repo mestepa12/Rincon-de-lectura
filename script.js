@@ -163,6 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
             'libros-abandonados': 'Libros Abandonados'
         };
 
+        // Secciones que significan "aún no lo he empezado": mover un libro
+        // aquí sí invalida el progreso, así que es lo único que lo borra (y
+        // avisando antes). Ver el bloque de cambio de sección más abajo.
+        const SECCIONES_SIN_PROGRESO = new Set(['proximas-lecturas', 'lista-deseos']);
+
         // isSecret: true  → si está bloqueado, el requisito se oculta ("???")
         // isSecret: false → el requisito es visible aunque esté bloqueado,
         //                   para que el usuario sepa qué meta perseguir.
@@ -2995,9 +3000,62 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cambio de sección solo si el usuario eligió una diferente
             const newSection = moveBookSelect.value;
             if (newSection !== book.section) {
-                updatedData.section    = newSection;
-                updatedData.currentPage = 0;          // resetear progreso al cambiar sección
-                updatedData.rating      = deleteField(); // limpiar valoración
+                updatedData.section = newSection;
+
+                // Qué pasa con el progreso según el destino. Antes se borraba
+                // siempre, y eso perdía datos en silencio: mover un libro de
+                // estante te reseteaba la página y te quitaba la valoración
+                // sin avisar.
+                //
+                //   Leyendo ahora  → se conserva (retomas donde estabas)
+                //   Terminados     → pasa a totalPages, igual que el flujo de
+                //                    "terminar libro"; poner 0 descuadraba el
+                //                    logro "maratón" y el total de páginas
+                //   Abandonados    → se conserva; "lo dejé en la 245" es el
+                //                    dato con sentido, y es lo que alimenta la
+                //                    barra de páginas abandonadas de las
+                //                    estadísticas (que hasta ahora salía a 0)
+                //   Próximas / Deseos → se pierde: son secciones de "aún no
+                //                    empezado", y ahí sí se avisa antes
+                //
+                // La valoración NO se borra nunca. Está oculta fuera de
+                // Terminados y los dos sitios que la agregan filtran por
+                // sección, así que conservarla es invisible y evita que
+                // releer un libro te cueste la nota que le pusiste.
+                const paginaActual = book.currentPage || 0;
+
+                if (newSection === 'libros-terminados') {
+                    updatedData.currentPage = book.totalPages || 0;
+                } else if (newSection === 'leyendo-ahora' && book.section === 'libros-terminados') {
+                    // Relectura: empieza de cero. Conservar la página aquí
+                    // metía en un bucle — al guardar quedaba currentPage ==
+                    // totalPages, saltaba el "¿lo has terminado?" y el libro
+                    // volvía a Terminados, así que releer era imposible.
+                    // Y no se pierde nada propio: en un terminado currentPage
+                    // solo repetía totalPages. La valoración se conserva.
+                    updatedData.currentPage = 0;
+                } else if (SECCIONES_SIN_PROGRESO.has(newSection)) {
+                    if (paginaActual > 0) {
+                        const detalle = [`Progreso actual: página ${paginaActual} de ${book.totalPages || '?'}`];
+                        if (book.rating > 0) detalle.push(`Tu valoración de ${book.rating} estrellas se conserva.`);
+                        const ok = await confirmDialog({
+                            title: `¿Mover a ${SECTIONS[newSection]}?`,
+                            message: `Esa sección es para libros que aún no has empezado, así que se perderá tu progreso.\n\n` +
+                                     `${detalle.join('\n')}\n\nCuenta: ${user.email}`,
+                            confirmText: `Mover y perder el progreso`,
+                            cancelText: 'Cancelar',
+                            danger: true
+                        });
+                        if (!ok) {
+                            // Devolver el desplegable a donde estaba: si no,
+                            // queda enseñando una sección que no se ha aplicado.
+                            moveBookSelect.value = book.section;
+                            return;
+                        }
+                    }
+                    updatedData.currentPage = 0;
+                }
+                // Leyendo ahora y Abandonados: currentPage no se toca.
             } else if (book.section === 'leyendo-ahora') {
                 const oldPage = book.currentPage || 0;
                 let newPage = parseInt(currentPageInput.value, 10);
@@ -4080,15 +4138,12 @@ document.addEventListener('DOMContentLoaded', () => {
             deleteDoc(doc(db, 'books', String(bookId))).catch(error => console.error("Error al eliminar:", error));
         };
 
-        const handleMoveBook = (bookId, targetSection) => {
-            const bookRef = doc(db, 'books', bookId); 
-            updateDoc(bookRef, {
-                section: targetSection,
-                currentPage: 0,
-                rating: deleteField()
-            }).catch(error => console.error("Error al mover:", error));
-        };
-        
+        // (Aquí vivía handleMoveBook, que nadie llamaba y que reseteaba
+        // currentPage y borraba rating al mover de sección. Se elimina en vez
+        // de dejarla: es justo el comportamiento que se acaba de corregir, y
+        // reconectarla por descuido lo reintroduciría. El cambio de sección
+        // se hace en el guardado del modal de detalle.)
+
         const handleRateBook = (bookId, rating) => {
             updateDoc(doc(db, 'books', String(bookId)), { rating: rating }).catch(error => console.error("Error al valorar:", error));
         };

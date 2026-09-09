@@ -153,3 +153,125 @@ export function promptDialog({ title = '', message = '', value = '', placeholder
         input.select();
     });
 }
+
+/**
+ * Normaliza un texto para compararlo sin castigar a quien escribe: sin
+ * acentos, sin mayúsculas y sin espacios sobrantes. Importa porque el 39%
+ * del tráfico es de Latinoamérica y los teclados y autocorrectores no
+ * tratan las tildes igual en todas partes.
+ * @param {string} t Texto de origen.
+ * @return {string} Texto normalizado.
+ */
+const normalizar = (t) => String(t)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim().toLowerCase();
+
+/**
+ * Elige la palabra que habrá que teclear. Se prefiere el nombre del propio
+ * elemento (así no se puede memorizar una sola palabra y escribirla en
+ * automático), pero si es largo o raro de teclear se cae a una genérica.
+ * @param {string} nombre Nombre del elemento a borrar.
+ * @param {string} respaldo Palabra genérica de reserva.
+ * @return {string} Palabra a teclear.
+ */
+export function palabraConfirmacion(nombre, respaldo = 'ELIMINAR') {
+    const limpio = String(nombre || '').trim();
+    // Más de 30 caracteres o con signos poco cómodos de teclear: no compensa,
+    // teclearlo se vuelve una penitencia y acaba copiándose y pegándose.
+    if (!limpio || limpio.length > 30 || /[^\p{L}\p{N}\s'’.-]/u.test(limpio)) return respaldo;
+    return limpio;
+}
+
+/**
+ * Confirmación que exige escribir una palabra concreta. Pensada para lo que
+ * no tiene vuelta atrás: un botón de "aceptar" se pulsa en automático, una
+ * palabra hay que leerla y teclearla.
+ *
+ * Siempre enseña las tres cosas: qué se borra, cuántos elementos y de qué
+ * cuenta (lo último por el mismo motivo que la cabecera: saber con qué
+ * sesión estás trabajando antes de destruir algo).
+ *
+ * @param {object} opciones Configuración del diálogo.
+ * @param {string} opciones.title Título.
+ * @param {string} opciones.message Explicación de lo que va a pasar.
+ * @param {string[]} opciones.detalles Líneas de detalle (qué y cuántos).
+ * @param {string} opciones.cuenta Correo de la sesión.
+ * @param {string} opciones.palabra Palabra exacta a teclear.
+ * @param {string} opciones.confirmText Texto del botón de confirmar.
+ * @param {string} opciones.cancelText Texto del botón de cancelar.
+ * @return {Promise<boolean>} true solo si se tecleó la palabra y se confirmó.
+ */
+export function confirmEscritoDialog({
+    title = '¿Seguro?',
+    message = '',
+    detalles = [],
+    cuenta = '',
+    palabra = 'ELIMINAR',
+    confirmText = 'Eliminar',
+    cancelText = 'Cancelar',
+} = {}) {
+    return new Promise((resolve) => {
+        const { dialog, actions } = buildDialog({ title, message, danger: true });
+
+        if (detalles.length) {
+            const ul = document.createElement('ul');
+            ul.className = 'app-dialog-detalles';
+            detalles.forEach((d) => {
+                const li = document.createElement('li');
+                li.textContent = d;
+                ul.appendChild(li);
+            });
+            dialog.insertBefore(ul, actions);
+        }
+
+        if (cuenta) {
+            const p = document.createElement('p');
+            p.className = 'app-dialog-cuenta';
+            p.textContent = `Cuenta: ${cuenta}`;
+            dialog.insertBefore(p, actions);
+        }
+
+        const idInput = `confirmar-escrito-${Math.random().toString(36).slice(2, 9)}`;
+        const label = document.createElement('label');
+        label.className = 'app-dialog-label';
+        label.htmlFor = idInput;
+        // El texto se compone por trozos para que la palabra vaya en <strong>
+        // sin pasar por innerHTML.
+        label.append('Para confirmar, escribe ');
+        const fuerte = document.createElement('strong');
+        fuerte.textContent = palabra;
+        label.append(fuerte);
+        dialog.insertBefore(label, actions);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = idInput;
+        input.className = 'app-dialog-input';
+        input.autocomplete = 'off';
+        input.autocapitalize = 'off';
+        input.spellcheck = false;
+        dialog.insertBefore(input, actions);
+
+        const confirmBtn = makeButton(confirmText, 'app-dialog-confirm');
+        const cancelBtn = makeButton(cancelText, 'app-dialog-cancel');
+        confirmBtn.disabled = true;
+        actions.append(confirmBtn, cancelBtn);
+
+        const objetivo = normalizar(palabra);
+        const coincide = () => normalizar(input.value) === objetivo;
+        const revisar = () => { confirmBtn.disabled = !coincide(); };
+        input.addEventListener('input', revisar);
+
+        let result = false;
+        const aceptar = () => { if (!coincide()) return; result = true; dialog.close(); };
+        confirmBtn.addEventListener('click', aceptar);
+        cancelBtn.addEventListener('click', () => dialog.close());
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); aceptar(); } });
+        dialog.addEventListener('cancel', () => { result = false; });
+        dialog.addEventListener('close', () => resolve(result), { once: true });
+
+        document.body.appendChild(dialog);
+        dialog.showModal();
+        input.focus();
+    });
+}
