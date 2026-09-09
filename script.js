@@ -1,4 +1,4 @@
-import { notify, confirmDialog, promptDialog } from './notify.js';
+import { notify, confirmDialog, promptDialog, confirmEscritoDialog, palabraConfirmacion } from './notify.js';
 import { googleBooksApiKey, fcmVapidKey } from './config.js';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
@@ -955,6 +955,28 @@ document.addEventListener('DOMContentLoaded', () => {
             guardarMapaDecos(m);
         });
         document.getElementById('decorar-auto')?.addEventListener('click', async () => {
+            // Borra de golpe TODA la colocación manual de la estantería, que
+            // puede ser el trabajo de un buen rato. Es el único borrado
+            // realmente masivo que hay hoy en la app.
+            const colocados = lastUserData?.decosColocados;
+            const cuantos = colocados && typeof colocados === 'object'
+                ? Object.keys(colocados).length : 0;
+
+            if (cuantos > 0) {
+                const ok = await confirmEscritoDialog({
+                    title: '¿Restaurar el reparto automático?',
+                    message: 'Se perderá la colocación que hiciste a mano y los objetos volverán a repartirse solos.',
+                    detalles: [
+                        `Objetos colocados a mano: ${cuantos}`,
+                        'Total: se borran todos a la vez. No se puede deshacer.'
+                    ],
+                    cuenta: user.email,
+                    palabra: 'RESTAURAR',
+                    confirmText: 'Restaurar reparto'
+                });
+                if (!ok) return;
+            }
+
             decorarModal.close();
             if (lastUserData) delete lastUserData.decosColocados;
             renderBooks();
@@ -2293,13 +2315,100 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         // === LOGROS: Toast y renderizado ===
-        const mostrarToastLogro = (logro) => {
+        // Construye la tarjeta de aviso. Sin innerHTML: los nombres de logro
+        // hoy son constantes del código, pero interpolar marcado es un patrón
+        // que no conviene dejar puesto por si mañana el texto viene de otro
+        // sitio.
+        const construirTarjetaLogro = ({ icono, titulo, nombre, deco }) => {
             const t = document.createElement('div');
             t.className = 'logro-toast';
-            t.innerHTML = `<span class="logro-toast-icono">${logro.icono}</span><div><div class="logro-toast-titulo">¡Logro desbloqueado!</div><div class="logro-toast-nombre">${logro.nombre}</div>${logro.deco ? `<div class="logro-toast-deco"><img class="logro-deco-img" src="${decoUrl(logro.deco)}" alt=""> nuevo adorno en tu estantería</div>` : ''}</div>`;
+            t.setAttribute('role', 'status');
+
+            const ico = document.createElement('span');
+            ico.className = 'logro-toast-icono';
+            ico.setAttribute('aria-hidden', 'true');
+            ico.textContent = icono;
+
+            const cuerpo = document.createElement('div');
+            const tit = document.createElement('div');
+            tit.className = 'logro-toast-titulo';
+            tit.textContent = titulo;
+            const nom = document.createElement('div');
+            nom.className = 'logro-toast-nombre';
+            nom.textContent = nombre;
+            cuerpo.append(tit, nom);
+
+            if (deco) {
+                const d = document.createElement('div');
+                d.className = 'logro-toast-deco';
+                const img = document.createElement('img');
+                img.className = 'logro-deco-img';
+                img.src = decoUrl(deco);
+                img.alt = '';
+                d.append(img, ' nuevo adorno en tu estantería');
+                cuerpo.appendChild(d);
+            }
+
+            t.append(ico, cuerpo);
+            return t;
+        };
+
+        // --- Cola de avisos de logro ---------------------------------------
+        // Antes cada logro creaba su tarjeta en la misma posición, así que
+        // varios a la vez se tapaban unos a otros: se desbloqueaban siete y
+        // se veía uno. Ahora se muestran de uno en uno, y si la tanda es
+        // grande se resume en un solo aviso para no tener a nadie mirando
+        // tarjetas durante medio minuto.
+        const colaLogros = [];
+        let pintandoLogro = false;
+        const DURACION_LOGRO = 4500;
+        const MAX_INDIVIDUALES = 3;
+
+        const pintarSiguienteLogro = () => {
+            if (pintandoLogro) return;
+            const siguiente = colaLogros.shift();
+            if (!siguiente) return;
+
+            pintandoLogro = true;
+            const t = construirTarjetaLogro(siguiente);
             document.body.appendChild(t);
             setTimeout(() => t.classList.add('logro-toast-visible'), 10);
-            setTimeout(() => { t.classList.remove('logro-toast-visible'); setTimeout(() => t.remove(), 500); }, 4500);
+            setTimeout(() => {
+                t.classList.remove('logro-toast-visible');
+                setTimeout(() => {
+                    t.remove();
+                    pintandoLogro = false;
+                    pintarSiguienteLogro();
+                }, 500);
+            }, DURACION_LOGRO);
+        };
+
+        /**
+         * Anuncia una tanda de logros recién desbloqueados.
+         * @param {object[]} logros Logros de la tanda (objetos de LOGROS).
+         */
+        const anunciarLogros = (logros) => {
+            if (!logros.length) return;
+
+            if (logros.length > MAX_INDIVIDUALES) {
+                // Tanda grande (típico tras importar de Goodreads o al
+                // sincronizarse un contador viejo): un único aviso que lleva
+                // al modal, en vez de una cola interminable.
+                colaLogros.push({
+                    icono: '🏅',
+                    titulo: '¡Logros desbloqueados!',
+                    nombre: `Has desbloqueado ${logros.length} logros`,
+                    deco: null,
+                });
+            } else {
+                logros.forEach((l) => colaLogros.push({
+                    icono: l.icono,
+                    titulo: '¡Logro desbloqueado!',
+                    nombre: l.nombre,
+                    deco: l.deco,
+                }));
+            }
+            pintarSiguienteLogro();
         };
 
         const renderLogros = (desbloqueados = []) => {
@@ -2427,7 +2536,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (nuevos.length > 0) {
                     await updateDoc(userRef, { logrosDesbloqueados: [...desbloqueados, ...nuevos] });
-                    nuevos.forEach(id => { const l = LOGROS.find(x => x.id === id); if (l) mostrarToastLogro(l); });
+                    anunciarLogros(nuevos.map(id => LOGROS.find(x => x.id === id)).filter(Boolean));
                 }
             } catch (e) { console.error('Error evaluando logros:', e); }
         };
@@ -3037,11 +3146,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="button" id="buddy-leave-btn" class="buddy-leave">Abandonar lectura compartida</button>
                 `;
                 content.querySelector('#buddy-leave-btn').onclick = async () => {
-                    const ok = await confirmDialog({
+                    // Borra el documento compartido: se lo lleva por delante
+                    // también a la otra persona, que no ha pedido nada.
+                    const ok = await confirmEscritoDialog({
                         title: '¿Abandonar lectura compartida?',
-                        message: 'El progreso conjunto se borrará para los dos.',
-                        confirmText: 'Abandonar',
-                        danger: true
+                        message: 'El progreso conjunto se borrará para los dos, no solo para ti.',
+                        detalles: [
+                            `Libro: «${br.title || 'sin título'}»`,
+                            `Con: @${otherName}`,
+                            'Total: 1 lectura compartida y el progreso de 2 personas. No se puede deshacer.'
+                        ],
+                        cuenta: user.email,
+                        palabra: palabraConfirmacion(br.title, 'ABANDONAR'),
+                        confirmText: 'Abandonar lectura'
                     });
                     if (!ok) return;
                     try { await deleteDoc(doc(db, 'buddy_reads', br.id)); } catch (error) {
@@ -4189,6 +4306,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (parsed.length === 0) { notify('No se encontraron libros válidos en el CSV.', 'warning'); return; }
 
+            // La importación solo añade, nunca borra, pero no hay borrado
+            // múltiple en la app: importar el CSV equivocado (o dos veces)
+            // deja una biblioteca que hay que limpiar libro a libro. Sobre
+            // una biblioteca vacía da igual; sobre una con libros, no.
+            if (booksData.length > 0) {
+                const ok = await confirmDialog({
+                    title: '¿Importar sobre tu biblioteca actual?',
+                    message: `Ya tienes ${booksData.length} libro${booksData.length !== 1 ? 's' : ''} y se van a añadir ${parsed.length} más.\n\n` +
+                             'Los libros importados NO se pueden quitar de golpe: si te equivocas de archivo o importas dos veces, ' +
+                             'habría que borrarlos uno a uno.\n\n' +
+                             `Cuenta: ${user.email}`,
+                    confirmText: `Añadir ${parsed.length} libros`,
+                    cancelText: 'Cancelar',
+                    danger: true
+                });
+                if (!ok) return;
+            }
+
             // ── Paso 2: obtener portadas en paralelo ─────────────────────────
             // ISBN → OpenLibrary URL instantánea | sin ISBN → llamada Google Books
             const books = await Promise.all(parsed.map(async (b) => {
@@ -4264,11 +4399,25 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteBookModalBtn.addEventListener('click', async () => {
             const bookId = bookDetailModal.dataset.bookId;
             if (!bookId) return;
-            const ok = await confirmDialog({
+            const libro = booksData.find(b => b.id === bookId);
+            if (!libro) return;
+
+            // Qué se pierde exactamente, con cifras. Una advertencia genérica
+            // se lee por encima; "tus notas (320 caracteres)" se lee.
+            const detalles = [`Libro: «${libro.title}»`];
+            if (libro.author) detalles.push(`Autor: ${libro.author}`);
+            if (libro.currentPage > 0) detalles.push(`Progreso: página ${libro.currentPage} de ${libro.totalPages || '?'}`);
+            if (libro.rating > 0) detalles.push(`Tu valoración: ${libro.rating} de 5 estrellas`);
+            if (libro.notes) detalles.push(`Tus notas: ${libro.notes.length} caracteres`);
+            detalles.push('Total: 1 libro. No se puede deshacer.');
+
+            const ok = await confirmEscritoDialog({
                 title: '¿Eliminar este libro?',
-                message: 'Se borrará de tu biblioteca junto con sus notas y progreso.',
-                confirmText: 'Eliminar',
-                danger: true
+                message: 'Se borrará de tu biblioteca. Esto no se puede deshacer.',
+                detalles,
+                cuenta: user.email,
+                palabra: palabraConfirmacion(libro.title),
+                confirmText: 'Eliminar libro'
             });
             if (ok) {
                 handleDeleteBook(bookId);
