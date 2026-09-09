@@ -40,6 +40,8 @@ async function renderTarjetaAislada(card) {
     }
 }
 import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
+import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './papelera.js';
+import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, esCsvGoodreads, esCsvPropio } from './csv-formato.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -4134,8 +4136,146 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
-        const handleDeleteBook = (bookId) => {
-            deleteDoc(doc(db, 'books', String(bookId))).catch(error => console.error("Error al eliminar:", error));
+        // ===============================================
+        // === PAPELERA (30 días) ========================
+        // Borrar NO destruye: mueve el documento a /papelera conservando el
+        // mismo ID, así las sesiones de lectura (que apuntan por bookId) y
+        // los comentarios y lecturas compartidas (que apuntan por slug de
+        // título+autor) vuelven a enlazar solos al restaurar.
+        // No hay subcolecciones bajo /books/{id}: el documento se lleva todo
+        // lo suyo y no deja nada huérfano.
+        // ===============================================
+        let papeleraData = [];
+
+        /**
+         * Manda un libro a la papelera. Escritura atómica: o se mueve, o no
+         * se toca nada. Sin batch, un fallo entre medias podría dejar el
+         * libro duplicado o desaparecido.
+         * @param {object} libro Libro a borrar (de booksData).
+         * @return {Promise<void>}
+         */
+        const moverAPapelera = async (libro) => {
+            const batch = writeBatch(db);
+            batch.set(doc(db, 'papelera', libro.id), {
+                ...soloCamposDeLibro(libro),
+                deletedAt: Date.now(),
+            });
+            batch.delete(doc(db, 'books', libro.id));
+            await batch.commit();
+        };
+
+        /**
+         * Devuelve un libro de la papelera a la biblioteca.
+         * @param {object} item Documento de la papelera (con id).
+         * @return {Promise<void>}
+         */
+        const restaurarDePapelera = async (item) => {
+            const batch = writeBatch(db);
+            // soloCamposDeLibro se lleva por delante deletedAt: en /books
+            // ese campo no está en la lista blanca y las reglas lo rechazarían.
+            batch.set(doc(db, 'books', item.id), soloCamposDeLibro(item));
+            batch.delete(doc(db, 'papelera', item.id));
+            await batch.commit();
+        };
+
+        /**
+         * Purga lo que ha pasado de DIAS_PAPELERA días. Se ejecuta al abrir
+         * la app: sin infraestructura nueva y sin depender del plan Blaze.
+         * El qué purgar lo decide idsAPurgar(), que es una función pura en
+         * papelera.js; aquí solo se ejecuta el borrado. El día que esto pase
+         * a una Cloud Function programada, cambia quién lo llama.
+         * @param {object[]} items Contenido actual de la papelera.
+         * @return {Promise<number>} Cuántos se purgaron.
+         */
+        const purgarPapelera = async (items) => {
+            const ids = idsAPurgar(items, Date.now());
+            if (!ids.length) return 0;
+            try {
+                // De 400 en 400: el límite de un batch de Firestore es 500.
+                for (let i = 0; i < ids.length; i += 400) {
+                    const batch = writeBatch(db);
+                    ids.slice(i, i + 400).forEach(id => batch.delete(doc(db, 'papelera', id)));
+                    await batch.commit();
+                }
+            } catch (error) {
+                console.error('No se pudo purgar la papelera:', error);
+                return 0;
+            }
+            return ids.length;
+        };
+
+        /** Actualiza el contador del botón de menú (oculto si está vacía). */
+        const actualizarContadorPapelera = () => {
+            const badge = document.getElementById('papelera-contador');
+            if (!badge) return;
+            badge.textContent = String(papeleraData.length);
+            badge.hidden = papeleraData.length === 0;
+        };
+
+        /** Pinta la lista de la papelera dentro de su modal. */
+        const renderPapelera = () => {
+            const lista = document.getElementById('papelera-lista');
+            const intro = document.getElementById('papelera-intro');
+            if (!lista || !intro) return;
+            lista.replaceChildren();
+
+            if (!papeleraData.length) {
+                intro.textContent = 'No has borrado ningún libro.';
+                return;
+            }
+            intro.textContent = `Los libros borrados se guardan ${DIAS_PAPELERA} días. Pasado el plazo se eliminan solos.`;
+
+            const ahora = Date.now();
+            papeleraData.forEach((item) => {
+                const fila = document.createElement('div');
+                fila.className = 'papelera-item';
+
+                const datos = document.createElement('div');
+                datos.className = 'papelera-item-datos';
+
+                const titulo = document.createElement('div');
+                titulo.className = 'papelera-item-titulo';
+                titulo.textContent = item.title || 'Sin título';
+
+                const autor = document.createElement('div');
+                autor.className = 'papelera-item-autor';
+                autor.textContent = item.author || 'Autor desconocido';
+
+                const dias = diasRestantes(item, ahora);
+                const plazo = document.createElement('div');
+                plazo.className = 'papelera-item-plazo';
+                plazo.textContent = dias === null
+                    ? 'Sin fecha de borrado'
+                    : (dias === 0 ? 'Se borra hoy' : `Quedan ${dias} día${dias === 1 ? '' : 's'}`);
+
+                datos.append(titulo, autor, plazo);
+
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'papelera-restaurar';
+                btn.textContent = 'Restaurar';
+                btn.addEventListener('click', async () => {
+                    btn.disabled = true;
+                    try {
+                        await restaurarDePapelera(item);
+                        notify(`«${item.title}» ha vuelto a tu biblioteca.`, 'success');
+                    } catch (error) {
+                        console.error('Error restaurando:', error);
+                        notify('No se pudo restaurar el libro.', 'error');
+                        btn.disabled = false;
+                    }
+                });
+
+                fila.append(datos, btn);
+                lista.appendChild(fila);
+            });
+        };
+
+        const handleDeleteBook = (libro) => {
+            moverAPapelera(libro).catch(error => {
+                console.error('Error al mover a la papelera:', error);
+                notify('No se pudo borrar el libro. Inténtalo de nuevo.', 'error');
+            });
         };
 
         // (Aquí vivía handleMoveBook, que nadie llamaba y que reseteaba
@@ -4218,6 +4358,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // 2. Creamos la consulta (query)
         const qMyBooks = query(booksRef, where("userId", "==", user.uid));
 
+        // --- Papelera: colección aparte, solo del dueño ---------------------
+        // Va en su propia consulta para que /books siga conteniendo únicamente
+        // libros vivos: así estadísticas, logros, CSV y la biblioteca de los
+        // amigos no necesitan filtrar nada y no hay forma de que un borrado
+        // se cuele en un recuento.
+        let papeleraPurgada = false;
+        onSnapshot(query(collection(db, 'papelera'), where('userId', '==', user.uid)), (snap) => {
+            papeleraData = [];
+            snap.forEach(d => papeleraData.push({ id: d.id, ...d.data() }));
+            papeleraData.sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+            actualizarContadorPapelera();
+            if (document.getElementById('papelera-modal')?.open) renderPapelera();
+
+            // Purga al abrir la app, una sola vez por sesión. El onSnapshot
+            // vuelve a dispararse tras borrar y sin este guardia entraría en
+            // bucle.
+            if (!papeleraPurgada) {
+                papeleraPurgada = true;
+                purgarPapelera(papeleraData).then(n => {
+                    if (n > 0) console.info(`Papelera: purgados ${n} libro(s) de más de ${DIAS_PAPELERA} días.`);
+                });
+            }
+        }, (error) => console.error('Error escuchando la papelera:', error));
+
         // 3. Escuchamos los cambios con onSnapshot
         onSnapshot(qMyBooks, (snapshot) => {
             viewingFriendLibrary = false;
@@ -4279,6 +4443,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const rows = parseCSV(csvText);
             if (rows.length < 2) { notify('El CSV está vacío o no tiene el formato de Goodreads.', 'warning'); return; }
             const headers = rows[0].map(h => h.trim());
+
+            // Reimportar nuestra propia exportación no funciona: son formatos
+            // distintos (nosotros escribimos "Título"/"Estado", Goodreads
+            // "Title"/"Exclusive Shelf"). Antes las filas se descartaban una a
+            // una y salía un "no se encontraron libros válidos" que no decía
+            // nada. Ahora se detecta y se explica, y de paso se garantiza que
+            // un CSV con libros en la papelera nunca los devuelve a la
+            // biblioteca por accidente.
+            if (esCsvPropio(headers)) {
+                notify(
+                    'Ese es un CSV de Mi Rincón de Lectura, no de Goodreads.\n\n' +
+                    'Esta opción solo importa el CSV que genera Goodreads. Tu propia ' +
+                    'exportación todavía no se puede volver a importar.',
+                    'warning');
+                return;
+            }
+            if (!esCsvGoodreads(headers)) {
+                notify('Este CSV no parece de Goodreads: le falta la columna «Title».', 'warning');
+                return;
+            }
 
             // ── Mapeo de estanterías Goodreads → nuestras secciones ────────────
             const SHELF_MAP = {
@@ -4464,19 +4648,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (libro.currentPage > 0) detalles.push(`Progreso: página ${libro.currentPage} de ${libro.totalPages || '?'}`);
             if (libro.rating > 0) detalles.push(`Tu valoración: ${libro.rating} de 5 estrellas`);
             if (libro.notes) detalles.push(`Tus notas: ${libro.notes.length} caracteres`);
-            detalles.push('Total: 1 libro. No se puede deshacer.');
+            detalles.push(`Total: 1 libro. Podrás recuperarlo durante ${DIAS_PAPELERA} días.`);
 
             const ok = await confirmEscritoDialog({
                 title: '¿Eliminar este libro?',
-                message: 'Se borrará de tu biblioteca. Esto no se puede deshacer.',
+                message: `Sale de tu biblioteca y va a la papelera, donde puedes restaurarlo durante ${DIAS_PAPELERA} días. Pasado ese plazo se borra del todo.`,
                 detalles,
                 cuenta: user.email,
                 palabra: palabraConfirmacion(libro.title),
-                confirmText: 'Eliminar libro'
+                confirmText: 'Mover a la papelera'
             });
             if (ok) {
-                handleDeleteBook(bookId);
+                handleDeleteBook(libro);
                 bookDetailModal.close();
+                notify(`«${libro.title}» está en la papelera. Puedes restaurarlo durante ${DIAS_PAPELERA} días.`, 'info');
             }
         });
 
@@ -4798,11 +4983,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const exportarCSV = () => {
             if (viewingFriendLibrary) { notify('Solo puedes exportar tu propia biblioteca.', 'info'); return; }
-            if (!booksData.length) { notify('No tienes libros que exportar.', 'info'); return; }
-            const cols = ['Título', 'Autor', 'Estado', 'Páginas totales', 'Página actual',
-                'Valoración', 'Género', 'Notas', 'Ritmo narrativo', 'Estados de ánimo', 'Portada', 'Enlace'];
-            const filas = booksData.map(b => [
-                b.title, b.author, SECCIONES_CSV[b.section] || b.section || '',
+            // La papelera entra en la exportación: el CSV es la copia de
+            // seguridad de la usuaria, y si un libro se purga a los 30 días
+            // una copia sin él lo pierde para siempre. Van etiquetados en la
+            // columna Estado, que ya existía.
+            const filasLibros = booksData.map(b => ({ ...b, _estado: SECCIONES_CSV[b.section] || b.section || '' }));
+            const filasPapelera = papeleraData.map(b => ({ ...b, _estado: ESTADO_CSV_PAPELERA }));
+            const aExportar = [...filasLibros, ...filasPapelera];
+            if (!aExportar.length) { notify('No tienes libros que exportar.', 'info'); return; }
+            const cols = COLUMNAS_EXPORTACION;
+            const filas = aExportar.map(b => [
+                b.title, b.author, b._estado,
                 b.totalPages, b.currentPage, b.rating, b.genre, b.notes, b.ritmoNarrativo,
                 Array.isArray(b.estadosDeAnimo) ? b.estadosDeAnimo.join('; ') : (b.estadosDeAnimo || ''),
                 b.cover, b.googleLink,
@@ -4811,10 +5002,21 @@ document.addEventListener('DOMContentLoaded', () => {
             const csv = '﻿' + [cols.join(','), ...filas].join('\r\n');
             const fecha = new Date().toISOString().slice(0, 10);
             descargarBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `mi-rincon-de-lectura-${fecha}.csv`);
-            notify(`Exportados ${booksData.length} libro${booksData.length !== 1 ? 's' : ''} a CSV.`, 'success');
+            const enPapelera = filasPapelera.length;
+            notify(
+                `Exportados ${aExportar.length} libro${aExportar.length !== 1 ? 's' : ''} a CSV.` +
+                (enPapelera ? ` Incluye ${enPapelera} de la papelera.` : ''),
+                'success');
         };
         const exportCsvBtn = document.getElementById('export-csv-btn');
         if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportarCSV);
+
+        const papeleraModal = document.getElementById('papelera-modal');
+        document.getElementById('papelera-btn')?.addEventListener('click', () => {
+            renderPapelera();
+            papeleraModal?.showModal();
+        });
+        document.getElementById('close-papelera-btn')?.addEventListener('click', () => papeleraModal?.close());
 
         // === MENÚ LATERAL (acciones secundarias, entra por la izquierda) ===
         // Reutiliza el patrón del panel de amigos. Los botones conservan sus

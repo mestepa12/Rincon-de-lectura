@@ -47,6 +47,12 @@ service cloud.firestore {
               'ritmoNarrativo', 'estadosDeAnimo', 'importedFrom'];
     }
 
+    // Un libro en la papelera es el libro tal cual, mas la marca de cuando
+    // se borro. Nada mas: no se admiten campos inventados.
+    function papeleraFields() {
+      return bookFields().concat(['deletedAt']);
+    }
+
     function validBook(d, a) {
       return (!a.hasAny(['title'])       || !('title' in d)       || (d.title is string && d.title.size() >= 1 && d.title.size() <= 300))
           && (!a.hasAny(['author'])      || !('author' in d)      || (d.author is string && d.author.size() <= 200))
@@ -89,6 +95,40 @@ service cloud.firestore {
                     && validBook(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
 
       // --- Borrar: solo el dueño ---
+      allow delete: if request.auth != null
+                    && resource.data.userId == request.auth.uid;
+    }
+
+    // =========================================================
+    // 1b. PAPELERA (/papelera) - libros borrados, 30 dias
+    //
+    // Borrar mueve el documento aqui; restaurar lo devuelve a /books. Se
+    // conserva el mismo ID para que las sesiones de lectura (que apuntan por
+    // bookId) vuelvan a enlazar solas.
+    //
+    // A diferencia de /books, aqui NO leen los amigos: lo que has borrado no
+    // lo ve nadie mas que tu, ni siquiera durante los 30 dias.
+    // =========================================================
+    match /papelera/{bookId} {
+
+      // --- Leer: SOLO el dueno ---
+      allow read: if request.auth != null
+                  && resource.data.userId == request.auth.uid;
+
+      // --- Crear: solo con tu propio ID, los campos del libro + deletedAt ---
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.keys().hasOnly(papeleraFields())
+                    && request.resource.data.keys().hasAll(['deletedAt'])
+                    && request.resource.data.deletedAt is number
+                    && request.resource.data.deletedAt > 0
+                    && validBook(request.resource.data, request.resource.data.keys());
+
+      // --- Sin update: lo borrado no se edita. Restaurar = crear en /books
+      //     y borrar aqui, que es lo que hace el cliente. Asi nadie puede
+      //     reescribir deletedAt para que algo viva mas de la cuenta.
+
+      // --- Borrar: solo el dueno (restaurar o purgar a los 30 dias) ---
       allow delete: if request.auth != null
                     && resource.data.userId == request.auth.uid;
     }

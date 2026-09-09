@@ -2900,6 +2900,49 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
 
 .app-dialog-actions { display: flex; flex-direction: column; gap: 0.6rem; }
 
+/* --- Papelera --------------------------------------------------------- */
+.papelera-intro {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    color: var(--accessible-muted-color);
+}
+.papelera-lista { display: flex; flex-direction: column; gap: 0.6rem; max-height: 55vh; overflow-y: auto; }
+.papelera-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.85rem;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+.papelera-item-datos { min-width: 0; flex: 1; }
+.papelera-item-titulo { font-weight: 700; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.papelera-item-autor  { font-size: 0.85rem; color: var(--accessible-muted-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* El plazo en el color de acento interactivo: #9A3B3B sobre #F5EFE6 = 7.1:1 */
+.papelera-item-plazo  { font-size: 0.78rem; color: var(--accent-color-interactive); margin-top: 2px; }
+.papelera-restaurar {
+    flex-shrink: 0;
+    padding: 0.5rem 0.9rem;
+    border: 2px solid var(--accent-color-interactive);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--accent-color-interactive);
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.papelera-restaurar:hover:not(:disabled) { background: var(--accent-color-interactive); color: #fff; }
+.papelera-restaurar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@media (max-width: 480px) {
+    /* A 360px el boton al lado del titulo deja el texto en dos letras */
+    .papelera-item { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+    .papelera-restaurar { width: 100%; }
+}
+
 /* --- Confirmacion escrita (acciones sin vuelta atras) --- */
 /* Lista de "que se borra y cuantos": el dato concreto, no una advertencia
    generica, que es lo que hace que se lea. */

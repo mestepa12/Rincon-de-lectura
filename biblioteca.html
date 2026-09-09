@@ -126,6 +126,7 @@
             <div class="menu-group-label">Datos</div>
             <button id="import-goodreads-btn" class="menu-item" type="button" title="Importar biblioteca desde Goodreads CSV"><span class="mi-ico">&#128229;</span> Importar de Goodreads</button>
             <button id="export-csv-btn" class="menu-item" type="button" title="Exportar mi biblioteca a CSV"><span class="mi-ico">&#128228;</span> Exportar a CSV</button>
+            <button id="papelera-btn" class="menu-item" type="button" title="Libros borrados: se pueden restaurar durante 30 días"><span class="mi-ico">&#128465;&#65039;</span> Papelera <span id="papelera-contador" class="badge" hidden>0</span></button>
 
             <div class="menu-group-label">Ajustes</div>
             <button id="toggle-theme" class="menu-item" type="button"><span class="mi-ico">🌙</span> Tema claro / oscuro</button>
@@ -560,6 +561,17 @@
                 <button type="button" id="cancel-objetivos-btn" class="btn-cancel">Cancelar</button>
             </div>
         </form>
+    </dialog>
+
+    <!-- Papelera: libros borrados, restaurables 30 dias. Lista vacia por
+         defecto; la rellena renderPapelera() desde /papelera. -->
+    <dialog id="papelera-modal">
+        <h2>&#128465;&#65039; Papelera</h2>
+        <p id="papelera-intro" class="papelera-intro"></p>
+        <div id="papelera-lista" class="papelera-lista"></div>
+        <div class="modal-actions">
+            <button type="button" id="close-papelera-btn" class="btn-cancel">Cerrar</button>
+        </div>
     </dialog>
 
     <div id="export-stats-card">
