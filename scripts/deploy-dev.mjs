@@ -16,14 +16,25 @@ import { proyecto, PROD, proyectoDelBundle } from './lib/proyectos.mjs';
 const DEV = proyecto('dev');
 const extra = process.argv.slice(2);
 
-console.log(color.negrita(`\n▶ Desplegando a DESARROLLO: ${DEV}\n`));
+// Reglas e índices no llevan front. Exigir un build para desplegarlos
+// obligaría a tener .env.dev con credenciales que ahí no pintan nada, así
+// que solo se construye si el despliegue incluye hosting.
+const iOnly = extra.indexOf('--only');
+const objetivos = iOnly === -1 ? null : (extra[iOnly + 1] || '');
+const necesitaBuild = objetivos === null
+    || objetivos.split(',').some((o) => o === 'hosting' || o.startsWith('hosting:'));
+
+console.log(color.negrita(`\n▶ Desplegando a DESARROLLO: ${DEV}`));
+console.log(color.negrita(`  ${objetivos || 'todo (hosting + functions + firestore)'}\n`));
 
 try {
-  // El build de dev carga .env y encima .env.dev, que es donde viven las
-  // credenciales del proyecto de desarrollo.
-  await ejecutar('npm', ['run', 'build:dev']);
+  if (necesitaBuild) {
+    // El build de dev carga .env y encima .env.dev, que es donde viven las
+    // credenciales del proyecto de desarrollo.
+    await ejecutar('npm', ['run', 'build:dev']);
+  }
 
-  const enBundle = proyectoDelBundle([DEV, PROD]);
+  const enBundle = necesitaBuild ? proyectoDelBundle([DEV, PROD]) : null;
   if (enBundle === PROD) {
     console.error(color.rojo(`
 ✗ El build apunta a PRODUCCIÓN (${PROD}) pero ibas a desplegarlo a ${DEV}.
@@ -34,7 +45,7 @@ try {
 `));
     process.exit(1);
   }
-  if (enBundle === null) {
+  if (necesitaBuild && enBundle === null) {
     console.log(color.amarillo('i  No se ha podido leer el projectId del bundle; se continúa.'));
   }
 

@@ -6,7 +6,7 @@ Cuatro sitios donde puede correr esto, de menos a más real:
 |---|---|---|---|
 | **Emuladores** | tu máquina | falso, local | probar sin miedo: reglas, Functions, datos |
 | **Canal de preview** | `*.web.app` temporal | **el de producción** | revisar el front antes de publicarlo |
-| **Proyecto dev** | `rincon-de-lectura-dev` | propio, de mentira | reglas, índices y Functions desplegados de verdad |
+| **Proyecto dev** | `rincon-lectura-dev-1d818` | propio, de mentira | reglas, índices y Functions desplegados de verdad |
 | **Producción** | `rinconlectura.es` | el real | lo que ven las 40 usuarias |
 
 ## ¿A qué proyecto apunto ahora mismo?
@@ -145,32 +145,38 @@ se puede evitar con `--no-authorized-domains`, a cambio de no poder entrar.
 Para cuando haya que cambiar reglas de Firestore, índices o Functions y
 quieras probarlo desplegado de verdad antes de tocar producción.
 
-### Crearlo (una vez, en la consola)
+### Estado del proyecto
 
-1. <https://console.firebase.google.com> → **Añadir proyecto**.
-2. Nombre: `Rincon de lectura dev`. Debajo del nombre la consola enseña el
-   **ID generado**: edítalo y ponlo en `rincon-de-lectura-dev`, que es el
-   que espera `.firebaserc`. Si está cogido, elige otro y cambia esa línea
-   de `.firebaserc` — es el único sitio donde está escrito.
-3. Google Analytics: **desactivar**. No hace falta en dev y evita enganchar
-   una propiedad de GA.
-4. Ya dentro: **Compilación → Firestore Database → Crear base de datos**,
-   modo producción, región `eur3 (europe-west)`. **La región no se puede
-   cambiar después.**
-5. **Compilación → Authentication → Comenzar** y habilitar los mismos
-   proveedores que producción: **Correo electrónico/contraseña** y
-   **Google** (`auth.js:110` usa `signInWithPopup` con `GoogleAuthProvider`).
-6. **Configuración del proyecto → Tus apps → Web (`</>`)**, registra una app
-   (`Rincon de lectura dev`) y copia los valores de `firebaseConfig`.
-7. `cp .env.dev.example .env.dev` y pega ahí esos valores. `.env.dev` está
-   ignorado por git.
+Ya existe: nombre visible `rincon-lectura-dev`, **Project ID
+`rincon-lectura-dev-1d818`**. Firebase le puso el sufijo porque el ID
+limpio estaba cogido; `--project` necesita el ID, no el nombre visible.
+Está en `.firebaserc` y es el único sitio donde aparece escrito.
+
+Hecho ya:
+
+- Base de datos Firestore creada (`(default)`, Native, edición Standard).
+- Sin índices compuestos, igual que producción.
+
+Queda por comprobar en la consola, si no lo hiciste al crearlo:
+
+1. **Compilación → Authentication → Comenzar**, con los mismos proveedores
+   que producción: **Correo electrónico/contraseña** y **Google**
+   (`auth.js:110` usa `signInWithPopup` con `GoogleAuthProvider`).
+2. **Configuración del proyecto → Tus apps → Web (`</>`)**: registra una app
+   web si no la hay y copia el `firebaseConfig`.
+3. `cp .env.dev.example .env.dev` y pega ahí esos valores. `.env.dev` está
+   ignorado por git. Copia el `storageBucket` tal cual salga en la consola:
+   los proyectos nuevos usan `.firebasestorage.app` y los viejos
+   `.appspot.com`.
+
+Después, `npm run proyecto` debe decir que `.env.dev` está presente.
 
 **Sobre Cloud Functions:** desplegar Functions exige plan **Blaze** (pago
 por uso) también en el proyecto de dev. Si solo vas a tocar reglas e
-índices, con el plan Spark gratuito te vale y puedes saltarte esto. Si
-quieres Functions en dev, hay que activar Blaze en ese proyecto: el uso
-real de un entorno de pruebas cae de sobra dentro del nivel gratuito
-(2 M invocaciones/mes), pero es una decisión de facturación tuya.
+índices, con el plan Spark gratuito te vale. Si quieres Functions en dev,
+hay que activar Blaze en ese proyecto: el uso real de un entorno de pruebas
+cae de sobra dentro del nivel gratuito (2 M invocaciones/mes), pero es una
+decisión de facturación tuya.
 
 ### Usarlo
 
