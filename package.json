@@ -1,6 +1,10 @@
 {
   "scripts": {
     "dev": "vite",
+    "dev:emu": "node scripts/dev-emuladores.mjs",
+    "emu:semilla": "node scripts/seed-emuladores.mjs",
+    "emu:exportar": "firebase emulators:export ./.emuladores --force",
+    "emu:limpiar": "node scripts/limpiar-emuladores.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "deploy:preview": "node scripts/deploy-preview.mjs",

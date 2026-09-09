@@ -1,5 +1,11 @@
 .firebase/
 firebase-debug.log
+firestore-debug.log
+ui-debug.log
+database-debug.log
+pubsub-debug.log
+# Carpeta suelta que deja un `emulators:export` interrumpido
+firebase-export-*/
 .DS_Store
 # Dependencias de Node
 node_modules/
@@ -15,3 +21,5 @@ dist/
 # Archivos autogenerados por Playwright
 playwright-report/
 test-results/
+# Datos de los emuladores de Firebase (import/export local)
+.emuladores/
