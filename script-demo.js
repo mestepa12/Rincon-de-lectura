@@ -337,8 +337,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 await new Promise(r => setTimeout(r, 600));
                 res = await fetch(url);
             }
-            if (!res.ok && [429, 500, 502, 503, 504].includes(res.status)) {
-                await new Promise(r => setTimeout(r, 1200));
+            // 403 = "requests-from-referer-blocked": la key está restringida
+            // por referrer a los dominios de producción, así que fuera de
+            // ellos (canal de preview, localhost) la llamada directa nunca va
+            // a funcionar. No se espera: se salta al proxy, que fija el
+            // Referer bueno desde el servidor. En producción no hay 403.
+            if (!res.ok && [403, 429, 500, 502, 503, 504].includes(res.status)) {
+                if (res.status !== 403) await new Promise(r => setTimeout(r, 1200));
                 // Proxy por Cloud Function: IP de Google Cloud + caché CDN,
                 // esquiva el rate limit por IP que sufren las redes móviles
                 res = await fetch(`https://mi-rincon-de-lectura.web.app/api/buscar-libros?q=${encodeURIComponent(titulo)}`);

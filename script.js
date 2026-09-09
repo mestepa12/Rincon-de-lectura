@@ -317,7 +317,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (backoffMs[i]) await new Promise(r => setTimeout(r, backoffMs[i]));
                     if (signal?.aborted) return null;
                     response = await fetch(urls[i], { signal: searchSignal(signal) });
-                    if (response.ok || ![429, 500, 502, 503, 504].includes(response.status)) break;
+                    // 403 = "requests-from-referer-blocked": la key está
+                    // restringida por referrer a los dominios de producción,
+                    // así que fuera de ellos (canal de preview, Capacitor,
+                    // localhost) la llamada directa siempre falla. Se sigue
+                    // la escalera hasta el proxy, que fija el Referer bueno
+                    // desde el servidor. En producción este 403 no ocurre.
+                    if (response.ok || ![403, 429, 500, 502, 503, 504].includes(response.status)) break;
                 }
                 if (!response.ok) return null;
                 const data = await response.json();

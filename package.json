@@ -3,7 +3,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && firebase deploy",
+    "deploy:preview": "node scripts/deploy-preview.mjs",
+    "deploy": "node scripts/deploy-prod.mjs",
+    "canales": "firebase hosting:channel:list",
+    "canal:borrar": "firebase hosting:channel:delete",
     "android": "npm run build && npx cap sync android && npx cap open android"
   },
   "devDependencies": {
