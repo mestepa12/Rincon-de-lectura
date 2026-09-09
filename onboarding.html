@@ -53,6 +53,12 @@
 
     <div class="login-container">
         <h1>¡Casi listo!</h1>
+        <!-- Cuenta activa: esta pantalla ya está autenticada, así que aquí
+             también tiene que verse con qué sesión se está entrando. -->
+        <p id="cuenta-activa" class="cuenta-activa cuenta-activa--claro" hidden>
+            <span class="cuenta-activa-etiqueta">Sesión de</span>
+            <span id="cuenta-activa-correo" class="cuenta-activa-correo"></span>
+        </p>
         <p style="margin-bottom: 1.2rem; line-height: 1.5;">Elige tu nombre de usuario para Rincón de Lectura. Así te encontrarán tus amigos.</p>
         <form id="onboarding-form">
             <label for="username">Nombre de usuario</label>

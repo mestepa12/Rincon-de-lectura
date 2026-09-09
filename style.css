@@ -66,6 +66,60 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 }
 .header-main { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; width: 100%; gap: 0.75rem; min-width: 0; }
 .header-left { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+/* Identidad de la cabecera: titulo y cuenta activa apilados, para que el
+   correo no robe una fila entera ni se mezcle con los botones al hacer
+   wrap en movil. */
+.header-identity { display: flex; flex-direction: column; min-width: 0; }
+
+/* Cuenta activa. Sobre el marron de la cabecera (#4E443A) el
+   --accent-color se queda en 2.86:1 y suspenderia AA, asi que se usa
+   #D7CCC8, que da 6.03:1: discreto al lado del blanco del titulo pero
+   perfectamente legible. */
+.cuenta-activa {
+    margin: 1px 0 0;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    line-height: 1.25;
+    color: #D7CCC8;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cuenta-activa-etiqueta { opacity: 0.8; }
+.cuenta-activa-correo { font-weight: 700; }
+
+/* Variante para fondos claros (onboarding). #7D5C51 sobre #FDFBF7 = 5.8:1. */
+.cuenta-activa--claro { color: var(--accessible-muted-color); margin: 0 0 0.9rem; }
+
+/* Dentro de los dialogos. Los <dialog> abiertos con showModal() viven en el
+   top layer, por encima de cualquier z-index, asi que la cabecera sticky
+   queda tapada: la unica forma de que la cuenta siga a la vista es que este
+   dentro del propio dialogo. Absoluta para no empujar el contenido, y a la
+   izquierda porque los botones de cerrar van arriba a la derecha. */
+.cuenta-en-modal {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.75rem;
+    right: 2.5rem;
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    color: var(--accessible-muted-color);
+    text-align: left;
+    pointer-events: none;
+    /* Chip con fondo propio: hay dialogos transparentes (el de la racha) y
+       sin esto la linea quedaria ilegible sobre el backdrop oscuro. El
+       contraste se mantiene contra #FDFBF7 (5.8:1). */
+    background: rgba(253, 251, 247, 0.94);
+    padding: 2px 6px;
+    border-radius: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cuenta-en-modal .cuenta-activa-correo { font-weight: 700; }
 .menu-btn {
     background: transparent; border: 2px solid #a1887f; color: white;
     font-size: 1.2rem; line-height: 1; padding: 0.4rem 0.7rem; border-radius: 5px;
@@ -207,6 +261,8 @@ body.dark-mode #site-title { color: #fff; }
 
 /* ======== MODALES Y FORMULARIOS (GENERAL) ======== */
 dialog {
+    /* relative: ancla la linea de cuenta activa (.cuenta-en-modal) */
+    position: relative;
     border: 2px solid var(--border-color);
     border-radius: 8px;
     padding: 2rem;

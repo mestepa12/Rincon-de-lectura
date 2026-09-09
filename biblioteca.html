@@ -74,7 +74,17 @@
         <div class="header-main">
             <div class="header-left">
                 <button id="menu-btn" class="menu-btn" type="button" aria-label="Abrir menú" title="Menú">☰</button>
-                <h1 id="site-title">Mi Rincón de Lectura</h1>
+                <div class="header-identity">
+                    <h1 id="site-title">Mi Rincón de Lectura</h1>
+                    <!-- Cuenta activa: siempre a la vista para que nunca haya
+                         duda de con qué sesión se está trabajando. Se rellena
+                         desde script.js; hidden hasta que hay correo, así no
+                         parpadea un hueco vacío al cargar. -->
+                    <p id="cuenta-activa" class="cuenta-activa" hidden>
+                        <span class="cuenta-activa-etiqueta">Sesión de</span>
+                        <span id="cuenta-activa-correo" class="cuenta-activa-correo"></span>
+                    </p>
+                </div>
             </div>
             <div class="header-controls">
                 <button id="add-book-btn" type="button">Añadir Libro</button>

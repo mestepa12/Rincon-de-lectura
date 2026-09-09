@@ -44,6 +44,48 @@ import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    /**
+     * Deja el correo de la sesión a la vista en la cabecera y dentro de
+     * todos los diálogos.
+     *
+     * Lo de los diálogos no es un extra: son <dialog> abiertos con
+     * showModal(), que se pintan en el "top layer" del navegador, por
+     * encima de cualquier z-index. La cabecera sticky queda tapada, así que
+     * la única manera de que la cuenta siga viéndose con un modal abierto
+     * es que la línea esté dentro del propio diálogo.
+     *
+     * @param {string} correo Correo de la cuenta con la sesión iniciada.
+     */
+    function pintarCuentaActiva(correo) {
+        if (!correo) return;
+
+        const linea = document.getElementById('cuenta-activa');
+        const hueco = document.getElementById('cuenta-activa-correo');
+        if (linea && hueco) {
+            hueco.textContent = correo;
+            // title para poder leerlo entero cuando el ancho lo recorta
+            linea.title = `Sesión iniciada como ${correo}`;
+            linea.hidden = false;
+        }
+
+        document.querySelectorAll('dialog').forEach((dialogo) => {
+            if (dialogo.querySelector(':scope > .cuenta-en-modal')) return;
+            const p = document.createElement('p');
+            p.className = 'cuenta-en-modal';
+            const etiqueta = document.createElement('span');
+            etiqueta.className = 'cuenta-activa-etiqueta';
+            etiqueta.textContent = 'Sesión de ';
+            const valor = document.createElement('span');
+            valor.className = 'cuenta-activa-correo';
+            // textContent, no innerHTML: el correo viene de Auth, pero no
+            // hay razón para meterlo en el DOM como marcado.
+            valor.textContent = correo;
+            p.append(etiqueta, valor);
+            p.title = `Sesión iniciada como ${correo}`;
+            dialogo.prepend(p);
+        });
+    }
+
     // --- EL PORTERO: Vigilando la entrada ---
     onAuthStateChanged(auth, async (user) => {
         if (user && user.emailVerified) {
@@ -104,6 +146,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- FUNCIÓN PRINCIPAL DE LA APP ---
     function runApp(user) {
+        // --- CUENTA ACTIVA SIEMPRE A LA VISTA ---
+        // El correo, no el nombre de usuario: entre dos cuentas propias el
+        // nombre puede parecerse, el correo no. Va antes que nada para que
+        // esté pintado aunque falle cualquier carga posterior.
+        pintarCuentaActiva(user.email);
+
         // Referencias a colecciones (Sintaxis V10)
         const booksCollection = collection(db, 'books');
         const userBooksCollection = collection(db, 'books');

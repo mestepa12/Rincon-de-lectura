@@ -30,6 +30,16 @@ onAuthStateChanged(auth, async (user) => {
         window.location.replace(destinoTrasAuth());
         return;
     }
+    // Cuenta activa a la vista: esta pantalla ya está autenticada y conviene
+    // que se vea con qué sesión se está entrando antes de elegir nombre.
+    const lineaCuenta = document.getElementById('cuenta-activa');
+    const huecoCuenta = document.getElementById('cuenta-activa-correo');
+    if (lineaCuenta && huecoCuenta && user.email) {
+        huecoCuenta.textContent = user.email;
+        lineaCuenta.title = `Sesión iniciada como ${user.email}`;
+        lineaCuenta.hidden = false;
+    }
+
     // Sugerencia inicial a partir del nombre de Google, saneada al patrón.
     if (!input.value && user.displayName) {
         const sugerido = user.displayName.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30);
