@@ -7,6 +7,7 @@
 // El canal caduca solo (CADUCIDAD) para que no se acumulen. Al terminar
 // imprime la URL generada en grande, que es lo que se va a abrir.
 import { ejecutar, ramaActual, idCanal, color } from './lib/proc.mjs';
+import { PROD, AUTORIZACION } from './lib/proyectos.mjs';
 
 // 7 días: el máximo que admite Hosting son 30. Una semana sobra para
 // revisar un cambio y evita tener que limpiar canales a mano.
@@ -22,8 +23,10 @@ try {
 
   const salida = await ejecutar(
     'firebase',
-    ['hosting:channel:deploy', canal, '--expires', CADUCIDAD],
-    { capturar: true },
+    ['hosting:channel:deploy', canal, '--project', PROD, '--expires', CADUCIDAD],
+    // Un canal de preview vive en el proyecto de producción pero no toca el
+    // sitio en vivo, así que se autoriza al guardia de predeploy.
+    { capturar: true, env: { ...process.env, [AUTORIZACION]: '1' } },
   );
 
   // La CLI imprime la URL en una línea de resumen; se extrae para poder

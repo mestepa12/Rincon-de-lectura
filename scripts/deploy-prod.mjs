@@ -10,11 +10,10 @@ import { createInterface } from 'node:readline/promises';
 import { randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { ejecutar, ramaActual, color } from './lib/proc.mjs';
+import { PROD as PROYECTO_PROD, AUTORIZACION } from './lib/proyectos.mjs';
 
-// El proyecto real, escrito aquí a propósito: el despliegue pasa --project
-// con este valor, así que da igual a qué apunte `firebase use` en ese
-// momento. Ni un alias mal puesto ni un .firebaserc editado lo desvían.
-const PROYECTO_PROD = 'mi-rincon-de-lectura';
+// El destino va SIEMPRE en --project, resuelto desde el alias "prod" de
+// .firebaserc. Da igual a qué apunte `firebase use` en ese momento.
 const RAMA_ESPERADA = 'main';
 
 /** @return {string[]} Argumentos extra para firebase deploy (p. ej. --only). */
@@ -76,7 +75,11 @@ if (respuesta.trim() !== `desplegar ${codigo}`) {
 
 try {
   await ejecutar('npm', ['run', 'build']);
-  await ejecutar('firebase', ['deploy', '--project', PROYECTO_PROD, ...extra]);
+  // La autorización solo se pone DESPUÉS de que el código se haya tecleado
+  // bien: es lo que deja pasar al guardia de predeploy.
+  await ejecutar('firebase', ['deploy', '--project', PROYECTO_PROD, ...extra], {
+    env: { ...process.env, [AUTORIZACION]: '1' },
+  });
   console.log(color.verde('\n✓ Desplegado a producción.\n'));
 } catch (error) {
   console.error(color.rojo(`\n✗ ${error.message}\n`));

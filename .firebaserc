@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "mi-rincon-de-lectura"
+    "prod": "mi-rincon-de-lectura",
+    "dev": "rincon-de-lectura-dev"
   }
 }

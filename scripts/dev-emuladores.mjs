@@ -13,6 +13,7 @@
 import { mkdirSync, existsSync } from 'node:fs';
 import { ejecutar, color } from './lib/proc.mjs';
 import { entornoConJdk } from './lib/java.mjs';
+import { PROD } from './lib/proyectos.mjs';
 
 const DATOS = './.emuladores';
 
@@ -43,6 +44,12 @@ try {
   // queda fuera a propósito: el dev server de Vite ya sirve la app.
   await ejecutar('firebase', [
     'emulators:exec',
+    // .firebaserc ya no tiene alias "default" (ver punto 3), así que el
+    // proyecto va explícito. Se usa el ID de producción porque tiene que
+    // coincidir con VITE_FIREBASE_PROJECT_ID de .env para que el cliente
+    // encuentre los emuladores. Es solo una etiqueta local: nada sale de
+    // esta máquina.
+    '--project', PROD,
     '--only', 'auth,firestore,functions',
     `--import=${DATOS}`,
     // Con "=" a la fuerza: --export-on-exit admite valor opcional y, suelto,
