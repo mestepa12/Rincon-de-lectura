@@ -136,3 +136,92 @@ test('un CSV que no es ni de Goodreads ni nuestro no se importa', () => {
     assert.equal(esCsvGoodreads(['Nombre', 'Paginas']), false);
     assert.equal(esCsvPropio(['Nombre', 'Paginas']), false);
 });
+
+// ---------------------------------------------------------------------------
+// Lectura del CSV propio (la vuelta que faltaba para que la copia sirva)
+// ---------------------------------------------------------------------------
+
+const { seccionDesdeEstado, filaPropiaALibro, SECCIONES_CSV } =
+    await import('../csv-formato.js');
+const { slugLibro, mismoLibro } = await import('../libro-identidad.js');
+
+test('cada etiqueta que escribe la exportación se vuelve a leer', () => {
+    // Si esto falla, el CSV ha dejado de poder leerse a sí mismo.
+    for (const [seccion, etiqueta] of Object.entries(SECCIONES_CSV)) {
+        assert.equal(seccionDesdeEstado(etiqueta), seccion, `«${etiqueta}» no vuelve a ${seccion}`);
+    }
+});
+
+test('«En papelera» se lee como papelera, no como sección', () => {
+    assert.equal(seccionDesdeEstado('En papelera'), 'papelera');
+    assert.equal(seccionDesdeEstado('  en papelera  '), 'papelera');
+});
+
+test('un estado desconocido no revienta: cae a null', () => {
+    assert.equal(seccionDesdeEstado('Vete a saber'), null);
+    assert.equal(seccionDesdeEstado(''), null);
+});
+
+test('una fila sin título no se importa', () => {
+    assert.equal(filaPropiaALibro({ 'Título': '', 'Autor': 'X' }), null);
+    assert.equal(filaPropiaALibro({}), null);
+});
+
+test('una fila completa se convierte en libro con sus datos', () => {
+    const { libro, destino } = filaPropiaALibro({
+        'Título': 'Dune', 'Autor': 'Frank Herbert', 'Estado': 'Leyendo ahora',
+        'Páginas totales': '680', 'Página actual': '245', 'Valoración': '4',
+        'Género': 'Ciencia ficción', 'Notas': 'Buenísimo',
+        'Ritmo narrativo': 'pausado', 'Estados de ánimo': 'épico; oscuro',
+        'Portada': 'https://x/y.jpg', 'Enlace': 'https://books/1',
+    });
+    assert.equal(destino, 'leyendo-ahora');
+    assert.equal(libro.title, 'Dune');
+    assert.equal(libro.totalPages, 680);
+    assert.equal(libro.currentPage, 245);
+    assert.equal(libro.rating, 4);
+    assert.deepEqual(libro.estadosDeAnimo, ['épico', 'oscuro']);
+    assert.equal(libro.importedFrom, 'csv-propio');
+});
+
+test('los números corruptos del CSV se quedan en 0, no en NaN', () => {
+    const { libro } = filaPropiaALibro({ 'Título': 'X', 'Páginas totales': 'muchas', 'Página actual': '-5' });
+    assert.equal(libro.totalPages, 0);
+    assert.equal(libro.currentPage, 0);
+    assert.ok(!Number.isNaN(libro.totalPages));
+});
+
+test('la valoración se acota a 5 aunque el CSV traiga más', () => {
+    const { libro } = filaPropiaALibro({ 'Título': 'X', 'Valoración': '99' });
+    assert.equal(libro.rating, 5);
+});
+
+test('una fila de papelera guarda una sección válida, no "papelera"', () => {
+    const { libro, destino } = filaPropiaALibro({ 'Título': 'X', 'Estado': 'En papelera' });
+    assert.equal(destino, 'papelera');
+    assert.ok(Object.keys(SECCIONES_CSV).includes(libro.section));
+});
+
+// ---------------------------------------------------------------------------
+// Identidad de libro (la que deduplica)
+// ---------------------------------------------------------------------------
+
+test('la identidad ignora tildes, mayúsculas y puntuación', () => {
+    assert.equal(slugLibro('El Hóbbit', 'J.R.R. Tolkien'), slugLibro('el hobbit', 'J. R. R. Tolkien'));
+    assert.ok(mismoLibro({ title: '  Dune  ', author: 'Herbert' }, { title: 'DUNE', author: 'herbert' }));
+});
+
+test('una edición con su nombre en el título es OTRO libro', () => {
+    assert.notEqual(slugLibro('Dune', 'Herbert'), slugLibro('Dune (edición ilustrada)', 'Herbert'));
+});
+
+test('dos ediciones con el mismo título son la MISMA identidad', () => {
+    // Limitación conocida y avisada en el diálogo: el número de páginas no
+    // distingue ediciones.
+    assert.equal(slugLibro('Dune', 'Herbert'), slugLibro('Dune', 'Herbert'));
+});
+
+test('libros distintos no colisionan', () => {
+    assert.notEqual(slugLibro('Dune', 'Herbert'), slugLibro('Dune', 'Otro Autor'));
+    assert.notEqual(slugLibro('Duna', 'Herbert'), slugLibro('Dune', 'Herbert'));
+});

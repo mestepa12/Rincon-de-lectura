@@ -41,7 +41,8 @@ async function renderTarjetaAislada(card) {
 }
 import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './papelera.js';
-import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, esCsvGoodreads, esCsvPropio } from './csv-formato.js';
+import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
+import { slugLibro } from './libro-identidad.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -4364,6 +4365,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // amigos no necesitan filtrar nada y no hay forma de que un borrado
         // se cuele en un recuento.
         let papeleraPurgada = false;
+        let copiaRecordada = false;
         onSnapshot(query(collection(db, 'papelera'), where('userId', '==', user.uid)), (snap) => {
             papeleraData = [];
             snap.forEach(d => papeleraData.push({ id: d.id, ...d.data() }));
@@ -4394,6 +4396,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Orden alfabético por título
             booksData.sort((a, b) => a.title.localeCompare(b.title));
+
+            // Recordatorio de copia: una sola vez por sesión, cuando ya se
+            // sabe cuántos libros hay.
+            if (!copiaRecordada) { copiaRecordada = true; recordarCopia(); }
             renderBooks();
             evaluarLogros();
 
@@ -4414,6 +4420,104 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // === IMPORTAR DE GOODREADS ===
+        // === RESTAURAR DESDE NUESTRA PROPIA COPIA (CSV) ===
+        //
+        // El CSV que exporta la app es la copia de seguridad de la usuaria;
+        // hasta ahora no se podía volver a leer, así que no restauraba nada.
+        //
+        // Deduplica por identidad de libro (título + autor normalizados), la
+        // misma que usan los comentarios y las lecturas compartidas. Así
+        // reimportar dos veces la misma copia deja la biblioteca igual en vez
+        // de duplicarla entera.
+        const importarCsvPropio = async (rows, headers) => {
+            const filas = rows.slice(1).map((row) => {
+                const f = {};
+                headers.forEach((h, i) => { f[h] = (row[i] || '').trim(); });
+                return f;
+            });
+
+            const ilegibles = [];
+            const candidatos = [];
+            filas.forEach((f) => {
+                const leido = filaPropiaALibro(f);
+                if (!leido) ilegibles.push(f);
+                else candidatos.push(leido);
+            });
+
+            // Ni la biblioteca ni la papelera admiten repetidos.
+            const yaTengo = new Set([
+                ...booksData.map((b) => slugLibro(b.title, b.author)),
+                ...papeleraData.map((b) => slugLibro(b.title, b.author)),
+            ]);
+
+            // Dos filas del mismo fichero con la misma identidad tampoco deben
+            // crear dos libros: se queda la primera.
+            const vistos = new Set();
+            const nuevos = [];
+            let repetidos = 0;
+            for (const c of candidatos) {
+                const slug = slugLibro(c.libro.title, c.libro.author);
+                if (yaTengo.has(slug) || vistos.has(slug)) { repetidos++; continue; }
+                vistos.add(slug);
+                nuevos.push(c);
+            }
+
+            const aPapelera = nuevos.filter((c) => c.destino === 'papelera').length;
+            const aBiblioteca = nuevos.length - aPapelera;
+
+            if (!nuevos.length && !repetidos && !ilegibles.length) {
+                notify('El fichero no tiene ninguna fila con datos.', 'warning');
+                return;
+            }
+
+            const detalle = [`Filas leídas: ${filas.length}`];
+            if (nuevos.length) {
+                detalle.push(`Se añadirán: ${nuevos.length}` +
+                    (aPapelera ? ` (${aBiblioteca} a la biblioteca, ${aPapelera} a la papelera)` : ''));
+            }
+            if (repetidos) detalle.push(`Ya los tienes, se omiten: ${repetidos}`);
+            if (ilegibles.length) detalle.push(`No se han podido leer: ${ilegibles.length} (sin título)`);
+
+            const ok = await confirmDialog({
+                title: '¿Restaurar desde esta copia?',
+                message: `${detalle.join('\n')}\n\n` +
+                    'Los libros que ya tienes no se tocan: no se sobrescribe tu progreso ni tus notas.\n\n' +
+                    'Dos ediciones con el mismo título y autor cuentan como una sola, aunque tengan distintas páginas.\n\n' +
+                    (aPapelera
+                        ? `${aPapelera === 1 ? 'El libro que estaba' : `Los ${aPapelera} libros que estaban`} en la papelera vuelve${aPapelera === 1 ? '' : 'n'} ahí, con el plazo de ${DIAS_PAPELERA} días contando desde hoy.\n\n`
+                        : '') +
+                    `Cuenta: ${user.email}`,
+                confirmText: nuevos.length ? `Añadir ${nuevos.length} libros` : 'Entendido',
+                cancelText: 'Cancelar',
+            });
+            if (!ok || !nuevos.length) return;
+
+            const ahora = Date.now();
+            try {
+                for (let i = 0; i < nuevos.length; i += 400) {
+                    const batch = writeBatch(db);
+                    nuevos.slice(i, i + 400).forEach(({ libro, destino }) => {
+                        const datos = { ...libro, userId: user.uid };
+                        if (destino === 'papelera') {
+                            batch.set(doc(collection(db, 'papelera')), { ...datos, deletedAt: ahora });
+                        } else {
+                            batch.set(doc(collection(db, 'books')), datos);
+                        }
+                    });
+                    await batch.commit();
+                }
+            } catch (error) {
+                console.error('Error restaurando desde CSV:', error);
+                notify('No se pudo completar la restauración. Vuelve a intentarlo.', 'error');
+                return;
+            }
+
+            notify(
+                `Restaurados ${nuevos.length} libro${nuevos.length !== 1 ? 's' : ''}.` +
+                (repetidos ? ` Se omitieron ${repetidos} que ya tenías.` : ''),
+                'success');
+        };
+
         const importGoodreadsCSV = async (file) => {
             const raw = await file.text();
             const csvText = raw.replace(/^\uFEFF/, ''); // Eliminar BOM
@@ -4452,11 +4556,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // un CSV con libros en la papelera nunca los devuelve a la
             // biblioteca por accidente.
             if (esCsvPropio(headers)) {
-                notify(
-                    'Ese es un CSV de Mi Rincón de Lectura, no de Goodreads.\n\n' +
-                    'Esta opción solo importa el CSV que genera Goodreads. Tu propia ' +
-                    'exportación todavía no se puede volver a importar.',
-                    'warning');
+                await importarCsvPropio(rows, headers);
                 return;
             }
             if (!esCsvGoodreads(headers)) {
@@ -4969,13 +5069,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // === EXPORTAR BIBLIOTECA A CSV ===
-        const SECCIONES_CSV = {
-            'leyendo-ahora': 'Leyendo ahora',
-            'proximas-lecturas': 'Próximas lecturas',
-            'libros-terminados': 'Terminados',
-            'lista-deseos': 'Lista de deseos',
-            'libros-abandonados': 'Abandonados',
-        };
+        // SECCIONES_CSV vive en csv-formato.js: lo que escribe la exportación
+        // y lo que lee la importación tienen que ser la misma tabla, o el CSV
+        // deja de poder leerse a sí mismo.
         // Escape CSV (RFC 4180): entrecomilla si hay coma, comilla o salto.
         const csvCampo = (v) => {
             const s = v == null ? '' : String(v);
@@ -5002,12 +5098,48 @@ document.addEventListener('DOMContentLoaded', () => {
             const csv = '﻿' + [cols.join(','), ...filas].join('\r\n');
             const fecha = new Date().toISOString().slice(0, 10);
             descargarBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `mi-rincon-de-lectura-${fecha}.csv`);
+            marcarCopiaHecha();
             const enPapelera = filasPapelera.length;
             notify(
                 `Exportados ${aExportar.length} libro${aExportar.length !== 1 ? 's' : ''} a CSV.` +
                 (enPapelera ? ` Incluye ${enPapelera} de la papelera.` : ''),
                 'success');
         };
+        // --- Recordatorio de copia de seguridad ---------------------------
+        // No hay copia automática: la más sencilla que funciona es que te
+        // acuerdes de exportar. Se guarda la fecha del último export en
+        // localStorage (por navegador, no en Firestore: es una comodidad, no
+        // un dato de la cuenta) y se avisa cuando lleva demasiado sin hacerse.
+        const CLAVE_ULTIMA_COPIA = 'rincon_ultima_copia';
+        const DIAS_ENTRE_COPIAS = 30;
+
+        const marcarCopiaHecha = () => {
+            try { localStorage.setItem(CLAVE_ULTIMA_COPIA, String(Date.now())); } catch { /* modo privado */ }
+        };
+
+        /** Avisa si hace más de DIAS_ENTRE_COPIAS que no se exporta. */
+        const recordarCopia = () => {
+            // Sin libros no hay nada que salvar, y el aviso solo estorbaría.
+            if (booksData.length < 3) return;
+            let ultima = null;
+            try { ultima = localStorage.getItem(CLAVE_ULTIMA_COPIA); } catch { return; }
+
+            const ms = Number(ultima);
+            const dias = (ultima && isFinite(ms) && ms > 0)
+                ? Math.floor((Date.now() - ms) / 86400000)
+                : null;
+            if (dias !== null && dias < DIAS_ENTRE_COPIAS) return;
+
+            // La primera vez no se sabe cuánto hace: se marca hoy y se avisa
+            // dentro de un mes, en vez de dar la brasa nada más entrar.
+            if (dias === null) { marcarCopiaHecha(); return; }
+
+            notify(
+                `Hace ${dias} días que no guardas una copia de tu biblioteca.\n\n` +
+                'Menú > Exportar a CSV. Ese fichero se puede volver a importar.',
+                'info');
+        };
+
         const exportCsvBtn = document.getElementById('export-csv-btn');
         if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportarCSV);
 
