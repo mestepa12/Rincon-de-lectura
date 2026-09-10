@@ -72,7 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         document.querySelectorAll('dialog').forEach((dialogo) => {
-            if (dialogo.querySelector(':scope > .cuenta-en-modal')) return;
+            // Algunos diálogos son solo un envoltorio transparente con una
+            // tarjeta dentro (el de la racha): ahí la franja va dentro de la
+            // tarjeta, o quedaría flotando sobre el fondo difuminado.
+            const destino = dialogo.querySelector(':scope > .racha-modal-inner') || dialogo;
+            if (destino.querySelector(':scope > .cuenta-en-modal')) return;
             const p = document.createElement('p');
             p.className = 'cuenta-en-modal';
             const etiqueta = document.createElement('span');
@@ -85,7 +89,16 @@ document.addEventListener('DOMContentLoaded', () => {
             valor.textContent = correo;
             p.append(etiqueta, valor);
             p.title = `Sesión iniciada como ${correo}`;
-            dialogo.prepend(p);
+
+            // Varios diálogos traen padding: 0 porque maquetan por dentro
+            // (detalle de libro, estadísticas, chat...). En esos la franja
+            // tiene que poner su propio margen o queda pegada al borde; en
+            // los que sí tienen padding, se alinea con el resto del
+            // contenido. Se decide aquí porque el CSS no puede consultarlo.
+            const sinPadding = parseFloat(getComputedStyle(destino).paddingLeft || '0') < 1;
+            if (sinPadding) p.classList.add('cuenta-en-modal--suelta');
+
+            destino.prepend(p);
         });
     }
 

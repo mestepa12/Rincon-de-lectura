@@ -92,34 +92,49 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 /* Variante para fondos claros (onboarding). #7D5C51 sobre #FDFBF7 = 5.8:1. */
 .cuenta-activa--claro { color: var(--accessible-muted-color); margin: 0 0 0.9rem; }
 
-/* Dentro de los dialogos. Los <dialog> abiertos con showModal() viven en el
-   top layer, por encima de cualquier z-index, asi que la cabecera sticky
-   queda tapada: la unica forma de que la cuenta siga a la vista es que este
-   dentro del propio dialogo. Absoluta para no empujar el contenido, y a la
-   izquierda porque los botones de cerrar van arriba a la derecha. */
+/* Dentro de los diálogos. Los <dialog> abiertos con showModal() viven en el
+   top layer, por encima de cualquier z-index, así que la cabecera sticky
+   queda tapada: la única forma de que la cuenta siga a la vista es que esté
+   dentro del propio diálogo.
+
+   Va en el flujo normal, como una franja de cabecera del modal, no flotando
+   por encima del contenido: misma estructura y tipografía que en la cabecera
+   de la app, con una línea de separación debajo. */
 .cuenta-en-modal {
-    position: absolute;
-    top: 0.5rem;
-    left: 0.75rem;
-    right: 2.5rem;
-    margin: 0;
+    display: block;
+    margin: 0 0 1rem;
+    padding: 0 0 0.6rem;
+    border-bottom: 1px solid var(--border-color);
     font-family: var(--font-body);
     font-size: 0.72rem;
-    line-height: 1.2;
+    line-height: 1.3;
+    letter-spacing: 0.01em;
     color: var(--accessible-muted-color);
     text-align: left;
-    pointer-events: none;
-    /* Chip con fondo propio: hay dialogos transparentes (el de la racha) y
-       sin esto la linea quedaria ilegible sobre el backdrop oscuro. El
-       contraste se mantiene contra #FDFBF7 (5.8:1). */
-    background: rgba(253, 251, 247, 0.94);
-    padding: 2px 6px;
-    border-radius: 4px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.cuenta-en-modal .cuenta-activa-etiqueta { opacity: 0.85; }
 .cuenta-en-modal .cuenta-activa-correo { font-weight: 700; }
+
+/* Diálogos que maquetan por dentro y no tienen padding propio: la franja
+   pone el suyo. La clase la añade script.js leyendo el padding real, así
+   ningún diálogo nuevo se queda fuera por olvido. */
+.cuenta-en-modal--suelta {
+    padding: 0.85rem 1.5rem 0.6rem;
+    margin-bottom: 0;
+}
+
+/* En un contenedor flex la franja no debe estirarse ni encogerse. */
+.cuenta-en-modal { flex: 0 0 auto; }
+
+/* En los que centran su contenido, la franja acompaña. */
+.racha-modal-inner > .cuenta-en-modal { text-align: center; }
+
+@media (max-width: 480px) {
+    .cuenta-en-modal--suelta { padding: 0.7rem 1rem 0.5rem; }
+}
 .menu-btn {
     background: transparent; border: 2px solid #a1887f; color: white;
     font-size: 1.2rem; line-height: 1; padding: 0.4rem 0.7rem; border-radius: 5px;
@@ -261,8 +276,6 @@ body.dark-mode #site-title { color: #fff; }
 
 /* ======== MODALES Y FORMULARIOS (GENERAL) ======== */
 dialog {
-    /* relative: ancla la linea de cuenta activa (.cuenta-en-modal) */
-    position: relative;
     border: 2px solid var(--border-color);
     border-radius: 8px;
     padding: 2rem;
@@ -777,29 +790,27 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 }
 .modal-actions .btn-primary { background: var(--accent-color-interactive); color: white; }
 .modal-actions .btn-cancel { background: transparent; border: 2px solid var(--border-color) !important; color: var(--text-color); }
-#add-book-form .modal-actions .btn-primary,
-#add-book-form .modal-actions .btn-cancel {
+/* Botones que van apilados a lo ancho del modal. El ">" es importante: deja
+   fuera los de .modal-actions-top, que van en fila y se reparten el ancho.
+   Antes esto estaba acotado a #add-book-form y #objetivos-form, asi que
+   cualquier modal nuevo (o el de editar libro) salia con el boton sin
+   padding ni radio, como una caja fina. */
+.modal-actions > .btn-primary,
+.modal-actions > .btn-cancel {
     width: 100%;
     padding: 0.9rem 1rem;
     font-size: 1rem;
     border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
+    min-height: 44px;            /* objetivo tactil minimo (iOS HIG) */
 }
 .btn-danger { background-color: #E53E3E; color: white; border-radius: 5px; font-weight: bold; cursor: pointer; }
 .btn-danger:hover { background-color: #C53030; }
 
 #objetivos-modal { max-width: 340px; width: 90%; border-radius: 12px; padding: 1.5rem; border: 2px solid var(--border-color); background: var(--card-bg-color); color: var(--text-color); }
 #objetivos-form { display: flex; flex-direction: column; gap: 0.75rem; }
-#objetivos-form .modal-actions .btn-primary,
-#objetivos-form .modal-actions .btn-cancel {
-    width: 100%;
-    padding: 0.9rem 1rem;
-    font-size: 1rem;
-    border-radius: 5px;
-    font-weight: bold;
-    cursor: pointer;
-}
+/* (el tamano lo da ahora la regla base .modal-actions > .btn-*) */
 #objetivos-form h2 { margin: 0 0 0.25rem; font-family: var(--font-title); }
 #objetivos-form input[type="number"] { padding: 0.6rem; border-radius: 5px; border: 2px solid var(--border-color); background: var(--bg-color); color: var(--text-color); font-size: 1rem; width: 100%; box-sizing: border-box; }
 .objetivos-progreso { display: flex; flex-direction: column; gap: 0.75rem; }
