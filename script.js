@@ -42,7 +42,7 @@ async function renderTarjetaAislada(card) {
 import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './papelera.js';
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
-import { slugLibro } from './libro-identidad.js';
+import { slugLibro, mismoLibro } from './libro-identidad.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1264,14 +1264,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Identificador universal de libro: mismo título+autor => mismo slug
         // entre distintos usuarios (minúsculas, sin tildes, sin espacios).
-        const generateBookSlug = (title, author) => {
-            const normalize = (s) => (s || '')
-                .toLowerCase()
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')  // quitar tildes/diacríticos
-                .replace(/[^a-z0-9]/g, '');       // quitar espacios y símbolos
-            return `${normalize(title)}-${normalize(author)}`;
-        };
+        // La identidad de un libro vive en libro-identidad.js para que la usen
+        // igual el importador, el alta manual y las recomendaciones. Se
+        // conserva el nombre porque ya lo usan comentarios y Leemos Juntos.
+        const generateBookSlug = slugLibro;
 
         let unsubscribeComments = null;
 
@@ -2301,9 +2297,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 estadosDeAnimo: [...addBookForm.querySelectorAll('input[name="moods"]:checked')].map(cb => cb.value)
             };
 
-            // Evita duplicados: mismo título + autor (normalizado) ya en la biblioteca
-            const clave = (t, a) => `${(t || '').trim().toLowerCase()}|${(a || '').trim().toLowerCase()}`;
-            const yaExiste = booksData.some(b => clave(b.title, b.author) === clave(newBook.title, newBook.author));
+            // Evita duplicados con la misma identidad que usa el resto de la
+            // app. La comparación anterior no quitaba tildes ni puntuación, así
+            // que dejaba pasar "El Hóbbit" al lado de "El Hobbit".
+            const yaExiste = booksData.some(b => mismoLibro(b, newBook));
             if (yaExiste) {
                 notify('Ese libro ya está en tu biblioteca.', 'warning');
                 return;
@@ -3695,9 +3692,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             await updateDoc(doc(db, 'books', b.id), { section: 'leyendo-ahora', currentPage: 0 });
                             actionBtn.textContent = '✓ ¡A leer!';
                         } else {
-                            // Evita duplicados: mismo título + autor ya en la biblioteca
-                            const norm = s => (s || '').trim().toLowerCase();
-                            if (booksData.some(x => norm(x.title) === norm(b.title) && norm(x.author) === norm(b.author))) {
+                            // Misma identidad que el resto de la app.
+                            if (booksData.some(x => mismoLibro(x, b))) {
                                 actionBtn.textContent = '✓ Ya lo tienes';
                                 return;
                             }
