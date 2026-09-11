@@ -1576,7 +1576,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Sesiones de lectura: cronómetro y predicción de fin
             refreshSessionUI(book);
 
-            // Leemos Juntos: progreso compartido con un amigo
+            // Leemos Juntos: progreso compartido con un amigo. El listener se
+            // engancha aquí, en la primera apertura, no al arrancar la app.
+            asegurarBuddyReads();
             renderBuddySection(book);
 
             // Desplegables: abiertos solo si tienen chicha (menos ruido visual)
@@ -3208,15 +3210,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let myBuddyReads = [];
 
-        onSnapshot(
-            query(collection(db, 'buddy_reads'), where('participants', 'array-contains', user.uid)),
-            (snap) => {
-                myBuddyReads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
-                if (bookDetailModal.open && book) renderBuddySection(book);
-            },
-            (error) => console.error('Error cargando lecturas compartidas:', error)
-        );
+        // Este listener no pinta nada mientras el detalle del libro está
+        // cerrado: su callback solo repinta si bookDetailModal.open. Así que
+        // no se abre al arrancar la app, sino la primera vez que se abre un
+        // libro, y quien nunca abra ninguno no lo paga. Es una consulta menos
+        // en tiempo real en cada visita.
+        //
+        // La primera apertura puede enseñar la sección un instante sin datos;
+        // el propio callback la repinta en cuanto llegan.
+        let buddyReadsEnganchado = false;
+        const asegurarBuddyReads = () => {
+            if (buddyReadsEnganchado) return;
+            buddyReadsEnganchado = true;
+            onSnapshot(
+                query(collection(db, 'buddy_reads'), where('participants', 'array-contains', user.uid)),
+                (snap) => {
+                    myBuddyReads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
+                    if (bookDetailModal.open && book) renderBuddySection(book);
+                },
+                (error) => console.error('Error cargando lecturas compartidas:', error)
+            );
+        };
 
         const getBuddyForBook = (book) =>
             myBuddyReads.find(br => br.bookSlug === generateBookSlug(book.title, book.author));
