@@ -105,20 +105,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- EL PORTERO: Vigilando la entrada ---
-    onAuthStateChanged(auth, async (user) => {
-        if (user && user.emailVerified) {
-            // Guard anti-abandono: un usuario de Google que cerró la pantalla
-            // de onboarding tiene sesión viva pero ningún perfil ni username
-            // en Firestore. Sin nombre la app no funciona bien, así que lo
-            // devolvemos a elegirlo antes de abrir la biblioteca. Lo mismo
-            // para los perfiles que el muro del quiz dejó sin username.
-            const perfil = await getDoc(doc(db, 'users', user.uid));
-            if (!perfilCompleto(perfil)) {
-                window.location.replace('onboarding.html');
-                return;
-            }
-            runApp(user);
-        }
+    onAuthStateChanged(auth, (user) => {
+        if (!(user && user.emailVerified)) return;
+
+        // Guard anti-abandono: un usuario de Google que cerró la pantalla
+        // de onboarding tiene sesión viva pero ningún perfil ni username
+        // en Firestore. Sin nombre la app no funciona bien, así que lo
+        // devolvemos a elegirlo antes de abrir la biblioteca. Lo mismo
+        // para los perfiles que el muro del quiz dejó sin username.
+        //
+        // El guard ya no RETIENE la app. Antes este getDoc tenía que ir y
+        // volver antes de que existiera siquiera la consulta de libros, así
+        // que su ida y vuelta la pagaban todas las visitas legítimas —o sea,
+        // todas menos un puñado— para atrapar un caso raro. Ahora sale en
+        // paralelo con runApp() y redirige en cuanto responde.
+        //
+        // Adelantar runApp() es seguro porque ninguna de sus escrituras
+        // puede fabricar un perfil a medias: evaluarLogros() y
+        // checkStreakBreakOnLogin() salen si el documento no existe,
+        // obtainPushToken() usa updateDoc (que falla si no existe) y la
+        // sincronización de totalPaginasLeidas exige haber leído antes el
+        // perfil. Si eso cambia, este guard vuelve a ser bloqueante.
+        getDoc(doc(db, 'users', user.uid))
+            .then((perfil) => {
+                if (!perfilCompleto(perfil)) window.location.replace('onboarding.html');
+            })
+            .catch((e) => {
+                // Sin red no se puede decidir: se deja pasar y se reintenta
+                // en la siguiente carga. Antes, un fallo aquí dejaba la
+                // biblioteca en blanco para siempre.
+                console.warn('No se pudo comprobar el perfil:', e);
+            });
+
+        runApp(user);
     });
         // --- FUNCIÓN DE MIGRACIÓN (SOLO PARA TRASPASAR DATOS) ---
 /*    async function migrarLibrosAntiguos(user) {
