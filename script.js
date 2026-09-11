@@ -2,7 +2,12 @@ import { notify, confirmDialog, promptDialog, confirmEscritoDialog, palabraConfi
 import { googleBooksApiKey, fcmVapidKey } from './config.js';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
-import { getMessaging, getToken, onMessage, isSupported as isMessagingSupported } from "firebase/messaging";
+// firebase/messaging arrastra consigo @firebase/installations: entre los dos,
+// ~91 kB de fuente que con un import estático viajaban DENTRO del chunk de
+// /biblioteca y se ejecutaban al arrancar (isSupported() toca IndexedDB y el
+// service worker). Las notificaciones no son lo que la usuaria viene a ver,
+// así que Vite las separa en su propio chunk y solo se descarga cuando de
+// verdad se van a usar. Ver cargarMessaging() más abajo.
 
 // 1. Inicialización compartida (app, auth y Firestore con caché persistente)
 import { app, auth, db } from './firebase-init.js';
@@ -2838,12 +2843,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // ignora en silencio. Por eso: con permiso ya concedido renovamos el
         // token en silencio; con permiso pendiente mostramos un banner y
         // pedimos el permiso en el click.
+        // Trae el chunk de firebase/messaging (ver el comentario de los
+        // imports). Se pide una sola vez: el propio import() cachea.
+        const cargarMessaging = () => import('firebase/messaging');
+
         const obtainPushToken = async () => {
             try {
                 const swRegistration = await navigator.serviceWorker.register(
                     `${import.meta.env.BASE_URL}firebase-messaging-sw.js`
                 );
 
+                const { getMessaging, getToken, onMessage } = await cargarMessaging();
                 const messaging = getMessaging(app);
                 const token = await getToken(messaging, {
                     vapidKey: fcmVapidKey,
@@ -2905,12 +2915,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const setupPushNotifications = async () => {
             try {
+                // Las comprobaciones baratas primero, y sobre todo ANTES de
+                // pedir el chunk: en un navegador sin push, o sin la clave
+                // configurada, no se descarga nada en absoluto.
                 if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-                if (!(await isMessagingSupported())) return;
                 if (!fcmVapidKey || fcmVapidKey.startsWith('PEGA_AQUI')) {
                     console.warn('FCM: falta VITE_FIREBASE_VAPID_KEY en .env');
                     return;
                 }
+                if (Notification.permission === 'denied') return; // no molestar
+
+                const { isSupported: isMessagingSupported } = await cargarMessaging();
+                if (!(await isMessagingSupported())) return;
 
                 if (Notification.permission === 'granted') {
                     obtainPushToken();  // ya autorizado: registrar/renovar en silencio
@@ -2919,12 +2935,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const dismissed = parseInt(localStorage.getItem('push_banner_dismissed') || '0', 10);
                     if (Date.now() - dismissed > 7 * 24 * 60 * 60 * 1000) showPushBanner();
                 }
-                // 'denied': no molestar
             } catch (error) {
                 console.error('Error configurando notificaciones push:', error);
             }
         };
-        setupPushNotifications();
+        // Al ralentí, no en el arranque: así el chunk de messaging no compite
+        // por la red con la consulta de libros.
+        if ('requestIdleCallback' in window) requestIdleCallback(() => setupPushNotifications(), { timeout: 5000 });
+        else setTimeout(setupPushNotifications, 2000);
 
         // === RACHA DIARIA DE LECTURA ===
         const updateStreak = async () => {
