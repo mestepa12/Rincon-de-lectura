@@ -44,6 +44,7 @@ import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './p
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
 import { slugLibro, mismoLibro } from './libro-identidad.js';
 import { perfilCompleto } from './perfil.js';
+import { enviarEvento } from './analitica.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -248,6 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         let booksData = [];
+        // La biblioteca propia se ha visto vacía en esta sesión (add_first_book)
+        let bibliotecaVistaVacia = false;
 
         // Libros guardados cuando Google Books aún servía zoom=0 llevan esa
         // URL en Firestore; ese zoom ya solo devuelve un placeholder, así que
@@ -2464,6 +2467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const snap = await getDoc(userRef);
                 if (!snap.exists()) return;
                 const ud = snap.data();
+                const viendoAmigo = viewingFriendLibrary; // de quién es booksData ahora
                 const desbloqueados = new Set(ud.logrosDesbloqueados || []);
                 const racha = ud.rachaActual || 0;
                 const totalPaginasLeidas = ud.totalPaginasLeidas || 0;
@@ -2557,8 +2561,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (nuevos.length > 0) {
                     await updateDoc(userRef, { logrosDesbloqueados: [...desbloqueados, ...nuevos] });
                     anunciarLogros(nuevos.map(id => LOGROS.find(x => x.id === id)).filter(Boolean));
+                    if (nuevos.includes('primer_libro') && !viendoAmigo) medirPrimerLibro();
                 }
             } catch (e) { console.error('Error evaluando logros:', e); }
+        };
+
+        // Primer libro de la cuenta. El marcador es el logro primer_libro, que
+        // ya vive en Firestore: vale en cualquier dispositivo y no se repite al
+        // vaciar la biblioteca y volver a llenarla. Llega aquí por las cinco
+        // vías de alta (formulario, recomendación, Goodreads, CSV propio,
+        // papelera) porque todas pasan por el onSnapshot de libros.
+        // Además la biblioteca propia tiene que haberse visto vacía en esta
+        // sesión: una cuenta anterior a los logros (mayo de 2026) que vuelve
+        // con libros lo desbloquearía ahora sin estar añadiendo el primero.
+        const medirPrimerLibro = () => {
+            if (!bibliotecaVistaVacia) return;
+            bibliotecaVistaVacia = false; // una vez: evaluarLogros puede solaparse consigo misma
+            enviarEvento('add_first_book');
         };
 
         // === ESTADÍSTICAS ===
@@ -3368,6 +3387,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 startAt: Date.now(),
                 startPage: book.currentPage || 0
             }));
+            enviarEvento('reading_session_start'); // el cronómetro ya corre
             startSessionTicker();
             refreshSessionUI(book);
         };
@@ -4399,7 +4419,8 @@ document.addEventListener('DOMContentLoaded', () => {
         onSnapshot(qMyBooks, (snapshot) => {
             viewingFriendLibrary = false;
             booksData = [];
-            
+            if (snapshot.empty) bibliotecaVistaVacia = true; // ver medirPrimerLibro
+
             snapshot.forEach(docSnap => {
                 const book = normalizarCover({ id: docSnap.id, ...docSnap.data() });
                 booksData.push(book);
@@ -4693,6 +4714,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 await batch.commit();
                 imported += Math.min(BATCH_SIZE, books.length - i);
             }
+            // Todos los lotes confirmados por el servidor (un lote que falla
+            // lanza y no llega aquí). La restauración del CSV propio no cuenta.
+            enviarEvento('goodreads_import_complete', { book_count: imported });
 
             const sinIsbn = parsed.filter(b => !b._isbn13).length;
             notify(

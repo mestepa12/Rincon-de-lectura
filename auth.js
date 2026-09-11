@@ -17,6 +17,7 @@ import {
 } from "firebase/firestore";
 import { app, auth, db } from "./firebase-init.js";
 import { perfilCompleto } from "./perfil.js";
+import { enviarAlta, recordarOrigenDesdeReferrer } from "./analitica.js";
 
 // 1. LIMPIEZA DE CREDENCIALES ANTIGUAS
 // Versiones anteriores guardaban email y contraseña en texto plano en
@@ -89,6 +90,9 @@ const iniciarAuth = () => {
     const divAviso = document.getElementById('msg-verificacion');
     const btnReenviar = document.getElementById('btn-reenviar-correo');
     const textoEstado = document.getElementById('estado-envio');
+
+    // De qué página se viene, para el origin_page del sign_up
+    if (loginForm || registerForm) recordarOrigenDesdeReferrer();
 
     const setupToggle = (btn, input) => {
         if (btn && input) {
@@ -284,13 +288,18 @@ const iniciarAuth = () => {
                 await setDoc(doc(db, "usernames", usernameKey), {
                     uid: userCred.user.uid
                 });
-                
+
+                // Alta completa: cuenta, perfil y nombre reservado. No se mide
+                // tras createUser…: si el perfil fallara, la cuenta no serviría.
+                const altaMedida = enviarAlta('email');
+
                 await sendEmailVerification(userCred.user);
 
                 // La sesión se queda iniciada a propósito: sin verificar no se
                 // puede entrar a la biblioteca, y así el banner de login puede
                 // mostrar el correo y reenviar el enlace sin volver a loguear.
                 limpiarCredencialesAntiguas();
+                await altaMedida; // que el evento salga antes de cambiar de página (≤1 s)
                 // Desde el muro del test: directo al resultado (la sesión queda
                 // iniciada); el aviso de verificación le esperará en el login.
                 if (sessionStorage.getItem('quiz_retorno')) {

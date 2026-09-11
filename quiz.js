@@ -13,10 +13,14 @@ import { loadHtml2canvas } from './lazy-libs.js';
 import { exportarBlob } from './share-export.js';
 import { QUIZ_TROPOS } from './quiz-data.js';
 import { perfilCompleto } from './perfil.js';
+import { enviarEvento, enviarAlta } from './analitica.js';
 
 const QUIZ_ID = 'tropo-literario';
 const CLAVE_RESPUESTAS = 'quiz_respuestas_' + QUIZ_ID; // sobrevive al viaje a login/registro
 const CLAVE_RETORNO = 'quiz_retorno';
+// El resultado se vuelve a pintar al recargar y a la vuelta del login (las
+// respuestas siguen en sessionStorage): quiz_complete va una vez por test.
+const CLAVE_RESULTADO_MEDIDO = 'quiz_resultado_medido';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const vistas = {
@@ -107,6 +111,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             sessionStorage.setItem(CLAVE_RETORNO, '1');
             mostrar('gate');
+            // Aquí y no en mostrar('gate'): al recargar se vuelve a enseñar
+            // el muro y no es alguien nuevo llegando a él.
+            enviarEvento('quiz_gate_view');
         }
     };
 
@@ -135,6 +142,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                     await setDoc(doc(db, 'users', uid), {
                         username, searchKey: username.toLowerCase(), uid
                     }, { merge: true });
+                    // Alta nueva; un perfil que existía sin nombre se repara
+                    // pero no es un alta. Sin redirección detrás.
+                    if (!perfil.exists()) enviarAlta('google', { origen: '/quiz', navega: false });
                 }
                 localStorage.setItem('rincon_logged_in', '1');
                 calcularYMostrar();
@@ -224,6 +234,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
 
         mostrar('resultado');
+        medirResultado(ganadorId);
+    };
+
+    const medirResultado = (perfilId) => {
+        try {
+            if (sessionStorage.getItem(CLAVE_RESULTADO_MEDIDO)) return;
+            sessionStorage.setItem(CLAVE_RESULTADO_MEDIDO, '1');
+        } catch { /* sin sessionStorage se mide igual */ }
+        enviarEvento('quiz_complete', { quiz_result: perfilId });
     };
 
     // ---------- 6. Compartir ----------
@@ -267,6 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const empezarTest = () => {
         respuestas = [];
         sessionStorage.removeItem(CLAVE_RESPUESTAS);
+        sessionStorage.removeItem(CLAVE_RESULTADO_MEDIDO);
         indice = 0;
         renderPregunta();
         mostrar('pregunta');

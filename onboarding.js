@@ -6,6 +6,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase-init.js";
 import { perfilCompleto } from "./perfil.js";
+import { enviarAlta } from "./analitica.js";
 
 // Misma lógica de destino que auth.js: si venía del muro del quiz, vuelve
 // al quiz; si no, a la biblioteca.
@@ -16,6 +17,10 @@ const form = document.getElementById('onboarding-form');
 const input = document.getElementById('username');
 const errorEl = document.getElementById('onboarding-error');
 const submitBtn = document.getElementById('onboarding-submit');
+
+// Un perfil que ya existía (sin username) es una cuenta antigua que se
+// repara, no un alta: no cuenta como sign_up.
+let perfilYaExistia = false;
 
 // --- Guard de sesión ---
 // Sin sesión no hay nada que configurar → al login.
@@ -32,6 +37,7 @@ onAuthStateChanged(auth, async (user) => {
         window.location.replace(destinoTrasAuth());
         return;
     }
+    perfilYaExistia = profileSnap.exists();
     // Cuenta activa a la vista: esta pantalla ya está autenticada y conviene
     // que se vea con qué sesión se está entrando antes de elegir nombre.
     const lineaCuenta = document.getElementById('cuenta-activa');
@@ -94,6 +100,12 @@ form.addEventListener('submit', async (e) => {
         }, { merge: true });
 
         localStorage.setItem('rincon_logged_in', '1');
+        // El alta con Google acaba aquí: hasta ahora solo había cuenta de
+        // Auth. También llega aquí una cuenta de correo cuyo perfil falló.
+        if (!perfilYaExistia) {
+            const conGoogle = user.providerData.some((p) => p.providerId === 'google.com');
+            await enviarAlta(conGoogle ? 'google' : 'email'); // ≤1 s, antes de salir
+        }
         window.location.href = destinoTrasAuth();
     } catch (err) {
         console.error("Error en onboarding:", err.code || err);
