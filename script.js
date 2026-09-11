@@ -284,6 +284,29 @@ document.addEventListener('DOMContentLoaded', () => {
         let prevRacha = null;
         let lastUserData = null;
 
+        // — Sincronización de totalPaginasLeidas —
+        // El recálculo vivía dentro del onSnapshot de libros y escribía en
+        // CADA snapshot, incluida la primera carga: una escritura por visita
+        // aunque el número fuera idéntico al que ya había en Firestore.
+        // Ahora solo se escribe si de verdad cambia, y para saberlo hacen
+        // falta las dos piezas —los libros y el perfil—, que llegan sin orden
+        // fijo: por eso lo llaman los dos listeners y actúa el que complete
+        // el par. Ojo: esto NO cambia cuándo corre el recálculo respecto a
+        // evaluarLogros(), que sigue exactamente donde estaba.
+        let totalPaginasCalculado = null;   // lo que dicen los libros
+        let totalPaginasEnServidor = null;  // lo último que sabemos de Firestore
+        const sincronizarTotalPaginas = () => {
+            if (totalPaginasCalculado === null || totalPaginasEnServidor === null) return;
+            if (totalPaginasCalculado === totalPaginasEnServidor) return;
+            const total = totalPaginasCalculado;
+            totalPaginasEnServidor = total; // evita reescribir mientras va en vuelo
+            setDoc(doc(db, 'users', user.uid), { totalPaginasLeidas: total }, { merge: true })
+                .catch((e) => {
+                    totalPaginasEnServidor = null; // falló: que el próximo intento lo reintente
+                    console.warn('No se pudo sincronizar totalPaginasLeidas:', e);
+                });
+        };
+
         // — Saneamiento anti-XSS —
         // Todo dato de usuario o de API externa que se interpole en innerHTML
         // debe pasar por escapeHtml (texto y atributos) o safeUrl (URLs).
@@ -1680,6 +1703,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const userData = docSnap.data();
             const logrosAntes = lastUserData ? (lastUserData.logrosDesbloqueados || []).length : null;
             lastUserData = userData;
+            // El perfil trae el total que hay ahora mismo en Firestore: con
+            // él, sincronizarTotalPaginas() ya puede decidir si toca escribir
+            // (y también recoge el eco de nuestra propia escritura, que es lo
+            // que corta la posibilidad de un bucle).
+            totalPaginasEnServidor = typeof userData.totalPaginasLeidas === 'number'
+                ? userData.totalPaginasLeidas
+                : 0;
+            sincronizarTotalPaginas();
             if (viewingFriendLibrary) return; // Don't overwrite friend's UI
             // Logro nuevo con la estantería a la vista: re-render para que
             // su adorno recién desbloqueado aparezca en las baldas
@@ -4437,14 +4468,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // ── Migración automática ──────────────────────────────────────────
             // Recalcula totalPaginasLeidas cada vez que cambian los libros.
-            // Usa setDoc+merge para que funcione aunque el campo no exista aún
-            // (usuarios registrados antes de que se añadiera esta feature).
-            const totalPaginasLeidas = booksData.reduce((sum, b) => {
+            // La escritura la decide sincronizarTotalPaginas(): solo sale si
+            // el número difiere del que ya hay en Firestore (ver arriba).
+            totalPaginasCalculado = booksData.reduce((sum, b) => {
                 if (b.section === 'libros-terminados') return sum + (b.totalPages || 0);
                 return sum + (b.currentPage || 0);
             }, 0);
-            setDoc(doc(db, 'users', user.uid), { totalPaginasLeidas }, { merge: true })
-                .catch(e => console.warn('No se pudo sincronizar totalPaginasLeidas:', e));
+            sincronizarTotalPaginas();
             // ─────────────────────────────────────────────────────────────────
 
         }, (error) => {
