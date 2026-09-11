@@ -3,7 +3,7 @@
 // vivir en un único módulo para que initializeFirestore() se llame una sola
 // vez y antes de cualquier getFirestore().
 import { initializeApp } from "firebase/app";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { initializeAuth, browserLocalPersistence, connectAuthEmulator } from "firebase/auth";
 import { initializeFirestore, connectFirestoreEmulator, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { firebaseConfig } from './config.js';
 
@@ -32,7 +32,17 @@ const usarEmuladores =
     ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
 
 export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
+
+// initializeAuth, no getAuth: getAuth() engancha de serie el resolver de
+// popup/redirect, y ese resolver se inicializa SIEMPRE al arrancar Auth
+// —también en /biblioteca, que nunca hace login con Google—. Eso se traducía
+// en descargar apis.google.com/js/api.js, el cargador de gapi y un iframe de
+// Auth antes siquiera de restaurar la sesión: ~790 ms medidos en móvil.
+// Sin resolver, la sesión se restaura igual (vive en IndexedDB) y quien sí
+// necesita el popup se lo pasa a mano: ver signInWithPopup en auth.js.
+// Ojo si algún día se usa signInWithRedirect: ese SÍ necesita el resolver
+// puesto aquí para recoger el resultado al volver.
+export const auth = initializeAuth(app, { persistence: browserLocalPersistence });
 
 // Caché local persistente (IndexedDB): los datos de Firestore sobreviven
 // recargas y permiten usar la app sin conexión. El tabManager multi-pestaña

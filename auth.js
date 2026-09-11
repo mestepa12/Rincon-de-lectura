@@ -3,6 +3,7 @@ import {
     onAuthStateChanged,
     sendEmailVerification,
     signInWithPopup,
+    browserPopupRedirectResolver,
     GoogleAuthProvider,
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -112,7 +113,11 @@ const iniciarAuth = () => {
     if (googleSignInBtn) {
         googleSignInBtn.addEventListener('click', () => {
             setPersistence(auth, browserLocalPersistence).then(() => {
-                return signInWithPopup(auth, new GoogleAuthProvider());
+                // El resolver va explícito porque firebase-init.js ya no lo
+                // engancha de serie (cargaba gapi en todas las páginas). Aquí
+                // sí hace falta: es el único sitio que abre el popup, y se
+                // carga en el clic, no en el arranque.
+                return signInWithPopup(auth, new GoogleAuthProvider(), browserPopupRedirectResolver);
             })
             .then(async (userCred) => {
                 // Comprobamos si el usuario ya existe en Firestore
