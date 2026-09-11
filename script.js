@@ -43,6 +43,7 @@ import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './papelera.js';
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
 import { slugLibro, mismoLibro } from './libro-identidad.js';
+import { perfilCompleto } from './perfil.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -108,9 +109,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Guard anti-abandono: un usuario de Google que cerró la pantalla
             // de onboarding tiene sesión viva pero ningún perfil ni username
             // en Firestore. Sin nombre la app no funciona bien, así que lo
-            // devolvemos a elegirlo antes de abrir la biblioteca.
+            // devolvemos a elegirlo antes de abrir la biblioteca. Lo mismo
+            // para los perfiles que el muro del quiz dejó sin username.
             const perfil = await getDoc(doc(db, 'users', user.uid));
-            if (!perfil.exists()) {
+            if (!perfilCompleto(perfil)) {
                 window.location.replace('onboarding.html');
                 return;
             }

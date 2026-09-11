@@ -1,6 +1,6 @@
 // Test de personalidad literaria: preguntas públicas sin fricción, muro de
 // conversión antes del resultado, e infografía compartible.
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, FieldPath } from "firebase/firestore";
 import {
     onAuthStateChanged,
     signInWithPopup,
@@ -12,6 +12,7 @@ import { auth, db } from './firebase-init.js';
 import { loadHtml2canvas } from './lazy-libs.js';
 import { exportarBlob } from './share-export.js';
 import { QUIZ_TROPOS } from './quiz-data.js';
+import { perfilCompleto } from './perfil.js';
 
 const QUIZ_ID = 'tropo-literario';
 const CLAVE_RESPUESTAS = 'quiz_respuestas_' + QUIZ_ID; // sobrevive al viaje a login/registro
@@ -109,19 +110,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
+    // Mientras dura el alta con Google desde el muro, el flujo lo lleva el
+    // handler del popup. Sin esta marca, onAuthStateChanged se adelantaba,
+    // guardaba el resultado antes de que existiera el perfil y el handler
+    // creía que la cuenta ya tenía uno: quedaba sin username.
+    let altaConGoogle = false;
+
     // Google en un clic desde el propio muro (mismo alta de perfil que auth.js)
     document.getElementById('gate-google').addEventListener('click', () => {
+        altaConGoogle = true;
         setPersistence(auth, browserLocalPersistence)
             .then(() => signInWithPopup(auth, new GoogleAuthProvider()))
             .then(async (userCred) => {
-                const perfil = await getDoc(doc(db, 'users', userCred.user.uid));
-                if (!perfil.exists()) {
+                const uid = userCred.user.uid;
+                const perfil = await getDoc(doc(db, 'users', uid));
+                if (!perfilCompleto(perfil)) {
                     const nombreGoogle = userCred.user.displayName ? userCred.user.displayName.replace(/\s+/g, '').slice(0, 26) : 'Lector';
                     const username = nombreGoogle + Math.floor(Math.random() * 1000);
-                    await setDoc(doc(db, 'users', userCred.user.uid), {
-                        username, searchKey: username.toLowerCase(), uid: userCred.user.uid
-                    });
-                    await setDoc(doc(db, 'usernames', username.toLowerCase()), { uid: userCred.user.uid });
+                    // Primero la reserva, como en el onboarding: si el nombre
+                    // está cogido falla aquí, antes de escribir el perfil.
+                    await setDoc(doc(db, 'usernames', username.toLowerCase()), { uid });
+                    // Con merge: un perfil que existía sin nombre conserva lo
+                    // que tuviera (p. ej. un resultado anterior del quiz).
+                    await setDoc(doc(db, 'users', uid), {
+                        username, searchKey: username.toLowerCase(), uid
+                    }, { merge: true });
                 }
                 localStorage.setItem('rincon_logged_in', '1');
                 calcularYMostrar();
@@ -129,11 +142,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             .catch(err => {
                 if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
                 console.error('Error Google:', err.code);
-            });
+            })
+            .finally(() => { altaConGoogle = false; });
     });
 
     // Si ya venimos autenticados con respuestas completas (retorno de registro/login)
     onAuthStateChanged(auth, (user) => {
+        if (altaConGoogle) return;
         if (user && respuestas.length === quiz.preguntas.length && vistas.resultado.hidden) {
             calcularYMostrar();
         }
@@ -160,11 +175,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const { ganadorId, afinidades } = puntuar();
         const perfil = quiz.perfiles[ganadorId];
 
-        // Guardar el resultado en el perfil (merge: no toca el resto de campos)
+        // Guardar el resultado en el perfil. updateDoc y no setDoc+merge: el
+        // quiz no debe crear perfiles nunca. Un setDoc aquí creaba users/{uid}
+        // con solo quizResults si llegaba antes que el alta, y la cuenta se
+        // quedaba sin username. Sin perfil, updateDoc falla y no pasa nada.
         try {
-            await setDoc(doc(db, 'users', auth.currentUser.uid), {
-                quizResults: { [QUIZ_ID]: ganadorId }
-            }, { merge: true });
+            await updateDoc(doc(db, 'users', auth.currentUser.uid),
+                new FieldPath('quizResults', QUIZ_ID), ganadorId);
         } catch (e) { console.error('No se pudo guardar el resultado:', e.code); }
 
         // Pintar la infografía teñida con el hue del perfil

@@ -5,6 +5,7 @@
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebase-init.js";
+import { perfilCompleto } from "./perfil.js";
 
 // Misma lógica de destino que auth.js: si venía del muro del quiz, vuelve
 // al quiz; si no, a la biblioteca.
@@ -18,15 +19,16 @@ const submitBtn = document.getElementById('onboarding-submit');
 
 // --- Guard de sesión ---
 // Sin sesión no hay nada que configurar → al login.
-// Si el perfil YA existe (p. ej. recargó la página o llegó aquí de rebote),
-// no repetimos onboarding → directo al destino.
+// Si el perfil YA está completo (p. ej. recargó la página o llegó aquí de
+// rebote), no repetimos onboarding → directo al destino. Un perfil que
+// existe pero sin username (lo dejaba así el muro del quiz) sí se queda.
 onAuthStateChanged(auth, async (user) => {
     if (!user) {
         window.location.replace('login.html');
         return;
     }
     const profileSnap = await getDoc(doc(db, "users", user.uid));
-    if (profileSnap.exists()) {
+    if (perfilCompleto(profileSnap)) {
         window.location.replace(destinoTrasAuth());
         return;
     }
@@ -83,11 +85,13 @@ form.addEventListener('submit', async (e) => {
         await setDoc(doc(db, "usernames", usernameKey), { uid: user.uid });
 
         // PRIVACIDAD: el email NO se guarda en Firestore (lo custodia Auth).
+        // Con merge: si el perfil ya existía sin nombre, conserva lo que
+        // tuviera (p. ej. el resultado del quiz).
         await setDoc(doc(db, "users", user.uid), {
             username: username,
             searchKey: usernameKey,
             uid: user.uid
-        });
+        }, { merge: true });
 
         localStorage.setItem('rincon_logged_in', '1');
         window.location.href = destinoTrasAuth();

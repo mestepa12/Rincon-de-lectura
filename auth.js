@@ -16,6 +16,7 @@ import {
     setDoc
 } from "firebase/firestore";
 import { app, auth, db } from "./firebase-init.js";
+import { perfilCompleto } from "./perfil.js";
 
 // 1. LIMPIEZA DE CREDENCIALES ANTIGUAS
 // Versiones anteriores guardaban email y contraseña en texto plano en
@@ -115,10 +116,10 @@ const iniciarAuth = () => {
 
                 localStorage.setItem('rincon_logged_in', '1');
 
-                // Cuenta nueva: aún no tiene perfil ni username. En vez de
+                // Cuenta nueva (o perfil sin username): en vez de
                 // autogenerar un nombre feo ("Miguel742"), lo mandamos al
                 // onboarding a elegirlo. El perfil se crea allí, no aquí.
-                if (!profileSnap.exists()) {
+                if (!perfilCompleto(profileSnap)) {
                     window.location.href = 'onboarding.html';
                     return;
                 }
