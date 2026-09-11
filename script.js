@@ -780,6 +780,30 @@ document.addEventListener('DOMContentLoaded', () => {
             return promesa;
         };
 
+        // — Estantería: portadas y lomos solo cuando el libro se acerca —
+        //
+        // En la estantería el <img> de la portada va rotado 90° y colocado en
+        // absoluto, y con eso loading="lazy" deja de frenar nada: el navegador
+        // los daba todos por visibles. Con 80 libros eso eran 64 descargas de
+        // portada MÁS 69 al proxy de imágenes (una por lomo, para muestrear su
+        // color) disparadas de golpe al pintar. 133 peticiones peleándose por
+        // el pool de conexiones, que es lo que retrasaba la última portada
+        // hasta pasados los 9 s.
+        //
+        // Ahora cada lomo se prepara cuando entra en un margen de 400 px
+        // alrededor de la pantalla. Lo que se ve, se ve igual; lo que está a
+        // diez baldas de distancia ya no compite por la red.
+        const trabajoAlAcercarse = new WeakMap();
+        const cercaDePantalla = new IntersectionObserver((entradas) => {
+            for (const e of entradas) {
+                if (!e.isIntersecting) continue;
+                cercaDePantalla.unobserve(e.target);
+                const trabajo = trabajoAlAcercarse.get(e.target);
+                trabajoAlAcercarse.delete(e.target);
+                if (trabajo) trabajo();
+            }
+        }, { rootMargin: '400px 0px' });
+
         const crearLibroEstanteria = (book) => {
             const h = hashLibro(book.id || book.title || '');
             const el = document.createElement('article');
@@ -819,21 +843,39 @@ document.addEventListener('DOMContentLoaded', () => {
             img.className = 'shelf-cover';
             img.loading = 'lazy';
             img.alt = '';
-            img.src = book.cover || COVER_PLACEHOLDER;
             img.onerror = () => { img.onerror = null; img.src = COVER_PLACEHOLDER; };
+            // El placeholder es un data: URI, así que no cuesta ninguna
+            // petición y el hueco nunca se ve roto mientras llega la de verdad.
+            img.src = COVER_PLACEHOLDER;
             inner.appendChild(img);
             el.appendChild(inner);
 
-            if (!caraVista && book.cover && /^https?:/i.test(book.cover)) {
-                generarLomo(book.cover).then(({ color, textura, textoOscuro }) => {
-                    if (color) el.style.setProperty('--lomo', color);
-                    if (textura && spineEl) {
-                        spineEl.style.backgroundImage = `${OVERLAY_LOMO}, url(${textura})`;
-                        spineEl.style.backgroundSize = '100% 100%';
-                        spineEl.classList.toggle('lomo-claro', textoOscuro);
-                    }
-                });
+            const prepararPortada = () => {
+                if (book.cover) img.src = book.cover;
+                if (!caraVista && book.cover && /^https?:/i.test(book.cover)) {
+                    generarLomo(book.cover).then(({ color, textura, textoOscuro }) => {
+                        if (color) el.style.setProperty('--lomo', color);
+                        if (textura && spineEl) {
+                            spineEl.style.backgroundImage = `${OVERLAY_LOMO}, url(${textura})`;
+                            spineEl.style.backgroundSize = '100% 100%';
+                            spineEl.classList.toggle('lomo-claro', textoOscuro);
+                        }
+                    });
+                }
+            };
+            // Si el lomo ya está en la caché de localStorage, el color no
+            // cuesta red: se aplica ya para que no baile al hacer scroll.
+            const cacheada = book.cover ? lomosCache[book.cover] : null;
+            if (cacheada && !caraVista) {
+                if (cacheada.c) el.style.setProperty('--lomo', cacheada.c);
+                if (cacheada.t && spineEl) {
+                    spineEl.style.backgroundImage = `${OVERLAY_LOMO}, url(${cacheada.t})`;
+                    spineEl.style.backgroundSize = '100% 100%';
+                    spineEl.classList.toggle('lomo-claro', !!cacheada.x);
+                }
             }
+            trabajoAlAcercarse.set(el, prepararPortada);
+            cercaDePantalla.observe(el);
             return el;
         };
 
@@ -896,6 +938,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const decosPool = enEstanteria ? decosDesbloqueados() : DECOS_BASE;
             const mapa = enEstanteria ? mapaDecos() : null;
+            // Cada render rehace las tarjetas: las que vigilaba el observador
+            // ya no existen. Se suelta entero y se vuelve a observar abajo.
+            cercaDePantalla.disconnect();
             document.querySelectorAll('.books-container').forEach(c => {
                 c.innerHTML = '';
                 c.classList.toggle('estanteria', enEstanteria);
