@@ -49,13 +49,37 @@
       s.src = 'https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5';
       document.head.appendChild(s);
     }
+    // Aqui no vale requestIdleCallback tras "load", que es lo que hacen las
+    // paginas publicas. En /biblioteca el load llega sobre los 900 ms pero la
+    // app sigue restaurando sesion y hablando con Firestore hasta pasados los
+    // 2,5 s: el hilo tiene huecos, asi que el idle disparaba gtag.js justo en
+    // medio de la ventana en la que llegan los libros. Medido: 233 ms de
+    // evaluacion ahi dentro, y +334 ms en el tiempo hasta ver los libros.
+    //
+    // Asi que el disparo se ata a lo unico que le importa a la usuaria: sus
+    // libros ya estan en pantalla. Con tres salidas de emergencia, porque una
+    // biblioteca vacia no pinta ninguna tarjeta y si no no se cargaria nunca:
+    // el primer toque, el cambio a pestana oculta (ya estaban abajo) y un
+    // tope de 4 s pase lo que pase, el mismo que tenia el requestIdleCallback
+    // de antes, para no empeorar el peor caso de nadie.
+    //
+    // No cambia NADA de que se mide: la cola de dataLayer se crea arriba, con
+    // su gtag('js') y su gtag('config'), y gtag.js la reproduce entera al
+    // cargar. Los eventos propios los sigue mandando analitica.js igual.
     function programar() {
-      // El timeout asegura la carga aunque la pagina nunca quede ociosa.
-      if ('requestIdleCallback' in window) requestIdleCallback(cargarGtag, { timeout: 4000 });
-      else setTimeout(cargarGtag, 1500);
+      var tope = setTimeout(cargarGtag, 4000);
+      var obs = new MutationObserver(function () {
+        if (!document.querySelector('.book, .shelf-book')) return;
+        obs.disconnect();
+        clearTimeout(tope);
+        // Un respiro tras el primer pintado: que gtag no compita con el
+        // layout de las tarjetas que acaban de entrar.
+        setTimeout(cargarGtag, 300);
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
     }
-    if (document.readyState === 'complete') programar();
-    else window.addEventListener('load', programar, { once: true });
+    if (document.readyState !== 'loading') programar();
+    else document.addEventListener('DOMContentLoaded', programar, { once: true });
     // Si el usuario interactua o se va antes de que el hilo quede libre,
     // se carga ya: asi no se pierde la sesion de quien rebota rapido.
     ['pointerdown', 'keydown', 'touchstart'].forEach(function (ev) {
