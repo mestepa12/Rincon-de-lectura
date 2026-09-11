@@ -15,6 +15,22 @@ const cleanInternalUrls = () => ({
   }
 })
 
+// El dev server (npm run dev y npm run dev:emu) sirve el mismo snippet de
+// gtag que producción, así que cada visita a localhost mandaba page_view y
+// session_start reales a la propiedad de Analytics. ga-disable-<ID> es el
+// interruptor oficial de Google: con él puesto antes del snippet, gtag.js
+// no envía nada. Solo en serve: el build no cambia. Los eventos propios ya
+// los corta analitica.js por su cuenta.
+const analiticaApagadaEnDev = () => ({
+  name: 'analitica-apagada-en-dev',
+  apply: 'serve',
+  transformIndexHtml: () => [{
+    tag: 'script',
+    children: "window['ga-disable-G-C3LTR2R6B5'] = true;",
+    injectTo: 'head-prepend',
+  }],
+})
+
 // Las páginas de contenido solo cargan de la app cta-registro.js (el clic en
 // "Crear cuenta"). Como <script type="module">, sea diferido, async o vaya al
 // final, el navegador lo pide al leer el HTML y Lighthouse lo mete en su
@@ -66,7 +82,7 @@ const ctaRegistroDiferido = () => {
 
 export default defineConfig({
   base: '/',
-  plugins: [cleanInternalUrls(), ctaRegistroDiferido()],
+  plugins: [cleanInternalUrls(), analiticaApagadaEnDev(), ctaRegistroDiferido()],
   build: {
     rollupOptions: {
       input: {
