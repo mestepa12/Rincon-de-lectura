@@ -307,7 +307,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 img.className = 'book-cover';
                 img.loading = 'lazy';
                 img.alt = `Portada de ${book.title}`;
-                img.src = book.cover || 'https://via.placeholder.com/150x225?text=Sin+Portada';
+                // Sin portada: la misma que usa la exportación. via.placeholder.com
+                // ya no responde y dejaba la imagen rota.
+                img.src = book.cover || portadaPlaceholder(book.title);
                 const info = document.createElement('div');
                 info.className = 'book-info';
                 const h3 = document.createElement('h3');
