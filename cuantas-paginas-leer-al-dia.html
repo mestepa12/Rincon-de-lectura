@@ -178,11 +178,25 @@
     }
     </script>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet"></noscript>
+    <!-- Fuentes propias (ver public/fuentes/fuentes.css). La hoja es pequena y
+         del mismo origen: con media="print" se aplicaba antes del primer
+         pintado y las fuentes entraban en su ventana (tropos-literarios -2 en
+         Lighthouse, medido). Se pide tras el load y un fotograma pintado; con
+         font-display: swap el texto ya se ve con la fuente del sistema. -->
+    <script>
+      (function () {
+        function cargar() {
+          var l = document.createElement('link');
+          l.rel = 'stylesheet';
+          l.href = '/fuentes/fuentes.css';
+          document.head.appendChild(l);
+        }
+        function trasPintar() { requestAnimationFrame(function () { requestAnimationFrame(cargar); }); }
+        if (document.readyState === 'complete') trasPintar();
+        else window.addEventListener('load', trasPintar, { once: true });
+      })();
+    </script>
+    <noscript><link rel="stylesheet" href="/fuentes/fuentes.css"></noscript>
     <link rel="stylesheet" href="style.css">
     <!-- Google tag (gtag.js): solo con consentimiento (ver consentimiento.js) -->
 <script>

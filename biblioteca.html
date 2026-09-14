@@ -22,8 +22,6 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="manifest" href="/manifest.json">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Las portadas son externas y no se pueden pedir hasta que Firestore
          responde y se pinta la biblioteca, asi que cuando llega su turno el
          handshake (DNS + TCP + TLS) esta entero por hacer. Adelantarlo aqui
@@ -31,8 +29,7 @@
          wsrv.nl es el proxy con CORS del que se muestrea el color del lomo. -->
     <link rel="preconnect" href="https://covers.openlibrary.org" crossorigin>
     <link rel="preconnect" href="https://wsrv.nl" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap"
-        rel="stylesheet">
+    <link rel="stylesheet" href="/fuentes/fuentes.css">
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js y html2canvas se cargan de forma diferida (lazy-libs.js)
          solo al abrir estadísticas o exportar tarjetas. -->
