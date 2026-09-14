@@ -337,3 +337,34 @@ test('pendientes guardados con consentimiento y revocado después: se tiran sin 
     assert.equal(siguiente.llamadas.length, 0);
     assert.equal(almacen.getItem(CLAVE_PENDIENTES), null);
 });
+
+// ---------------------------------------------------------------------------
+// Tráfico interno
+// ---------------------------------------------------------------------------
+
+test('tráfico interno: los eventos llevan traffic_type=internal, también los pendientes', async () => {
+    const e = emisor({ interno: () => true });
+    await e.enviar('reading_session_start');
+    assert.equal(e.llamadas[0][2].traffic_type, 'internal');
+
+    const almacen = almacenEnMemoria();
+    const origen = emisor({ almacen, gtagCargado: () => false, interno: () => true });
+    await origen.enviar('sign_up', { method: 'email' }, { antesDeNavegar: true });
+    const siguiente = emisor({ almacen, interno: () => true });
+    siguiente.enviarPendientes();
+    assert.equal(siguiente.llamadas[0][2].traffic_type, 'internal');
+});
+
+test('sin marca, traffic_type no aparece', async () => {
+    const e = emisor();
+    await e.enviar('reading_session_start');
+    assert.equal('traffic_type' in e.llamadas[0][2], false);
+});
+
+test('marcado pero sin consentimiento: no sale nada', async () => {
+    const e = emisor({ interno: () => true, consentido: () => false });
+    await e.enviar('add_first_book');
+    await e.enviar('sign_up', { method: 'google' }, { antesDeNavegar: true });
+    assert.equal(e.llamadas.length, 0);
+    assert.equal(e.almacen.datos.size, 0);
+});

@@ -46,6 +46,7 @@ const emisor = crearEmisor({
     // notificaciones, y eso no debe salir en ningún evento.
     paginaActual: () => `${window.location.origin}${window.location.pathname}`,
     consentido: hayConsentimiento,
+    interno: () => window.rinconConsentimiento?.interno() === true,
     avisarDev: import.meta.env.DEV ? (...args) => console.debug('[analítica]', ...args) : undefined,
 });
 

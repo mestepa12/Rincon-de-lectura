@@ -18,6 +18,14 @@
 //     este banner se pusieron sin un consentimiento válido.
 //   - Rechazar cuesta lo mismo que aceptar: dos botones iguales, un clic.
 //   - La decisión vale 24 meses, sea sí o no.
+//
+// Aquí vive también la marca de tráfico interno, porque tiene que estar
+// decidida antes del config de gtag. ?trafico_interno=si en cualquier URL
+// marca este navegador y todo lo que envíe lleva traffic_type=internal, que
+// el filtro de datos de GA4 excluye; ?trafico_interno=no, o pulsar la
+// pastilla que se ve mientras está puesta, la quita. Los hosts que no son de
+// producción van marcados siempre. La marca no abre ningún envío: sin
+// consentimiento no sale nada, marcado o no.
 (function (w, d, cfg) {
     'use strict';
 
@@ -26,6 +34,8 @@
     // no nombraba Analytics y decía "al continuar, aceptas". No vale como
     // consentimiento: se tira y se vuelve a preguntar.
     var CLAVE_ANTIGUA = 'cookie_consent';
+    var CLAVE_INTERNO = 'rincon_trafico_interno';
+    var PARAMETRO_INTERNO = 'trafico_interno';
     var VERSION = 1;               // subirla vuelve a preguntar a todo el mundo
     var DIA = 24 * 60 * 60 * 1000;
     var VIGENCIA = 730 * DIA;      // 24 meses, el máximo que recomienda la AEPD
@@ -68,6 +78,31 @@
         return null;
     }
 
+    /** Marca puesta a mano en este navegador (la de los hosts de dev no cuenta). */
+    function marcado() {
+        return leer(CLAVE_INTERNO) === '1';
+    }
+
+    /** ¿Lo que se envíe desde aquí es tráfico interno? */
+    function interno() {
+        return marcado() || cfg.hostsProduccion.indexOf(w.location.hostname) === -1;
+    }
+
+    // Solo los valores exactos. El parámetro se quita de la barra en el acto,
+    // también con valores que no valen: un enlace copiado de aquí no marca a
+    // quien lo abra.
+    function leerParametroInterno() {
+        try {
+            var url = new URL(w.location.href);
+            var valor = url.searchParams.get(PARAMETRO_INTERNO);
+            if (valor === null) return;
+            if (valor === 'si' || valor === 'sí') guardar(CLAVE_INTERNO, '1');
+            else if (valor === 'no') quitar(CLAVE_INTERNO);
+            url.searchParams.delete(PARAMETRO_INTERNO);
+            w.history.replaceState(w.history.state, '', url.pathname + url.search + url.hash);
+        } catch (e) { /* sin URL o sin history: la página sigue igual */ }
+    }
+
     function borrarCookiesAnalitica() {
         var nombres = [];
         String(d.cookie || '').split(';').forEach(function (par) {
@@ -99,10 +134,12 @@
         w.gtag('js', new Date());
         // Sin uso publicitario aunque alguien active Google Signals en la
         // propiedad: la política de privacidad lo promete.
-        w.gtag('config', cfg.idMedicion, {
-            allow_google_signals: false,
-            allow_ad_personalization_signals: false
-        });
+        var ajustes = { allow_google_signals: false, allow_ad_personalization_signals: false };
+        // En el config, traffic_type lo lleva todo lo que gtag.js envíe desde
+        // esta página (page_view, session_start, scroll...), no solo los
+        // eventos propios: las pruebas inflan sobre todo visitas y usuarios.
+        if (interno()) ajustes.traffic_type = 'internal';
+        w.gtag('config', cfg.idMedicion, ajustes);
     }
 
     function cargarGtag() {
@@ -167,6 +204,41 @@
         borrarCookiesAnalitica();
     }
 
+    function textoMarca() {
+        if (estado() !== 'si') return 'Tráfico interno · sin consentimiento, no se envía';
+        if (w[DESACTIVAR] === true) return 'Tráfico interno · Analytics apagado, no se envía';
+        return 'Tráfico interno · se envía marcado';
+    }
+
+    // Pastilla fija mientras el navegador esté marcado, para no creer que se
+    // mide cuando no (ni al revés). Pulsarla quita la marca.
+    function pintarMarca() {
+        var pastilla = d.getElementById('marca-interna');
+        if (!marcado()) {
+            if (pastilla) pastilla.parentNode.removeChild(pastilla);
+            return;
+        }
+        if (!d.body) {
+            d.addEventListener('DOMContentLoaded', pintarMarca);
+            return;
+        }
+        if (!pastilla) {
+            pastilla = d.createElement('button');
+            pastilla.type = 'button';
+            pastilla.id = 'marca-interna';
+            pastilla.className = 'marca-interna';
+            pastilla.title = 'Este navegador está marcado como tráfico interno. Pulsa para quitar la marca.';
+            pastilla.addEventListener('click', function () {
+                if (!w.confirm('¿Quitar la marca de tráfico interno de este navegador? ' +
+                    'Desde la próxima página se medirá como una visita más.')) return;
+                quitar(CLAVE_INTERNO);
+                pintarMarca();
+            });
+            d.body.appendChild(pastilla);
+        }
+        pastilla.textContent = textoMarca();
+    }
+
     function banner() {
         return d.getElementById('consentimiento');
     }
@@ -202,6 +274,7 @@
         if (acepta) activar(); else desactivar();
         raiz.classList.remove('consentimiento-pendiente');
         cerrar();
+        pintarMarca();
     }
 
     // Delegado y en captura: el banner y los botones del pie son HTML
@@ -225,21 +298,29 @@
         if (b && b.contains(d.activeElement)) cerrar();
     });
 
-    // Otra pestaña ha decidido: esta la sigue sin recargar.
+    // Otra pestaña ha decidido o ha cambiado la marca: esta la sigue sin recargar.
     w.addEventListener('storage', function (ev) {
+        if (ev.key === CLAVE_INTERNO) {
+            pintarMarca();
+            return;
+        }
         if (ev.key !== CLAVE && ev.key !== null) return;
         enMemoria = null;
         var e = estado();
         raiz.classList.toggle('consentimiento-pendiente', e === null);
         if (e === 'si') activar(); else desactivar();
+        pintarMarca();
     });
 
     quitar(CLAVE_ANTIGUA);
+    leerParametroInterno();
     if (estado() !== 'si') borrarCookiesAnalitica();
     raiz.classList.toggle('consentimiento-pendiente', estado() === null);
+    pintarMarca();
 
     w.rinconConsentimiento = {
         estado: estado,
+        interno: interno,
         aceptar: function () { decidir(true); },
         rechazar: function () { decidir(false); },
         abrir: abrir,

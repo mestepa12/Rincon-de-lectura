@@ -99,7 +99,9 @@ export const analiticaPermitida = ({ dev, emuladores, hostname }) =>
 // Dominios que sirven la web de verdad (la app Android también se presenta
 // como rinconlectura.es). Cualquier otro host desplegado —canales de
 // preview, proyecto de dev— envía con debug_mode: sale en DebugView y el
-// filtro de tráfico de desarrolladores lo quita de los informes.
+// filtro de tráfico de desarrolladores lo quita de los informes. Además va
+// siempre marcado como tráfico interno (consentimiento.js), también las
+// visitas que manda gtag.js por su cuenta.
 export const HOSTS_PRODUCCION = [
     'rinconlectura.es',
     'www.rinconlectura.es',
@@ -128,6 +130,9 @@ const MAX_PENDIENTES = 10;
  * @param {() => boolean} [d.consentido] Hay un "sí" vigente a Analytics.
  *     Se mira en cada envío (se puede aceptar o revocar sin recargar); sin
  *     él no sale ni se guarda nada. Si falta, cuenta como un no.
+ * @param {() => boolean} [d.interno] El navegador está marcado como tráfico
+ *     interno (consentimiento.js). No abre ningún envío: solo marca los que
+ *     ya iban a salir.
  * @param {Function} [d.avisarDev] Solo en desarrollo: registra lo que se
  *     habría enviado.
  * @param {number} [d.esperaMaxima] Tope de espera antes de navegar (ms).
@@ -136,7 +141,7 @@ const MAX_PENDIENTES = 10;
  */
 export function crearEmisor({
     activa, produccion, obtenerGtag, gtagCargado, almacen, paginaActual,
-    consentido = () => false,
+    consentido = () => false, interno = () => false,
     avisarDev = () => {}, esperaMaxima = 1000, programar = setTimeout,
 }) {
     const datosDeEnvio = (params, pagina) => {
@@ -144,6 +149,10 @@ export function crearEmisor({
         // debug_mode activa la depuración con CUALQUIER valor, false
         // incluido: en producción la clave no puede aparecer.
         if (!produccion) datos.debug_mode = true;
+        // Lo mismo que pone consentimiento.js en el config de gtag; aquí por
+        // si el evento sale en otra página (pendientes). "internal" es el
+        // valor que busca el filtro de tráfico interno de GA4.
+        if (interno()) datos.traffic_type = 'internal';
         return datos;
     };
 

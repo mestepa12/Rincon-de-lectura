@@ -1013,6 +1013,29 @@ body.dark-mode .consentimiento-boton { color: #1A202C; }
 .auth-legal { margin: 1.25rem 0 0; text-align: center; font-size: 0.85rem; }
 .auth-legal a { color: var(--accessible-muted-color); }
 
+/* ======== MARCA DE TRÁFICO INTERNO ======== */
+/* Solo en navegadores marcados con ?trafico_interno=si (consentimiento.js),
+   que nunca es el de una usuaria. Discreta pero inequívoca: dice si lo que
+   se hace aquí sale a Analytics o no. Pulsarla quita la marca. Mientras el
+   banner de cookies está abierto, sube arriba para no taparlo. */
+.marca-interna {
+    position: fixed;
+    left: 0.5rem;
+    bottom: 0.5rem;
+    z-index: 6000;
+    max-width: calc(100vw - 1rem);
+    padding: 0.3rem 0.7rem;
+    border: 0;
+    border-radius: 999px;
+    background-color: #1F2937;
+    color: #fff;
+    font: 700 0.72rem/1.3 system-ui, sans-serif;
+    cursor: pointer;
+}
+.marca-interna:focus-visible { outline: 3px solid #F59E0B; outline-offset: 2px; }
+.consentimiento-pendiente .marca-interna,
+.consentimiento-abierto .marca-interna { top: 0.5rem; bottom: auto; }
+
 /* ======== MEDIA QUERIES ======== */
 @media (max-width: 768px) {
     .site-header { padding: 0.75rem 1rem; } 

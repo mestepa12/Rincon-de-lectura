@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { defineConfig, minifySync } from 'vite'
-import { ID_MEDICION } from './analitica-nucleo.js'
+import { HOSTS_PRODUCCION, ID_MEDICION } from './analitica-nucleo.js'
 
 // En producción Firebase Hosting sirve URLs limpias (cleanUrls: true) y
 // redirige "X.html" -> "/X" con un 301. Los enlaces internos usan "X.html"
@@ -56,7 +56,7 @@ const consentimiento = () => {
       }
       // Se lee en cada página: en dev, un cambio se ve al recargar.
       const fuente = readFileSync(new URL('./consentimiento.js', import.meta.url), 'utf8')
-        .replace('__CONFIG_CONSENTIMIENTO__', JSON.stringify({ idMedicion: ID_MEDICION }))
+        .replace('__CONFIG_CONSENTIMIENTO__', JSON.stringify({ idMedicion: ID_MEDICION, hostsProduccion: HOSTS_PRODUCCION }))
       let script = fuente
       if (esBuild) {
         const { code, errors } = minifySync('consentimiento.js', fuente)

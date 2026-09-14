@@ -7,6 +7,8 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import vm from 'node:vm';
 
+import { HOSTS_PRODUCCION } from '../analitica-nucleo.js';
+
 const RAIZ = new URL('../', import.meta.url);
 const FUENTE = readFileSync(new URL('consentimiento.js', RAIZ), 'utf8');
 const ID = 'G-PRUEBA123';
@@ -59,7 +61,10 @@ const almacenLocal = (inicial) => {
     };
 };
 
-function navegador({ url = 'https://rinconlectura.es/', guardado = {}, cookies = [], almacenRoto = false, antes } = {}) {
+function navegador({
+    url = 'https://rinconlectura.es/', guardado = {}, cookies = [], almacenRoto = false, antes,
+    confirmar = () => true,
+} = {}) {
     const direccion = new URL(url);
     const clases = new Set();
     const tarro = tarroDeCookies(direccion.hostname);
@@ -67,6 +72,25 @@ function navegador({ url = 'https://rinconlectura.es/', guardado = {}, cookies =
     const scripts = [];
     const oyentes = {};
     const escuchar = (tipo, fn) => { (oyentes[tipo] ||= []).push(fn); };
+    const historial = [];
+
+    // Lo justo del DOM para la pastilla de tráfico interno. El <body> no
+    // existe mientras corre el script del <head>: se pone con ponerBody().
+    const porId = new Map();
+    const crearElemento = (etiqueta) => {
+        const oyentesEl = {};
+        return {
+            etiqueta,
+            textContent: '',
+            parentNode: null,
+            addEventListener: (tipo, fn) => { (oyentesEl[tipo] ||= []).push(fn); },
+            pulsar() { (oyentesEl.click || []).forEach((fn) => fn({})); },
+        };
+    };
+    const body = {
+        appendChild(el) { el.parentNode = body; if (el.id) porId.set(el.id, el); },
+        removeChild(el) { el.parentNode = null; porId.delete(el.id); },
+    };
 
     const document = {
         documentElement: {
@@ -77,18 +101,20 @@ function navegador({ url = 'https://rinconlectura.es/', guardado = {}, cookies =
                 toggle: (c, poner) => (poner ? clases.add(c) : clases.delete(c)),
             },
         },
+        body: null,
         get cookie() { return tarro.leer(); },
         set cookie(texto) { tarro.escribir(texto); },
-        createElement: (etiqueta) => ({ etiqueta }),
+        createElement: crearElemento,
         head: { appendChild: (el) => { scripts.push(el); } },
         addEventListener: escuchar,
-        getElementById: () => null,
+        getElementById: (id) => porId.get(id) || null,
     };
     const almacen = almacenLocal(guardado);
     const window = {
         location: direccion,
-        history: { state: null, replaceState() {} },
+        history: { state: null, replaceState: (estado, titulo, destino) => { historial.push(destino); } },
         addEventListener: escuchar,
+        confirm: confirmar,
     };
     Object.defineProperty(window, 'localStorage', {
         get() {
@@ -102,15 +128,22 @@ function navegador({ url = 'https://rinconlectura.es/', guardado = {}, cookies =
         constructor(...args) { super(...(args.length ? args : [AHORA])); }
         static now() { return AHORA; }
     }
-    const codigo = FUENTE.replace('__CONFIG_CONSENTIMIENTO__', JSON.stringify({ idMedicion: ID }));
-    vm.runInContext(codigo, vm.createContext({ window, document, Date: Fecha }));
+    const config = { idMedicion: ID, hostsProduccion: HOSTS_PRODUCCION };
+    const codigo = FUENTE.replace('__CONFIG_CONSENTIMIENTO__', JSON.stringify(config));
+    vm.runInContext(codigo, vm.createContext({ window, document, Date: Fecha, URL }));
 
     return {
-        window, clases, tarro, scripts, almacen,
+        window, document, clases, tarro, scripts, almacen, historial,
         api: window.rinconConsentimiento,
         // Lo que hay en el dataLayer, pasado a este realm para poder comparar.
         cola: () => JSON.parse(JSON.stringify((window.dataLayer || []).map((a) => Array.from(a)))),
         otraPestana: (clave) => oyentes.storage.forEach((fn) => fn({ key: clave })),
+        // El HTML ya se ha leído: hay <body>.
+        domListo: () => {
+            document.body = body;
+            (oyentes.DOMContentLoaded || []).forEach((fn) => fn());
+        },
+        pastilla: () => porId.get('marca-interna') || null,
     };
 }
 
@@ -340,6 +373,103 @@ test('un snippet de página que lanza no rompe el consentimiento', () => {
     otro.api.alAceptar(() => { throw new Error('roto'); });
     assert.doesNotThrow(() => otro.api.aceptar());
     assert.equal(otro.api.estado(), 'si');
+});
+
+// ---------------------------------------------------------------------------
+// Tráfico interno
+// ---------------------------------------------------------------------------
+
+const MARCA = { rincon_trafico_interno: '1' };
+
+test('?trafico_interno=si marca el navegador y se quita de la URL sin tocar lo demás', () => {
+    const n = navegador({ url: 'https://rinconlectura.es/biblioteca?chat=abc&trafico_interno=si#libro' });
+    assert.equal(n.almacen.getItem('rincon_trafico_interno'), '1');
+    assert.deepEqual(n.historial, ['/biblioteca?chat=abc#libro']);
+    assert.equal(n.api.interno(), true);
+});
+
+test('?trafico_interno=no quita la marca; otro valor no marca, pero también se limpia', () => {
+    const quitada = navegador({ url: 'https://rinconlectura.es/?trafico_interno=no', guardado: MARCA });
+    assert.equal(quitada.almacen.getItem('rincon_trafico_interno'), null);
+    assert.equal(quitada.api.interno(), false);
+    assert.deepEqual(quitada.historial, ['/']);
+
+    for (const valor of ['1', 'true', 'SI', '']) {
+        const n = navegador({ url: `https://rinconlectura.es/?trafico_interno=${valor}` });
+        assert.equal(n.almacen.getItem('rincon_trafico_interno'), null, valor);
+        assert.deepEqual(n.historial, ['/'], valor);
+    }
+});
+
+test('sin el parámetro no se toca la URL ni la marca', () => {
+    const n = navegador({ url: 'https://rinconlectura.es/biblioteca?chat=abc', guardado: MARCA });
+    assert.deepEqual(n.historial, []);
+    assert.equal(n.api.interno(), true);
+});
+
+test('con consentimiento y marca, traffic_type va en el config: lo heredan también las visitas', () => {
+    const n = navegador({ guardado: { ...decision(true), ...MARCA } });
+    registrar(n.api);
+    assert.deepEqual(n.cola()[1], ['config', ID,
+        { allow_google_signals: false, allow_ad_personalization_signals: false, traffic_type: 'internal' }]);
+});
+
+test('fuera de producción va marcado siempre, y sin pastilla', () => {
+    const n = navegador({ url: 'https://rincon-lectura-dev-1d818.web.app/', guardado: decision(true) });
+    registrar(n.api);
+    assert.equal(n.api.interno(), true);
+    assert.equal(n.cola()[1][2].traffic_type, 'internal');
+    n.domListo();
+    assert.equal(n.pastilla(), null);
+});
+
+test('marcado y sin consentimiento: no sale nada', () => {
+    const n = navegador({ url: 'https://rinconlectura.es/?trafico_interno=si' });
+    assert.equal(registrar(n.api).length, 0);
+    assert.equal(n.window.gtag, undefined);
+    assert.equal(n.scripts.length, 0);
+});
+
+test('la pastilla aparece con la marca y dice si se está enviando', () => {
+    const n = navegador({ guardado: MARCA });
+    assert.equal(n.pastilla(), null, 'en el <head> todavía no hay <body>');
+    n.domListo();
+    assert.match(n.pastilla().textContent, /sin consentimiento, no se envía/);
+    n.api.aceptar();
+    assert.match(n.pastilla().textContent, /se envía marcado/);
+    n.api.rechazar();
+    assert.match(n.pastilla().textContent, /sin consentimiento/);
+
+    const dev = navegador({ guardado: { ...decision(true), ...MARCA }, antes: (w) => { w[DESACTIVAR] = true; } });
+    dev.domListo();
+    assert.match(dev.pastilla().textContent, /Analytics apagado, no se envía/);
+});
+
+test('pulsar la pastilla quita la marca, solo si se confirma', () => {
+    const cancela = navegador({ guardado: MARCA, confirmar: () => false });
+    cancela.domListo();
+    cancela.pastilla().pulsar();
+    assert.equal(cancela.almacen.getItem('rincon_trafico_interno'), '1');
+    assert.ok(cancela.pastilla());
+
+    const confirma = navegador({ guardado: MARCA });
+    confirma.domListo();
+    confirma.pastilla().pulsar();
+    assert.equal(confirma.almacen.getItem('rincon_trafico_interno'), null);
+    assert.equal(confirma.pastilla(), null);
+    assert.equal(confirma.api.interno(), false);
+});
+
+test('la marca puesta o quitada en otra pestaña se refleja aquí', () => {
+    const n = navegador();
+    n.domListo();
+    assert.equal(n.pastilla(), null);
+    n.almacen.setItem('rincon_trafico_interno', '1');
+    n.otraPestana('rincon_trafico_interno');
+    assert.ok(n.pastilla());
+    n.almacen.removeItem('rincon_trafico_interno');
+    n.otraPestana('rincon_trafico_interno');
+    assert.equal(n.pastilla(), null);
 });
 
 // ---------------------------------------------------------------------------
