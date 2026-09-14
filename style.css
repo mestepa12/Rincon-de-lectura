@@ -1235,6 +1235,12 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     color: #333;
     border-color: #bbb;
 }
+/* En login y registro, con pantalla estrecha, el botón fijo tapaba el título
+   y, al desplazar, los campos. Ahí va con la página y esta le deja hueco. */
+@media (max-width: 768px) {
+    .login-page .back-to-demo { position: absolute; }
+    .login-page { padding-top: 2rem; }
+}
 
 
 /* ======== STREAK COUNTER ======== */
