@@ -1915,7 +1915,7 @@ html { scroll-behavior: smooth; }
     margin: 0 0 0.8rem;
 }
 .quiz-gancho { font-size: 1.02rem; line-height: 1.6; color: var(--text-color); opacity: 0.8; max-width: 40ch; margin: 0 auto 1.8rem; }
-.quiz-meta { font-size: 0.78rem; color: var(--text-color); opacity: 0.55; margin-top: 1.2rem; }
+.quiz-meta { font-size: 0.78rem; color: var(--accessible-muted-color); margin-top: 1.2rem; }
 
 /* Barra de progreso (transform, no width) */
 .quiz-progreso { width: 100%; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; margin-bottom: 1.6rem; }
@@ -2671,7 +2671,7 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
 .vs-tabla tbody tr:last-child th, .vs-tabla tbody tr:last-child td { border-bottom: none; }
 .vs-tabla tbody th { font-weight: 700; width: 34%; }
 .vs-tabla .vs-si { color: var(--accent-color-interactive); font-weight: 700; }
-.vs-tabla .vs-no { color: #b06a5f; font-weight: 700; opacity: 0.85; }
+.vs-tabla .vs-no { color: var(--accessible-muted-color); font-weight: 700; }
 .vs-tabla .vs-warn { color: var(--text-color); opacity: 0.7; }
 .vs-tabla .vs-muted { color: var(--text-color); opacity: 0.4; }
 .vs-nota {
