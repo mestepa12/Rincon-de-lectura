@@ -34,6 +34,13 @@
             border-radius: 4px;
             font-weight: bold;
         }
+        .legal-container h3 { margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.05rem; }
+        .tabla-cookies { overflow-x: auto; margin-bottom: 1rem; }
+        .tabla-cookies table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+        .tabla-cookies caption { text-align: left; font-weight: bold; margin-bottom: 0.5rem; }
+        .tabla-cookies th, .tabla-cookies td { border: 1px solid var(--border-color); padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+        .btn-preferencias { padding: 0.6rem 1rem; border: 0; border-radius: 4px; background-color: var(--accent-color-interactive); color: #fff; font: inherit; font-weight: bold; cursor: pointer; }
+        .btn-preferencias:focus-visible { outline: 3px solid var(--text-color); outline-offset: 2px; }
     </style>
 </head>
 <body>
@@ -42,7 +49,7 @@
         <a href="index.html" class="btn-back">← Volver al inicio</a>
         
         <h1>Política de Privacidad y Cookies</h1>
-        <p><strong>Última actualización:</strong> Abril de 2026</p>
+        <p><strong>Última actualización:</strong> Septiembre de 2026</p>
         <p>En <strong>Mi Rincón de Lectura</strong> (en adelante, "la Web") respetamos tu privacidad y protegemos tus datos personales. A continuación, te explicamos de forma transparente qué información recopilamos y para qué la utilizamos.</p>
 
         <h2>1. Responsable de los datos</h2>
@@ -58,14 +65,55 @@
 
         <h2>3. Finalidad del tratamiento</h2>
         <p>Utilizamos tus datos <strong>exclusivamente para el funcionamiento de la aplicación</strong>. No vendemos, cedemos ni compartimos tus datos personales o tu lista de libros con terceros para fines comerciales o publicitarios.</p>
-
-        <h2>4. Uso de Cookies y Analítica</h2>
-        <p>Esta Web utiliza <strong>Google Analytics</strong>, un servicio de análisis web prestado por Google que utiliza "cookies" (pequeños archivos de texto que se guardan en tu navegador) para ayudarnos a comprender cómo interactúan los usuarios con la página.</p>
+        <p>Para funcionar, la web se apoya en estos servicios:</p>
         <ul>
-            <li>Recopilamos información anónima sobre el tráfico (páginas visitadas, tiempo en la web, país de origen).</li>
-            <li>Esta información nos ayuda a mejorar el rendimiento y la experiencia de usuario.</li>
-            <li>Puedes configurar tu navegador para rechazar todas las cookies, aunque esto podría afectar al funcionamiento de Google Analytics. Las cookies de sesión necesarias para mantener tu cuenta abierta seguirán funcionando.</li>
+            <li><strong>Google Firebase</strong> (Google Ireland Limited): aloja la web, tu cuenta, tu biblioteca y las notificaciones.</li>
+            <li><strong>Open Library</strong> (Internet Archive) y <strong>Google Books</strong>: búsqueda de libros y portadas, también las de la demostración de la página de inicio.</li>
+            <li><strong>placehold.co</strong>: pone una imagen de relleno en los resultados de la búsqueda de libros cuando uno no tiene portada.</li>
+            <li><strong>wsrv.nl</strong>: calcula el color del lomo de cada libro en la vista de estantería y ayuda a incluir la portada cuando compartes una tarjeta como imagen.</li>
+            <li><strong>corsproxy.io</strong>: solo si una portada no se puede cargar de otra forma al compartir una tarjeta como imagen.</li>
         </ul>
+        <p>Salvo Firebase, estos servicios solo reciben tu dirección IP y lo imprescindible de cada petición (la portada que se muestra o el texto que buscas), nunca los datos de tu cuenta.</p>
+
+        <h2 id="cookies">4. Cookies y analítica</h2>
+
+        <h3>Lo que se guarda sin pedirte permiso</h3>
+        <p>Esto es necesario para que la web funcione o recuerda algo que tú has elegido, así que no requiere tu consentimiento:</p>
+        <ul>
+            <li><strong>Tu sesión:</strong> Firebase Authentication la guarda en el almacenamiento de tu navegador para que no tengas que iniciar sesión cada vez.</li>
+            <li><strong>Tus preferencias:</strong> el tema claro u oscuro, la vista de la biblioteca, los avisos que has cerrado y datos para pintar tu estantería más rápido.</li>
+            <li><strong>Tu respuesta al aviso de cookies</strong>, para no volver a preguntarte durante 24 meses.</li>
+            <li><strong>Una copia de la web para usarla sin conexión</strong> y, si activas las notificaciones, lo necesario para enviártelas.</li>
+        </ul>
+
+        <h3>Google Analytics, solo si lo aceptas</h3>
+        <p>Usamos <strong>Google Analytics</strong>, de Google Ireland Limited, para saber cuántas personas visitan la web y qué partes se usan: por ejemplo, qué páginas se ven, si se completa el registro, si alguien empieza una sesión de lectura o termina el test de tropos. Con eso decidimos qué mejorar.</p>
+        <ul>
+            <li><strong>Solo se activa si pulsas «Aceptar»</strong> en el aviso de cookies. Si lo rechazas o no respondes, no se carga, no se guarda ninguna cookie de Analytics y no se envía nada.</li>
+            <li><strong>Qué recoge:</strong> un identificador aleatorio guardado en una cookie, las páginas y acciones que acabamos de describir, el tipo de dispositivo y de navegador, y una ubicación aproximada (país o ciudad) que Google deduce de tu dirección IP. <strong>No es anónimo:</strong> ese identificador permite reconocer el mismo navegador en visitas distintas, aunque no sepamos quién eres. Nunca enviamos a Analytics tu correo, tu nombre de usuario ni tus libros.</li>
+            <li><strong>Sin publicidad:</strong> la web desactiva las señales de Google y la personalización de anuncios, así que estos datos no se usan para mostrarte publicidad.</li>
+            <li><strong>Base legal:</strong> tu consentimiento (artículo 6.1.a del RGPD y artículo 22.2 de la LSSI).</li>
+            <li><strong>Conservación:</strong> los datos de cada visita se guardan en Analytics como máximo 14 meses; después solo quedan informes con cifras agregadas.</li>
+            <li><strong>Transferencias internacionales:</strong> Google puede tratar estos datos en Estados Unidos. Google LLC está adherida al Marco de Privacidad de Datos UE-EE. UU., que la Comisión Europea reconoce como garantía adecuada.</li>
+        </ul>
+
+        <div class="tabla-cookies">
+            <table>
+                <caption>Cookies de Google Analytics</caption>
+                <thead>
+                    <tr><th scope="col">Nombre</th><th scope="col">Para qué sirve</th><th scope="col">Duración</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><code>_ga</code></td><td>Distinguir un navegador de otro</td><td>2 años</td></tr>
+                    <tr><td><code>_ga_C3LTR2R6B5</code></td><td>Mantener el estado de la visita</td><td>2 años</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>Cambiar de opinión</h3>
+        <p>Puedes dar o retirar tu consentimiento cuando quieras, con la misma facilidad:</p>
+        <p><button type="button" class="btn-preferencias" data-abrir-consentimiento>Cambiar mis preferencias de cookies</button></p>
+        <p>Si lo retiras, dejamos de enviar datos desde ese momento y borramos las cookies de Analytics de esta web. Retirarlo no afecta a lo que se recogió mientras estaba aceptado. También puedes borrar las cookies desde la configuración de tu navegador; en ese caso, te volveremos a preguntar.</p>
 
         <h2>5. Tus Derechos</h2>
         <p>De acuerdo con la normativa vigente (RGPD), tienes derecho a acceder, rectificar o solicitar la eliminación completa de tus datos personales y tu cuenta en cualquier momento.</p>
