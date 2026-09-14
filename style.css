@@ -1235,10 +1235,11 @@ details#manual-data-details summary:hover { background-color: var(--border-color
     color: #333;
     border-color: #bbb;
 }
-/* En login y registro, con pantalla estrecha, el botón fijo tapaba el título
-   y, al desplazar, los campos. Ahí va con la página y esta le deja hueco. */
+/* Con pantalla estrecha, el botón fijo tapaba el título de login y registro
+   y, al desplazar, los campos y los textos del test. Ahí va con la página;
+   login y registro le dejan hueco (el test ya empieza más abajo). */
 @media (max-width: 768px) {
-    .login-page .back-to-demo { position: absolute; }
+    .back-to-demo { position: absolute; }
     .login-page { padding-top: 2rem; }
 }
 
