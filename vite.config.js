@@ -1,4 +1,6 @@
-import { defineConfig } from 'vite'
+import { readFileSync } from 'node:fs'
+import { defineConfig, minifySync } from 'vite'
+import { ID_MEDICION } from './analitica-nucleo.js'
 
 // En producción Firebase Hosting sirve URLs limpias (cleanUrls: true) y
 // redirige "X.html" -> "/X" con un 301. Los enlaces internos usan "X.html"
@@ -26,10 +28,60 @@ const analiticaApagadaEnDev = () => ({
   apply: 'serve',
   transformIndexHtml: () => [{
     tag: 'script',
-    children: "window['ga-disable-G-C3LTR2R6B5'] = true;",
+    children: `window['ga-disable-${ID_MEDICION}'] = true;`,
     injectTo: 'head-prepend',
   }],
 })
+
+// Consentimiento de cookies (ver la cabecera de consentimiento.js). Cada
+// página lleva en el <head> la marca <!--consentimiento-->, después de
+// <meta charset>: un script largo delante sacaría la declaración de los
+// primeros 1024 bytes, y Lighthouse lo penaliza. Aquí se cambia por el script
+// inline (minificado en el build). El banner va como HTML estático al
+// principio del <body>, así es lo primero al tabular; el CSS lo oculta salvo
+// con html.consentimiento-pendiente, que pone ese script antes de pintar:
+// aparece en el primer fotograma y no mueve nada.
+const MARCA_CONSENTIMIENTO = '<!--consentimiento-->'
+const consentimiento = () => {
+  let esBuild = false
+  return {
+    name: 'consentimiento',
+    configResolved(config) { esBuild = config.command === 'build' },
+    transformIndexHtml(html) {
+      if (!html.includes(MARCA_CONSENTIMIENTO)) {
+        if (html.includes('rinconConsentimiento')) {
+          throw new Error('Una página usa rinconConsentimiento sin la marca <!--consentimiento--> en el <head>')
+        }
+        return html
+      }
+      // Se lee en cada página: en dev, un cambio se ve al recargar.
+      const fuente = readFileSync(new URL('./consentimiento.js', import.meta.url), 'utf8')
+        .replace('__CONFIG_CONSENTIMIENTO__', JSON.stringify({ idMedicion: ID_MEDICION }))
+      let script = fuente
+      if (esBuild) {
+        const { code, errors } = minifySync('consentimiento.js', fuente)
+        if (errors?.length) throw new Error(`consentimiento.js no minifica: ${errors[0].message}`)
+        script = code
+      }
+      // cleanInternalUrls no reescribe enlaces con ancla: aquí va ya la forma
+      // de cada entorno.
+      const politica = esBuild ? '/privacidad#cookies' : '/privacidad.html#cookies'
+      const banner = `<div id="consentimiento" class="consentimiento" role="region" aria-label="Cookies de análisis">
+    <div class="consentimiento-texto">
+        <p>Usamos Google Analytics para entender qué partes de la web se usan. Solo se activa si lo aceptas. Lo necesario para iniciar sesión y guardar tus preferencias no depende de esto. <a href="${politica}">Leer la política de cookies</a></p>
+        <p class="consentimiento-actual" data-consentimiento-actual hidden></p>
+    </div>
+    <div class="consentimiento-botones">
+        <button type="button" class="consentimiento-boton" data-consentimiento="rechazar">Rechazar</button>
+        <button type="button" class="consentimiento-boton" data-consentimiento="aceptar">Aceptar</button>
+    </div>
+</div>`
+      return html
+        .replace(MARCA_CONSENTIMIENTO, () => `<script>${script}</script>`)
+        .replace(/<body[^>]*>/, (body) => `${body}\n${banner}`)
+    },
+  }
+}
 
 // Las páginas de contenido solo cargan de la app cta-registro.js (el clic en
 // "Crear cuenta"). Como <script type="module">, sea diferido, async o vaya al
@@ -82,7 +134,7 @@ const ctaRegistroDiferido = () => {
 
 export default defineConfig({
   base: '/',
-  plugins: [cleanInternalUrls(), analiticaApagadaEnDev(), ctaRegistroDiferido()],
+  plugins: [cleanInternalUrls(), analiticaApagadaEnDev(), consentimiento(), ctaRegistroDiferido()],
   build: {
     rollupOptions: {
       input: {

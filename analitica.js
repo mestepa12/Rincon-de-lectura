@@ -2,10 +2,11 @@
 //
 //   enviarEvento('quiz_complete', { quiz_result: 'cozy' })
 //
-// No envía nada en desarrollo ni con emuladores, nunca lanza y nunca rompe
-// la acción que lo dispara: si gtag no está (bloqueador, carga diferida que
-// no llegó), sale en silencio. La lógica vive en analitica-nucleo.js, que es
-// lo que cubren las pruebas; aquí solo se conecta con el navegador.
+// No envía nada sin consentimiento, en desarrollo ni con emuladores, nunca
+// lanza y nunca rompe la acción que lo dispara: si gtag no está (sin
+// consentimiento, bloqueador, carga diferida que no llegó), sale en silencio.
+// La lógica vive en analitica-nucleo.js, que es lo que cubren las pruebas;
+// aquí solo se conecta con el navegador.
 import {
     analiticaPermitida, crearEmisor, HOSTS_PRODUCCION, normalizarRuta,
     origenDesdeReferrer, ORIGEN_DIRECTO, ORIGEN_OTRA,
@@ -19,6 +20,11 @@ const activa = analiticaPermitida({
     emuladores: import.meta.env.VITE_USE_EMULATORS === 'true', // 2. npm run dev:emu
     hostname: window.location.hostname,                        // 3. red de seguridad
 });
+
+// El "sí" lo guarda consentimiento.js, inline en el <head> de cada página.
+// Se pregunta en cada uso, porque se puede aceptar o revocar sin recargar.
+// Si ese script no estuviera, cuenta como un no.
+const hayConsentimiento = () => window.rinconConsentimiento?.estado() === 'si';
 
 // sessionStorage puede lanzar solo con tocarlo (cookies bloqueadas): este
 // módulo lo importan auth.js y script.js, y un fallo aquí los tumbaría.
@@ -39,6 +45,7 @@ const emisor = crearEmisor({
     // Sin query: a la biblioteca se llega con ?chat=<uid> desde las
     // notificaciones, y eso no debe salir en ningún evento.
     paginaActual: () => `${window.location.origin}${window.location.pathname}`,
+    consentido: hayConsentimiento,
     avisarDev: import.meta.env.DEV ? (...args) => console.debug('[analítica]', ...args) : undefined,
 });
 
@@ -56,11 +63,13 @@ export const enviarEvento = emisor.enviar;
 // La última página de contenido vista antes de registro/login en esta
 // pestaña. Se apunta al pulsar un CTA y al llegar a registro/login (por el
 // referrer, que con strict-origin-when-cross-origin trae la ruta completa
-// entre páginas del mismo sitio).
+// entre páginas del mismo sitio). Es almacenamiento para medir: sin
+// consentimiento no se apunta nada.
 const CLAVE_ORIGEN = 'rincon_origen_registro';
 
 /** Registro y login: apunta la página de la que se viene. */
 export const recordarOrigenDesdeReferrer = () => {
+    if (!hayConsentimiento()) return;
     const desde = origenDesdeReferrer(document.referrer, window.location.origin);
     if (!desde) return; // de fuera o sin referrer: vale lo que hubiera
     // Ir y volver entre registro y login da "(otra)": no pisa un origen real.
@@ -91,6 +100,7 @@ export const vigilarCtasRegistro = () => {
             const destino = new URL(enlace.href, window.location.href);
             if (destino.origin !== window.location.origin) return;
             if (destino.pathname.replace(/\.html$/, '') !== '/register') return;
+            if (!hayConsentimiento()) return;
             almacen.setItem(CLAVE_ORIGEN, origen);
             // Con Ctrl/Cmd/Mayús o target=_blank el enlace abre otra pestaña
             // y esta se queda: el evento va por el camino normal.

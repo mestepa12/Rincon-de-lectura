@@ -107,6 +107,9 @@ export const HOSTS_PRODUCCION = [
     'mi-rincon-de-lectura.firebaseapp.com',
 ];
 
+// Propiedad de GA4. consentimiento.js la recibe del plugin de vite.config.js.
+export const ID_MEDICION = 'G-C3LTR2R6B5';
+
 export const CLAVE_PENDIENTES = 'rincon_ga_pendientes';
 const MAX_PENDIENTES = 10;
 
@@ -122,6 +125,9 @@ const MAX_PENDIENTES = 10;
  *     procesa la cola (no basta con el stub del <head>).
  * @param {Storage} d.almacen sessionStorage.
  * @param {() => string} d.paginaActual URL sin query ni hash.
+ * @param {() => boolean} [d.consentido] Hay un "sí" vigente a Analytics.
+ *     Se mira en cada envío (se puede aceptar o revocar sin recargar); sin
+ *     él no sale ni se guarda nada. Si falta, cuenta como un no.
  * @param {Function} [d.avisarDev] Solo en desarrollo: registra lo que se
  *     habría enviado.
  * @param {number} [d.esperaMaxima] Tope de espera antes de navegar (ms).
@@ -130,6 +136,7 @@ const MAX_PENDIENTES = 10;
  */
 export function crearEmisor({
     activa, produccion, obtenerGtag, gtagCargado, almacen, paginaActual,
+    consentido = () => false,
     avisarDev = () => {}, esperaMaxima = 1000, programar = setTimeout,
 }) {
     const datosDeEnvio = (params, pagina) => {
@@ -182,6 +189,13 @@ export function crearEmisor({
                 resolver();
                 return;
             }
+            // Ni al dataLayer ni a pendientes: si se acepta luego en esta
+            // página, gtag.js no debe encontrarse eventos de antes del sí.
+            if (!consentido()) {
+                avisarDev('no enviado (sin consentimiento):', nombre, limpios);
+                resolver();
+                return;
+            }
             const pagina = paginaActual();
             if (antesDeNavegar && !gtagCargado()) {
                 guardarPendientes([...leerPendientes(), { nombre, params: limpios, pagina }]);
@@ -210,6 +224,11 @@ export function crearEmisor({
     const enviarPendientes = () => {
         try {
             if (!activa) return;
+            // Se guardaron con consentimiento y se ha revocado después.
+            if (!consentido()) {
+                guardarPendientes([]);
+                return;
+            }
             const lista = leerPendientes();
             if (!lista.length) return;
             guardarPendientes([]); // antes de enviar: un fallo no los repite

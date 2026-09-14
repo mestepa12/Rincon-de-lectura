@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <!--consentimiento-->
     <title>Mi Rincón de Lectura</title>
 
     <!-- Página privada (requiere sesión): fuera del índice de Google.
@@ -35,27 +36,17 @@
     <link rel="stylesheet" href="style.css">
     <!-- Chart.js y html2canvas se cargan de forma diferida (lazy-libs.js)
          solo al abrir estadísticas o exportar tarjetas. -->
-    <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js): solo con consentimiento (ver consentimiento.js) -->
     <script>
   // gtag.js pesa 169 KiB. Aunque va async, en 4G lenta ocupa la tuberia
   // durante toda la ventana del LCP y retrasa la descarga de las fuentes.
-  // La cola de dataLayer se crea aqui mismo, asi que ningun gtag() posterior
-  // se pierde; solo se aplaza la descarga del script hasta que el hilo queda
-  // libre despues de load, o hasta la primera interaccion si llega antes.
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-C3LTR2R6B5');
-  (function () {
-    var pedido = false;
-    function cargarGtag() {
-      if (pedido) return;
-      pedido = true;
-      var s = document.createElement('script');
-      s.async = true;
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5';
-      document.head.appendChild(s);
-    }
+  // Sin consentimiento esto no se llama nunca: ni cola, ni gtag.js, ni
+  // cookies. Con consentimiento, la cola de gtag (js y config) ya la ha
+  // creado consentimiento.js; aqui solo se decide cuando pedir gtag.js.
+  rinconConsentimiento.alAceptar(function (cargarGtag, aceptadoAhora) {
+    // Recien pulsado "Aceptar" con los libros ya en pantalla: se pide ya.
+    // Si aun no han llegado, se sigue el camino de siempre.
+    if (aceptadoAhora && document.querySelector('.book, .shelf-book')) { cargarGtag(); return; }
     // Aqui no vale requestIdleCallback tras "load", que es lo que hacen las
     // paginas publicas. En /biblioteca el load llega sobre los 900 ms pero la
     // app sigue restaurando sesion y hablando con Firestore hasta pasados los
@@ -70,9 +61,9 @@
     // tope de 4 s pase lo que pase, el mismo que tenia el requestIdleCallback
     // de antes, para no empeorar el peor caso de nadie.
     //
-    // No cambia NADA de que se mide: la cola de dataLayer se crea arriba, con
-    // su gtag('js') y su gtag('config'), y gtag.js la reproduce entera al
-    // cargar. Los eventos propios los sigue mandando analitica.js igual.
+    // No cambia NADA de que se mide: la cola ya esta creada y gtag.js la
+    // reproduce entera al cargar. Los eventos propios los sigue mandando
+    // analitica.js igual.
     function programar() {
       var tope = setTimeout(cargarGtag, 4000);
       var obs = new MutationObserver(function () {
@@ -95,7 +86,7 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden') cargarGtag();
     }, { once: true });
-  })();
+  });
 </script>
 </head>
 
@@ -660,18 +651,9 @@
     </div>
 
     <script type="module" src="auth.js"></script>
-    <script src="cookies.js" defer></script>
     <script type="module" src="script.js" defer></script>
     <script type="module" src="./config.js"></script>
 
-    <div id="cookie-banner" class="cookie-banner">
-        <p>
-            Utilizamos cookies y almacenamiento local para mejorar tu experiencia,
-            guardar tus preferencias de tema y mantener tu sesión iniciada.
-            Al continuar, aceptas nuestro uso de cookies.
-        </p>
-        <button id="accept-cookies-btn" class="btn-primary">Aceptar</button>
-    </div>
 
     <!--Desplegable para el menú de amigos-->
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -755,7 +737,7 @@
     </div>
 
     <footer class="main-footer">
-        <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a></p>
+        <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a> | <button type="button" class="enlace-boton" data-abrir-consentimiento>Preferencias de cookies</button></p>
     </footer>
 
     <input type="file" id="import-csv" accept=".csv" style="display:none;">

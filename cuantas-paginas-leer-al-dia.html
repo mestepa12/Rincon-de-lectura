@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--consentimiento-->
     <title>Cuántas páginas leer al día: 10 son 11 libros al año</title>
     <meta name="description" content="Un número suelto no sirve para todos. El método para calcular el tuyo desde el hueco que ya tienes, y la tabla de páginas diarias a libros al año.">
     <meta name="robots" content="index, follow">
@@ -183,27 +184,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Lora:wght@400;700&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="style.css">
-    <!-- Google tag (gtag.js) -->
+    <!-- Google tag (gtag.js): solo con consentimiento (ver consentimiento.js) -->
 <script>
   // gtag.js pesa 169 KiB. Aunque va async, en 4G lenta ocupa la tuberia
   // durante toda la ventana del LCP y retrasa la descarga de las fuentes.
-  // La cola de dataLayer se crea aqui mismo, asi que ningun gtag() posterior
-  // se pierde; solo se aplaza la descarga del script hasta que el hilo queda
-  // libre despues de load, o hasta la primera interaccion si llega antes.
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-C3LTR2R6B5');
-  (function () {
-    var pedido = false;
-    function cargarGtag() {
-      if (pedido) return;
-      pedido = true;
-      var s = document.createElement('script');
-      s.async = true;
-      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-C3LTR2R6B5';
-      document.head.appendChild(s);
-    }
+  // Con consentimiento, se aplaza hasta que el hilo queda libre despues de
+  // load, o hasta la primera interaccion si llega antes. La cola de gtag (js
+  // y config) la crea consentimiento.js antes de llamar aqui, asi que ningun
+  // gtag() posterior se pierde. Sin consentimiento esto no se llama nunca:
+  // ni cola, ni gtag.js, ni cookies.
+  rinconConsentimiento.alAceptar(function (cargarGtag, aceptadoAhora) {
+    // Recien pulsado "Aceptar": la pagina ya esta en marcha, se pide ya.
+    if (aceptadoAhora) { cargarGtag(); return; }
     function programar() {
       // El timeout asegura la carga aunque la pagina nunca quede ociosa.
       if ('requestIdleCallback' in window) requestIdleCallback(cargarGtag, { timeout: 4000 });
@@ -219,7 +211,7 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden') cargarGtag();
     }, { once: true });
-  })();
+  });
 </script>
 </head>
 <body>
@@ -326,7 +318,7 @@
             <a href="estadisticas-de-lectura.html">Estadísticas de lectura</a>
             <a href="quiz.html">Test de tropos</a>
         </nav>
-        <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a></p>
+        <p>&copy; 2026 Mi Rincón de Lectura | <a href="privacidad.html">Política de Privacidad</a> | <button type="button" class="enlace-boton" data-abrir-consentimiento>Preferencias de cookies</button></p>
     </footer>
 
     <!--cta-registro-->

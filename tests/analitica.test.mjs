@@ -52,6 +52,7 @@ const emisor = (extra = {}) => {
         gtagCargado: () => true,
         almacen,
         paginaActual: () => 'https://rinconlectura.es/tropos-literarios',
+        consentido: () => true,
         avisarDev: (...a) => avisos.push(a),
         programar: (fn, ms) => temporizadores.push({ fn, ms }),
         ...extra,
@@ -290,4 +291,49 @@ test('sin "antes de navegar" nunca se guarda nada, aunque gtag.js no haya cargad
 test('origen por defecto de un alta sin página previa', () => {
     assert.deepEqual(limpiarParametros('sign_up', { method: 'email', origin_page: ORIGEN_DIRECTO }),
         { method: 'email', origin_page: ORIGEN_DIRECTO });
+});
+
+// ---------------------------------------------------------------------------
+// Consentimiento
+// ---------------------------------------------------------------------------
+
+test('sin consentimiento no se envía nada, ni se guarda para la página siguiente', async () => {
+    const e = emisor({ consentido: () => false, gtagCargado: () => false });
+    await e.enviar('quiz_complete', { quiz_result: 'cozy' });
+    await e.enviar('sign_up', { method: 'email' }, { antesDeNavegar: true });
+    assert.equal(e.llamadas.length, 0);
+    assert.equal(e.almacen.datos.size, 0);
+    assert.equal(e.avisos.length, 2);
+});
+
+test('si no se dice nada del consentimiento, cuenta como un no', async () => {
+    const { gtag, llamadas } = gtagFalso();
+    const e = crearEmisor({
+        activa: true, produccion: true, obtenerGtag: () => gtag, gtagCargado: () => true,
+        almacen: almacenEnMemoria(), paginaActual: () => 'https://rinconlectura.es/',
+    });
+    await e.enviar('add_first_book');
+    e.enviarPendientes();
+    assert.equal(llamadas.length, 0);
+});
+
+test('el consentimiento se mira en cada envío: aceptar sin recargar mide desde ese momento', async () => {
+    let si = false;
+    const e = emisor({ consentido: () => si });
+    await e.enviar('quiz_gate_view');
+    si = true;
+    await e.enviar('quiz_complete', { quiz_result: 'cozy' });
+    assert.deepEqual(e.llamadas.map((l) => l[1]), ['quiz_complete'], 'lo de antes del sí no se recupera');
+});
+
+test('pendientes guardados con consentimiento y revocado después: se tiran sin enviar', async () => {
+    const almacen = almacenEnMemoria();
+    const origen = emisor({ almacen, gtagCargado: () => false });
+    await origen.enviar('sign_up', { method: 'email' }, { antesDeNavegar: true });
+    assert.ok(almacen.getItem(CLAVE_PENDIENTES));
+
+    const siguiente = emisor({ almacen, consentido: () => false });
+    siguiente.enviarPendientes();
+    assert.equal(siguiente.llamadas.length, 0);
+    assert.equal(almacen.getItem(CLAVE_PENDIENTES), null);
 });
