@@ -145,7 +145,11 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 
 /* ── Menú lateral izquierdo (acciones secundarias etiquetadas) ── */
 .menu-sidebar {
-    position: fixed; top: 0; left: 0; width: 300px; max-width: 85vw; height: 100vh;
+    position: fixed; top: 0; left: 0; width: 300px; max-width: 85vw;
+    /* En móvil 100vh es la altura con la barra del navegador escondida: con la
+       barra a la vista, el pie del menú (Cerrar sesión) quedaba bajo la pantalla.
+       dvh sigue a la altura visible; 100vh queda de reserva. */
+    height: 100vh; height: 100dvh;
     background-color: var(--card-bg-color);
     box-shadow: 2px 0 10px var(--shadow-color);
     z-index: 2000;
@@ -155,7 +159,16 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 }
 .menu-sidebar.open { transform: translateX(0); }
 .menu-sidebar .sidebar-header h3 { margin: 0; font-family: var(--font-title); color: #fff; font-size: 1.15rem; }
-.menu-nav { padding: 0.8rem; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.1rem; }
+/* contain: al llegar al final, el arrastre no se va a la página de detrás.
+   El inset deja Cerrar sesión por encima de la barra de inicio del iPhone. */
+.menu-nav {
+    padding: 0.8rem 0.8rem calc(0.8rem + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto; overscroll-behavior: contain;
+    flex: 1; display: flex; flex-direction: column; gap: 0.1rem;
+}
+/* El aviso de notificaciones (z-index 4000) tapaba el pie del menú abierto y
+   se quedaba con el arrastre, que movía la página en vez del menú. */
+body:has(.menu-sidebar.open) .push-banner { display: none; }
 .menu-group-label {
     font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
     color: var(--accent-color); font-weight: 700; padding: 0.85rem 0.7rem 0.35rem;
