@@ -1726,15 +1726,53 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeSidebarBtn = document.getElementById('close-sidebar-btn');
         const currentUserDisplay = document.getElementById('current-user-display');
 
+        // Foco en los paneles laterales (amigos y menú). Cerrados siguen en el
+        // DOM, desplazados fuera de la pantalla: sin inert, el tabulador
+        // recorría sus botones invisibles (12 antes de llegar al primer libro).
+        // Al abrir, el foco entra en el panel; al cerrar, vuelve a quien lo
+        // abrió. Si ese botón ya no se puede enfocar (estaba en otro panel que
+        // se ha cerrado), va al botón del menú, que siempre está a la vista.
+        const enfocable = (el) => !!el?.isConnected && !el.closest('[inert]') && el.getClientRects().length > 0;
+        const devolverFoco = (...candidatos) => {
+            [...candidatos, document.getElementById('menu-btn')].find(enfocable)?.focus({ preventScroll: true });
+        };
+        // Un <dialog> abierto desde un panel devuelve el foco, al cerrarse, al
+        // botón que lo abrió; para entonces el panel está cerrado (inert), no
+        // lo acepta y el foco caía en <body>. Se reconduce igual.
+        let ultimoBotonDePanel = null;
+        ['friends-sidebar', 'menu-sidebar'].forEach((id) => document.getElementById(id)?.addEventListener('click', (e) => {
+            ultimoBotonDePanel = e.target.closest('button, a');
+        }, true));
+        document.addEventListener('close', (e) => {
+            if (!(e.target instanceof HTMLDialogElement) || !ultimoBotonDePanel) return;
+            const boton = ultimoBotonDePanel;
+            ultimoBotonDePanel = null;
+            // Durante el evento el foco sigue dentro del diálogo: el navegador
+            // intenta devolverlo después. Se mira cuando ya lo ha intentado.
+            setTimeout(() => {
+                if (document.activeElement === document.body && !enfocable(boton)) devolverFoco(boton);
+            }, 0);
+        }, true);
+        let focoAntesDeAmigos = null;
+
         // 1. Función para abrir/cerrar
         const toggleSidebar = (show) => {
             if (show) {
+                if (!friendsSidebar.classList.contains('open')) focoAntesDeAmigos = document.activeElement;
+                friendsSidebar.inert = false;
                 friendsSidebar.classList.add('open');
                 sidebarOverlay.classList.add('active');
+                closeSidebarBtn?.focus({ preventScroll: true });
                 renderRanking(); // Actualizar ranking cada vez que se abre
             } else {
+                const focoDentro = friendsSidebar.contains(document.activeElement);
                 friendsSidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
+                friendsSidebar.inert = true;
+                if (focoDentro) {
+                    ultimoBotonDePanel = null;
+                    devolverFoco(focoAntesDeAmigos);
+                }
             }
         };
 
@@ -5320,9 +5358,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const menuSidebar = document.getElementById('menu-sidebar');
         const menuOverlay = document.getElementById('menu-overlay');
         const closeMenuBtn = document.getElementById('close-menu-btn');
+        // Foco e inert: igual que el panel de amigos (ver devolverFoco).
+        let focoAntesDelMenu = null;
         const abrirMenu = (v) => {
-            menuSidebar?.classList.toggle('open', v);
+            if (!menuSidebar) return;
+            const estabaAbierto = menuSidebar.classList.contains('open');
+            const focoDentro = menuSidebar.contains(document.activeElement);
+            if (v && !estabaAbierto) focoAntesDelMenu = document.activeElement;
+            menuSidebar.inert = !v;
+            menuSidebar.classList.toggle('open', v);
             menuOverlay?.classList.toggle('active', v);
+            if (v) closeMenuBtn?.focus({ preventScroll: true });
+            else if (focoDentro) {
+                ultimoBotonDePanel = null;
+                devolverFoco(focoAntesDelMenu);
+            }
         };
         menuBtn?.addEventListener('click', () => abrirMenu(true));
         closeMenuBtn?.addEventListener('click', () => abrirMenu(false));

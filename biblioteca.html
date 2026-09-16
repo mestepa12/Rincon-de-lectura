@@ -126,7 +126,9 @@
 
     <!-- Menú lateral: acciones secundarias con etiqueta (entra por la izquierda) -->
     <div id="menu-overlay" class="sidebar-overlay"></div>
-    <aside id="menu-sidebar" class="menu-sidebar" aria-label="Menú principal">
+    <!-- inert mientras está cerrado: fuera de la pantalla, pero sin él el
+         tabulador recorría sus botones invisibles. Lo quita script.js al abrir. -->
+    <aside id="menu-sidebar" class="menu-sidebar" aria-label="Menú principal" inert>
         <div class="sidebar-header">
             <h3>☰ Menú</h3>
             <button id="close-menu-btn" class="btn-icon" type="button" aria-label="Cerrar menú">✕</button>
@@ -655,7 +657,7 @@
     <!--Desplegable para el menú de amigos-->
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-    <aside id="friends-sidebar" class="friends-sidebar">
+    <aside id="friends-sidebar" class="friends-sidebar" inert>
 
         <div class="sidebar-header">
             <div class="user-profile-summary">
