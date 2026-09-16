@@ -1754,6 +1754,33 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 0);
         }, true);
         let focoAntesDeAmigos = null;
+        // Barra de navegación: Amigos y Más son pestañas. Al abrir o cerrar
+        // cualquiera de los dos paneles se marca la pestaña activa y se deja
+        // inert lo que queda tapado, para que el tabulador no acabe en botones
+        // que no se ven. En móvil el panel llega hasta la barra, que sigue
+        // siendo la forma de cambiar de pestaña. En escritorio es un cajón
+        // sobre un fondo oscuro que tapa también las pestañas (el de amigos, a
+        // 1280 px, cubre «Más»): ahí se cierra primero, como cualquier cajón.
+        // Se llama antes de devolver el foco, para que el destino ya no esté inert.
+        const barraMovil = window.matchMedia('(max-width: 768px)'); // mismo corte que el CSS
+        const reflejarPanelAbierto = () => {
+            const amigos = friendsSidebar.classList.contains('open');
+            const mas = !!document.getElementById('menu-sidebar')?.classList.contains('open');
+            const activa = amigos ? 'toggle-friends-btn' : mas ? 'menu-btn' : 'nav-biblioteca';
+            ['nav-biblioteca', 'toggle-friends-btn', 'menu-btn'].forEach((id) => {
+                const b = document.getElementById(id);
+                if (b && id === activa) b.setAttribute('aria-current', 'page');
+                else b?.removeAttribute('aria-current');
+            });
+            const tapado = amigos || mas;
+            [document.getElementById('main-content'), document.querySelector('.header-controls'),
+                document.querySelector('.header-search'), document.querySelector('.main-footer'),
+                document.getElementById('session-pill'), document.getElementById('btn-volver-casa')]
+                .forEach((el) => { if (el) el.inert = tapado; });
+            const barra = document.getElementById('barra-app');
+            if (barra) barra.inert = tapado && !barraMovil.matches;
+        };
+        barraMovil.addEventListener('change', reflejarPanelAbierto);
 
         // 1. Función para abrir/cerrar
         const toggleSidebar = (show) => {
@@ -1762,6 +1789,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 friendsSidebar.inert = false;
                 friendsSidebar.classList.add('open');
                 sidebarOverlay.classList.add('active');
+                reflejarPanelAbierto();
                 closeSidebarBtn?.focus({ preventScroll: true });
                 renderRanking(); // Actualizar ranking cada vez que se abre
             } else {
@@ -1769,9 +1797,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 friendsSidebar.classList.remove('open');
                 sidebarOverlay.classList.remove('active');
                 friendsSidebar.inert = true;
+                reflejarPanelAbierto();
                 if (focoDentro) {
                     ultimoBotonDePanel = null;
-                    devolverFoco(focoAntesDeAmigos);
+                    devolverFoco(focoAntesDeAmigos, toggleFriendsBtn);
                 }
             }
         };
@@ -5336,7 +5365,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             notify(
                 `Hace ${dias} días que no guardas una copia de tu biblioteca.\n\n` +
-                'Menú > Exportar a CSV. Ese fichero se puede volver a importar.',
+                'Más > Exportar a CSV. Ese fichero se puede volver a importar.',
                 'info');
         };
 
@@ -5368,6 +5397,7 @@ document.addEventListener('DOMContentLoaded', () => {
             menuSidebar.inert = !v;
             menuSidebar.classList.toggle('open', v);
             menuOverlay?.classList.toggle('active', v);
+            reflejarPanelAbierto();
             if (v) closeMenuBtn?.focus({ preventScroll: true });
             else if (focoDentro) {
                 ultimoBotonDePanel = null;
@@ -5381,6 +5411,53 @@ document.addEventListener('DOMContentLoaded', () => {
         // Al elegir cualquier opción, el menú se cierra (la acción sigue su curso)
         menuSidebar?.querySelectorAll('.menu-item').forEach(el =>
             el.addEventListener('click', () => abrirMenu(false)));
+
+        // === BARRA DE NAVEGACIÓN ===
+        // Añadir, Amigos, Estadísticas y Más son los botones de siempre, con
+        // sus IDs y sus listeners, movidos a la barra. La pestaña activa la
+        // marca reflejarPanelAbierto() al abrir o cerrar un panel. Aquí solo:
+        // que abrir un panel cierre el otro, Biblioteca para volver y el
+        // contador de solicitudes.
+        const navBiblioteca = document.getElementById('nav-biblioteca');
+        toggleFriendsBtn?.addEventListener('click', () => abrirMenu(false));
+        menuBtn?.addEventListener('click', () => toggleSidebar(false));
+        navBiblioteca?.addEventListener('click', () => {
+            // Viendo la biblioteca de un amigo, Biblioteca vuelve a la propia
+            // igual que «Volver a mi biblioteca».
+            if (viewingFriendLibrary) { window.location.reload(); return; }
+            const habiaPanel = friendsSidebar?.classList.contains('open') || menuSidebar?.classList.contains('open');
+            // El foco pasa antes a la pestaña: así cerrar los paneles no lo
+            // devuelve al botón que los abrió.
+            navBiblioteca.focus({ preventScroll: true });
+            toggleSidebar(false);
+            abrirMenu(false);
+            if (!habiaPanel) window.scrollTo({ top: 0 });
+        });
+
+        // Contador de solicitudes en la pestaña Amigos. El único contador vivía
+        // dentro del panel, y el panel dentro del menú: con solicitudes
+        // pendientes no había ninguna señal a la vista. Copia el del panel, que
+        // ya mantiene al día el listener de solicitudes, sin tocar el listener.
+        const contadorPanel = document.getElementById('requests-count');
+        const contadorBarra = document.getElementById('contador-solicitudes');
+        const pintarContadorBarra = () => {
+            const n = parseInt(contadorPanel?.textContent, 10) || 0;
+            if (contadorBarra) {
+                contadorBarra.hidden = n === 0;
+                contadorBarra.textContent = n > 9 ? '9+' : String(n);
+            }
+            // El número visible es aria-hidden: para lectores de pantalla va
+            // en el nombre del botón, que sigue empezando por «Amigos».
+            if (!toggleFriendsBtn) return;
+            if (n === 0) toggleFriendsBtn.removeAttribute('aria-label');
+            else toggleFriendsBtn.setAttribute('aria-label', n === 1
+                ? 'Amigos, 1 solicitud de amistad pendiente'
+                : `Amigos, ${n} solicitudes de amistad pendientes`);
+        };
+        if (contadorPanel) {
+            new MutationObserver(pintarContadorBarra).observe(contadorPanel, { childList: true, characterData: true, subtree: true });
+            pintarContadorBarra();
+        }
 
         setupTheme(); // (Esta línea ya la tenías al final)
     }

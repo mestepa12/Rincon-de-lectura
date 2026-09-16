@@ -3766,3 +3766,231 @@ body.dark-mode {
     font-size: 1.05rem;
     line-height: 1.7;
 }
+
+/* ======== BARRA DE NAVEGACIÓN (biblioteca) ======== */
+/* Solo con <body class="con-barra">. Una única <nav> con los destinos
+   principales: hasta 768 px es una barra fija abajo; desde 769 px, pestañas
+   dentro de la cabecera. --barra-alto es lo que ocupa abajo (0 en escritorio):
+   lo usan el body y todo lo que flota abajo para quedar por encima. Ya incluye
+   el hueco de la barra de inicio del iPhone (--barra-seguro), así que lo que
+   se apoya en la barra no necesita sumarlo otra vez. */
+.con-barra {
+    --barra-seguro: env(safe-area-inset-bottom, 0px);
+    --barra-alto: 0px;
+    --barra-activo-fondo: rgba(154, 59, 59, 0.12);
+}
+body.dark-mode.con-barra { --barra-activo-fondo: rgba(96, 165, 250, 0.18); }
+
+.barra-lista { display: flex; margin: 0; padding: 0; list-style: none; }
+.barra-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    font-family: var(--font-body);
+    font-weight: 700;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+/* Añadir era un botón de la cabecera con fondo propio (#add-book-btn) */
+.barra-app #add-book-btn { background-color: transparent; border-color: transparent; }
+.barra-ico-caja { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.barra-ico {
+    width: 1.5rem;
+    height: 1.5rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+.barra-ico-relleno { fill: currentColor; stroke: none; }
+
+/* Solicitudes de amistad pendientes. Rojo fijo en los dos temas: blanco
+   sobre #B3261E da 6.5:1. El número para lectores de pantalla va aparte, en
+   el nombre del botón («Amigos, 2 solicitudes de amistad pendientes»). */
+.barra-contador {
+    position: absolute;
+    top: -0.3rem;
+    left: calc(50% + 0.35rem);
+    min-width: 1.15rem;
+    height: 1.15rem;
+    padding: 0 0.3rem;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background-color: #B3261E;
+    color: #fff;
+    font: 700 0.68rem/1.15rem var(--font-body);
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--card-bg-color);
+}
+
+/* Las opciones de «Más» marcaban el foco solo con un fondo casi igual al del
+   panel (#F5EFE6 sobre #FDFBF7): con teclado no se veía dónde estabas. */
+.con-barra .menu-item:focus-visible { outline: 3px solid var(--accent-color-interactive); outline-offset: -3px; }
+
+@media (max-width: 768px) {
+    .con-barra {
+        --barra-alto: calc(3.5rem + var(--barra-seguro));
+        padding-bottom: var(--barra-alto);
+    }
+    .barra-app {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding-bottom: var(--barra-seguro);
+        background-color: var(--card-bg-color);
+        /* Línea superior con sombra y no con border: un borde sumaría 1 px a
+           la altura y dejaría de medir exactamente --barra-alto */
+        box-shadow: 0 -1px 0 var(--border-color), 0 -2px 10px var(--shadow-color);
+    }
+    .barra-lista > li { flex: 1 1 0; min-width: 0; display: flex; }
+    .barra-item {
+        flex: 1;
+        flex-direction: column;
+        gap: 0.15rem;
+        min-height: 3.5rem;
+        padding: 0.3rem 0.1rem;
+        color: var(--accessible-muted-color);
+        font-size: 0.7rem;
+        line-height: 1.1;
+    }
+    .barra-texto { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barra-ico-caja {
+        width: 3.25rem;
+        height: 1.85rem;
+        border-radius: 999px;
+        transition: background-color 0.2s ease;
+    }
+    /* Activa: color y además una píldora detrás del icono, para no depender
+       solo del color. #9A3B3B sobre la píldora = 5.5:1. */
+    .barra-item[aria-current="page"] { color: var(--accent-color-interactive); }
+    .barra-item[aria-current="page"] .barra-ico-caja { background-color: var(--barra-activo-fondo); }
+    .barra-item:focus-visible { outline: 3px solid var(--accent-color-interactive); outline-offset: -4px; border-radius: 10px; }
+    /* Añadir: la acción principal, siempre rellena. El icono usa el fondo de
+       tarjeta, que contrasta con el acento en los dos temas. */
+    .barra-anadir .barra-ico-caja { background-color: var(--accent-color-interactive); color: var(--card-bg-color); }
+
+    /* Cabecera: sin ☰ ni Añadir, título y controles caben en una fila. Con
+       «Volver a mi biblioteca» (biblioteca de un amigo) vuelve a partirse. */
+    .con-barra .header-main { flex-direction: row; flex-wrap: nowrap; align-items: center; }
+    .con-barra .header-main:has(#btn-volver-casa) { flex-wrap: wrap; }
+    .con-barra .header-controls { width: auto; flex-wrap: nowrap; flex-shrink: 0; }
+    .con-barra .hmenu > summary { display: inline-flex; align-items: center; min-height: 44px; }
+    .con-barra #streak-counter.streak-counter { min-height: 44px; }
+
+    /* Amigos y Más son pestañas: en vez de entrar de lado sobre un fondo
+       oscuro, ocupan la pantalla hasta la barra, que sigue a la vista. Se
+       anclan con top/bottom, sin vh: siguen a la altura visible igual que el
+       100dvh de escritorio. */
+    .con-barra .menu-sidebar,
+    .con-barra .friends-sidebar {
+        top: 0;
+        bottom: var(--barra-alto);
+        height: auto;
+        width: 100%;
+        max-width: none;
+        border-left: 0;
+        box-shadow: none;
+        transform: none;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s ease, visibility 0s linear 0.15s;
+    }
+    .con-barra .menu-sidebar.open,
+    .con-barra .friends-sidebar.open {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.15s ease;
+    }
+    .con-barra .sidebar-overlay { display: none; }
+    /* El hueco del iPhone ya lo deja la barra */
+    .con-barra .menu-nav,
+    .con-barra .sidebar-content { padding-bottom: 1rem; }
+    body.con-barra:has(.menu-sidebar.open, .friends-sidebar.open) { overflow: hidden; }
+
+    /* Lo que flota abajo, por encima de la barra */
+    .con-barra .push-banner { bottom: calc(var(--barra-alto) + 1rem); }
+    .con-barra .session-pill { bottom: calc(var(--barra-alto) + 12px); }
+    .con-barra .logro-toast {
+        --toast-inferior: calc(var(--barra-alto) + 2rem);
+        bottom: var(--toast-inferior);
+        transform: translate(-50%, calc(100% + var(--toast-inferior) + 24px));
+    }
+    .con-barra .logro-toast.logro-toast-visible { transform: translate(-50%, 0); }
+    :root:not(.consentimiento-pendiente):not(.consentimiento-abierto) .con-barra .marca-interna {
+        bottom: calc(var(--barra-alto) + 0.5rem);
+    }
+
+    /* Banner de cookies: encima de la barra, no encima de ella. Los huecos
+       que el banner reserva se suman al de la barra. */
+    .consentimiento-pendiente .con-barra .consentimiento,
+    .consentimiento-abierto .con-barra .consentimiento {
+        bottom: var(--barra-alto);
+        padding-bottom: 1rem;
+    }
+    .consentimiento-pendiente body.con-barra { padding-bottom: calc(13rem + var(--barra-alto)); }
+    .consentimiento-pendiente .con-barra .push-banner,
+    .consentimiento-pendiente .con-barra .session-pill { bottom: calc(13.5rem + var(--barra-alto)); }
+    .consentimiento-pendiente .con-barra .logro-toast { --toast-inferior: calc(13.5rem + var(--barra-alto)); }
+}
+
+@media (min-width: 769px) {
+    /* Pestañas en la cabecera: bajo el título mientras no caben en su fila */
+    .con-barra .header-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        grid-template-areas: "titulo controles" "nav nav";
+        align-items: center;
+        column-gap: 1.25rem;
+        row-gap: 0.6rem;
+    }
+    .con-barra .header-left { grid-area: titulo; }
+    .con-barra .header-controls { grid-area: controles; }
+    .con-barra .barra-app { grid-area: nav; }
+    .con-barra #btn-volver-casa { grid-column: 1 / -1; justify-self: start; }
+    .barra-lista { flex-wrap: wrap; gap: 0.25rem; }
+    .barra-item {
+        gap: 0.45rem;
+        padding: 0 0.8rem;
+        border-radius: 6px;
+        color: #D7CCC8; /* sobre #4E443A = 6:1 */
+        font-size: 0.92rem;
+        transition: background-color var(--transition-hover), color var(--transition-hover);
+    }
+    .barra-ico { width: 1.25rem; height: 1.25rem; }
+    .barra-item:hover { background-color: rgba(255, 255, 255, 0.1); color: #fff; }
+    .barra-item[aria-current="page"] {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 -3px 0 #fff;
+        border-radius: 6px 6px 0 0;
+    }
+    .barra-item:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+    .barra-app #add-book-btn {
+        background-color: var(--accent-color-interactive);
+        color: var(--card-bg-color);
+    }
+    .barra-app #add-book-btn:hover { filter: brightness(1.1); }
+    .barra-contador { box-shadow: 0 0 0 2px #4E443A; }
+}
+/* Título + pestañas + controles en una fila: medido, necesitan ~1.100 px */
+@media (min-width: 1120px) {
+    .con-barra .header-main {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-areas: "titulo nav controles";
+    }
+    .barra-lista { justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .con-barra .menu-sidebar,
+    .con-barra .friends-sidebar,
+    .barra-ico-caja { transition: none; }
+}

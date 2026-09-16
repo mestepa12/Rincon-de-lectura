@@ -87,12 +87,12 @@
 </script>
 </head>
 
-<body>
+<!-- con-barra: activa la barra de navegación (ver BARRA DE NAVEGACIÓN en style.css) -->
+<body class="con-barra">
 
     <header class="site-header">
         <div class="header-main">
             <div class="header-left">
-                <button id="menu-btn" class="menu-btn" type="button" aria-label="Abrir menú" title="Menú">☰</button>
                 <div class="header-identity">
                     <h1 id="site-title">Mi Rincón de Lectura</h1>
                     <!-- Cuenta activa: siempre a la vista para que nunca haya
@@ -105,8 +105,45 @@
                     </p>
                 </div>
             </div>
+            <!-- Navegación principal: barra fija abajo en móvil, pestañas en la
+                 cabecera en escritorio. Añadir, Amigos, Estadísticas y Más son los
+                 botones de siempre (mismos IDs, mismos listeners) traídos aquí.
+                 Va antes que los controles: con teclado se llega a ella primero. -->
+            <nav id="barra-app" class="barra-app" aria-label="Navegación principal">
+                <ul class="barra-lista">
+                    <li>
+                        <button id="nav-biblioteca" class="barra-item" type="button" aria-current="page">
+                            <span class="barra-ico-caja"><svg class="barra-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3.5" y="4" width="4.5" height="16" rx="1"/><rect x="9.5" y="7" width="4.5" height="13" rx="1"/><path d="M15.4 7.9l3.9-1.1 3.3 12.2-3.9 1.1z"/></svg></span>
+                            <span class="barra-texto">Biblioteca</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="toggle-friends-btn" class="barra-item" type="button">
+                            <span class="barra-ico-caja"><svg class="barra-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/><path d="M17.8 14.4c2.2.8 3.7 2.8 3.7 5.6"/></svg><span id="contador-solicitudes" class="barra-contador" aria-hidden="true" hidden></span></span>
+                            <span class="barra-texto">Amigos</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="add-book-btn" class="barra-item barra-anadir" type="button" aria-label="Añadir libro">
+                            <span class="barra-ico-caja"><svg class="barra-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14"/></svg></span>
+                            <span class="barra-texto">Añadir</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="stats-btn" class="barra-item" type="button">
+                            <span class="barra-ico-caja"><svg class="barra-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 20.5h17M7 17v-6M12 17V5.5M17 17V9"/></svg></span>
+                            <span class="barra-texto">Estadísticas</span>
+                        </button>
+                    </li>
+                    <li>
+                        <button id="menu-btn" class="barra-item" type="button">
+                            <span class="barra-ico-caja"><svg class="barra-ico barra-ico-relleno" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg></span>
+                            <span class="barra-texto">Más</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
             <div class="header-controls">
-                <button id="add-book-btn" type="button">Añadir Libro</button>
                 <details class="hmenu" id="menu-vistas">
                     <summary title="Cambiar la vista de la biblioteca" aria-label="Vistas">&#128444;&#65039;</summary>
                     <div class="hmenu-panel">
@@ -124,24 +161,21 @@
         </div>
     </header>
 
-    <!-- Menú lateral: acciones secundarias con etiqueta (entra por la izquierda) -->
+    <!-- Panel «Más» (pestaña de la barra): lo que no está en la barra. En
+         escritorio entra por la izquierda; en móvil ocupa la pantalla hasta la barra. -->
     <div id="menu-overlay" class="sidebar-overlay"></div>
     <!-- inert mientras está cerrado: fuera de la pantalla, pero sin él el
          tabulador recorría sus botones invisibles. Lo quita script.js al abrir. -->
-    <aside id="menu-sidebar" class="menu-sidebar" aria-label="Menú principal" inert>
+    <aside id="menu-sidebar" class="menu-sidebar" aria-label="Más" inert>
         <div class="sidebar-header">
-            <h3>☰ Menú</h3>
-            <button id="close-menu-btn" class="btn-icon" type="button" aria-label="Cerrar menú">✕</button>
+            <h3>Más</h3>
+            <button id="close-menu-btn" class="btn-icon" type="button" aria-label="Cerrar Más">✕</button>
         </div>
-        <nav class="menu-nav">
+        <nav class="menu-nav" aria-label="Más opciones">
             <div class="menu-group-label">Tu lectura</div>
-            <button id="stats-btn" class="menu-item" type="button"><span class="mi-ico">📊</span> Estadísticas</button>
             <button id="logros-btn" class="menu-item" type="button"><span class="mi-ico">🏅</span> Mis logros</button>
             <button id="objetivos-btn" class="menu-item" type="button"><span class="mi-ico">🎯</span> Objetivos de lectura</button>
             <button id="recommend-btn" class="menu-item" type="button"><span class="mi-ico">🦕</span> Recomiéndame un libro</button>
-
-            <div class="menu-group-label">Social</div>
-            <button id="toggle-friends-btn" class="menu-item" type="button"><span class="mi-ico">👥</span> Amigos</button>
             <a href="quiz.html" class="menu-item" title="Test: ¿cuál es tu tropo literario dominante?"><span class="mi-ico">🎭</span> Test del tropo literario</a>
 
             <div class="menu-group-label">Datos</div>
@@ -654,10 +688,11 @@
     <script type="module" src="./config.js"></script>
 
 
-    <!--Desplegable para el menú de amigos-->
+    <!-- Panel de amigos (pestaña de la barra). En escritorio entra por la
+         derecha; en móvil ocupa la pantalla hasta la barra. -->
     <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-    <aside id="friends-sidebar" class="friends-sidebar" inert>
+    <aside id="friends-sidebar" class="friends-sidebar" aria-label="Amigos" inert>
 
         <div class="sidebar-header">
             <div class="user-profile-summary">
