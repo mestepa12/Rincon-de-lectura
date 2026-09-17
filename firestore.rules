@@ -303,7 +303,7 @@ service cloud.firestore {
     }
 
     // =========================================================
-    // 5. USUARIOS (+ estructura antigua + amigos)
+    // 5. USUARIOS (+ sesiones y amigos)
     // =========================================================
     match /users/{userId} {
 
@@ -324,22 +324,7 @@ service cloud.firestore {
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(userFields())
                     && validUser(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
 
-      // === A. LIBROS ANTIGUOS (estructura legacy) ===
-      match /books/{bookId} {
-        allow read: if request.auth != null
-                    && (
-                        request.auth.uid == userId ||
-                        exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid))
-                      );
-
-        allow update, delete: if request.auth != null
-                              && request.auth.uid == userId;
-
-        allow create: if request.auth != null
-                      && request.auth.uid == userId;
-      }
-
-      // === A2. SESIONES DE LECTURA (privadas, solo el dueño) ===
+      // === A. SESIONES DE LECTURA (privadas, solo el dueño) ===
       match /sessions/{sessionId} {
         allow read, delete: if request.auth != null && request.auth.uid == userId;
 
