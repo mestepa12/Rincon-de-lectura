@@ -49,6 +49,7 @@ import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './p
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
 import { slugLibro, mismoLibro } from './libro-identidad.js';
 import { perfilCompleto } from './perfil.js';
+import { totalPaginasDeLibros, totalPaginasParaLogros } from './total-paginas.js';
 import { enviarEvento } from './analitica.js';
 
 
@@ -315,8 +316,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ahora solo se escribe si de verdad cambia, y para saberlo hacen
         // falta las dos piezas —los libros y el perfil—, que llegan sin orden
         // fijo: por eso lo llaman los dos listeners y actúa el que complete
-        // el par. Ojo: esto NO cambia cuándo corre el recálculo respecto a
-        // evaluarLogros(), que sigue exactamente donde estaba.
+        // el par. Por eso evaluarLogros() no se fía del total del perfil: si
+        // los libros llegan antes que el perfil, la escritura ni ha salido.
         let totalPaginasCalculado = null;   // lo que dicen los libros
         let totalPaginasEnServidor = null;  // lo último que sabemos de Firestore
         const sincronizarTotalPaginas = () => {
@@ -2644,7 +2645,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const viendoAmigo = viewingFriendLibrary; // de quién es booksData ahora
                 const desbloqueados = new Set(ud.logrosDesbloqueados || []);
                 const racha = ud.rachaActual || 0;
-                const totalPaginasLeidas = ud.totalPaginasLeidas || 0;
+                const totalPaginasLeidas = totalPaginasParaLogros(totalPaginasCalculado, ud.totalPaginasLeidas);
                 const nuevos = [];
 
                 // — Biblioteca —
@@ -4673,19 +4674,18 @@ document.addEventListener('DOMContentLoaded', () => {
             // sabe cuántos libros hay.
             if (!copiaRecordada) { copiaRecordada = true; recordarCopia(); }
             renderBooks();
-            evaluarLogros();
 
             // ── Migración automática ──────────────────────────────────────────
             // Recalcula totalPaginasLeidas cada vez que cambian los libros.
             // La escritura la decide sincronizarTotalPaginas(): solo sale si
             // el número difiere del que ya hay en Firestore (ver arriba).
-            totalPaginasCalculado = booksData.reduce((sum, b) => {
-                if (b.section === 'libros-terminados') return sum + (b.totalPages || 0);
-                return sum + (b.currentPage || 0);
-            }, 0);
+            // Va ANTES de evaluarLogros(): los logros de páginas leen
+            // totalPaginasCalculado y tienen que ver el de este snapshot.
+            totalPaginasCalculado = totalPaginasDeLibros(booksData);
             sincronizarTotalPaginas();
             // ─────────────────────────────────────────────────────────────────
 
+            evaluarLogros();
         }, (error) => {
             console.error("Error al recibir datos de Firebase: ", error);
         });
