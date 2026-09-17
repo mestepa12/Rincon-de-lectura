@@ -15,6 +15,7 @@ import { app, auth, db } from './firebase-init.js';
 // Carga diferida de Chart.js y html2canvas (solo al abrir stats / exportar)
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 import { exportarCanvas, descargarBlob } from './share-export.js';
+import { planDeAislamiento } from './captura-aislada.js';
 
 // iOS Safari mata en silencio el canvas de html2canvas cuando se queda sin
 // memoria; con bibliotecas grandes (decenas de portadas) el scale 2 sobre la
@@ -32,16 +33,29 @@ const ESCALA_CAPTURA = ES_IOS ? 1 : 2;
 async function renderTarjetaAislada(card) {
     const html2canvas = await loadHtml2canvas();
     const ocultados = [];
-    for (const el of Array.from(document.body.children)) {
-        if (el.contains(card)) continue; // conserva la tarjeta y sus ancestros
+    for (const { el, eraModal } of planDeAislamiento(Array.from(document.body.children), card)) {
         const ph = document.createComment('cap');
         el.replaceWith(ph);
-        ocultados.push([ph, el]);
+        ocultados.push([ph, el, eraModal]);
     }
     try {
         return await html2canvas(card, { scale: ESCALA_CAPTURA, useCORS: false, allowTaint: false, logging: false });
     } finally {
-        for (const [ph, el] of ocultados) ph.replaceWith(el);
+        // En el orden del body, que es el que rehace bien la pila del top
+        // layer: los diálogos que se apilan salen después en el HTML que
+        // aquel sobre el que se abren (ficha → editar/terminar), y los avisos
+        // de notify.js se añaden al final. Invertir esto dejaría debajo al
+        // que estaba encima.
+        for (const [ph, el, eraModal] of ocultados) {
+            ph.replaceWith(el);
+            // Desmontar un diálogo modal lo saca del top layer, pero le deja
+            // el atributo open: al devolverlo queda abierto como NO modal, sin
+            // verse, y el siguiente showModal() lanza InvalidStateError. Se
+            // vuelve a abrir como modal. removeAttribute en vez de close():
+            // close() dispara el evento 'close', que aquí soltaría el listener
+            // de comentarios de la ficha y cerraría el chat.
+            if (eraModal) { el.removeAttribute('open'); el.showModal(); }
+        }
     }
 }
 import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
