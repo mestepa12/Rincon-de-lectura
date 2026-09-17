@@ -1372,6 +1372,18 @@ body.dark-mode .consentimiento-boton { color: #1A202C; }
 }
 
 /* ======== LOGROS / ACHIEVEMENTS ======== */
+/* Estaba en línea en el HTML; aquí se puede adaptar a panel en móvil */
+#logros-modal {
+    max-width: 600px;
+    width: 95%;
+    max-height: 80vh;
+    overflow: hidden;
+    border-radius: 12px;
+    padding: 0;
+    border: 2px solid var(--border-color);
+    background: var(--card-bg-color);
+    color: var(--text-color);
+}
 .logros-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
@@ -3368,6 +3380,16 @@ body.dark-mode {
     border-radius: 8px;
 }
 
+/* Estaba en línea en el HTML; aquí se puede adaptar a panel en móvil */
+#decorar-modal {
+    max-width: 420px;
+    width: 92%;
+    border-radius: 12px;
+    padding: 0;
+    border: 2px solid var(--border-color);
+    background: var(--card-bg-color);
+    color: var(--text-color);
+}
 /* Selector de adorno: piezas sobre fondo de madera, su contexto real */
 .decorar-grid {
     display: grid;
@@ -3993,4 +4015,67 @@ body.dark-mode.con-barra { --barra-activo-fondo: rgba(96, 165, 250, 0.18); }
     .con-barra .menu-sidebar,
     .con-barra .friends-sidebar,
     .barra-ico-caja { transition: none; }
+}
+
+/* ======== PANELES DESDE ABAJO (biblioteca, móvil) ======== */
+/* Hasta 768 px los diálogos de trabajo suben desde el borde inferior, a todo
+   el ancho y con las esquinas de arriba redondeadas, como una hoja nativa.
+   Siguen siendo los mismos <dialog> con showModal(): foco, Escape y fondo no
+   cambian, y tapan la barra de navegación igual que antes. Se quedan
+   centrados los dos momentos de celebración (racha y «¡Última página!»).
+   En escritorio no cambia nada.
+
+   Los :not() con ID dan especificidad de dos IDs a propósito: tiene que
+   ganar a los tamaños que cada diálogo fija con su propio ID. */
+@media (max-width: 768px) {
+    .con-barra dialog:not(#racha-modal):not(#finish-book-modal) {
+        margin: auto 0 0;
+        width: 100%;
+        max-width: 100%;
+        /* Deja ver el fondo arriba: así se lee como panel y no como página */
+        max-height: calc(100svh - 2.5rem);
+        /* Borde inferior del color del panel con el alto de la barra de
+           inicio del iPhone: lo último del panel queda por encima sin tener
+           que tocar el relleno de cada diálogo. */
+        border-width: 1px 0 var(--barra-seguro);
+        border-bottom-color: var(--card-bg-color);
+        border-radius: 16px 16px 0 0;
+        box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
+        overscroll-behavior: contain;
+        animation: hoja-sube 0.34s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .con-barra dialog:not(#racha-modal):not(#finish-book-modal)::backdrop {
+        animation: hoja-fondo 0.34s ease;
+    }
+    /* El borde inferior ya deja el hueco del iPhone */
+    .con-barra dialog .modal-actions { padding-bottom: 0; }
+    /* Los que usaban el relleno general de 2rem, más ajustados a 360 px */
+    .con-barra #add-book-modal,
+    .con-barra #edit-book-modal,
+    .con-barra #papelera-modal { padding: 1.5rem 1.25rem; }
+
+    /* Al cerrar baja, donde el navegador sabe mantener el diálogo en su capa
+       mientras dura la salida (overlay). Donde no, se cierra en el acto. */
+    @supports (overlay: auto) {
+        .con-barra dialog:not(#racha-modal):not(#finish-book-modal) {
+            transform: translateY(100%);
+            transition: transform 0.26s cubic-bezier(0.32, 0.72, 0, 1),
+                overlay 0.26s allow-discrete, display 0.26s allow-discrete;
+        }
+        .con-barra dialog:not(#racha-modal):not(#finish-book-modal)[open] { transform: none; }
+        .con-barra dialog:not(#racha-modal):not(#finish-book-modal)::backdrop {
+            opacity: 0;
+            transition: opacity 0.26s ease, overlay 0.26s allow-discrete, display 0.26s allow-discrete;
+        }
+        .con-barra dialog:not(#racha-modal):not(#finish-book-modal)[open]::backdrop { opacity: 1; }
+    }
+}
+@keyframes hoja-sube { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes hoja-fondo { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+    .con-barra dialog:not(#racha-modal):not(#finish-book-modal),
+    .con-barra dialog:not(#racha-modal):not(#finish-book-modal)::backdrop {
+        animation: none;
+        transition: none;
+    }
 }
