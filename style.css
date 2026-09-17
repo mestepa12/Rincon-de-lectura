@@ -624,23 +624,93 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
     line-height: 1.4;
     color: var(--accent-color);
 }
+/* Reproductor minimizado de la sesión en curso (la antigua píldora). La
+   clase se mantiene: la usan las reglas que lo apartan del banner de
+   cookies. En móvil se coloca encima de la barra (BARRA DE NAVEGACIÓN). */
 .session-pill {
     position: fixed;
     bottom: 18px;
     right: 18px;
     z-index: 900;
-    border: none;
-    border-radius: 999px;
-    padding: 0.65rem 1.1rem;
-    background: var(--accent-color-interactive);
-    color: white;
-    font-weight: bold;
-    font-size: 0.95rem;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
-    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    width: min(22rem, calc(100vw - 2rem));
+    height: 3.5rem;
+    padding-right: 0.35rem;
+    background: var(--card-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
 }
-.session-pill:hover { filter: brightness(1.1); }
+.session-pill[hidden], .session-pill [hidden] { display: none; }
+.reproductor-abrir {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: 13px 0 0 13px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.reproductor-portada {
+    position: relative;
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2.875rem;
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--accent-color-interactive);
+    color: var(--card-bg-color);
+}
+.reproductor-portada-ico { width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.reproductor-portada img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.reproductor-textos { min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; line-height: 1.2; }
+.reproductor-titulo { font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.reproductor-estado { font-size: 0.78rem; color: var(--accessible-muted-color); font-variant-numeric: tabular-nums; }
+/* Punto que late: la sesión está corriendo */
+.reproductor-estado::before {
+    content: '';
+    display: inline-block;
+    width: 0.45rem;
+    height: 0.45rem;
+    margin-right: 0.35rem;
+    border-radius: 50%;
+    background: var(--accent-color-interactive);
+    vertical-align: 0.05em;
+    animation: reproductor-latido 1.6s ease-in-out infinite;
+}
+@keyframes reproductor-latido { 50% { opacity: 0.35; } }
+.reproductor-terminar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--accent-color-interactive);
+    color: var(--card-bg-color);
+    cursor: pointer;
+}
+.reproductor-terminar svg { width: 1.25rem; height: 1.25rem; fill: currentColor; }
+.reproductor-abrir:hover { background: var(--bg-color); }
+.reproductor-terminar:hover { filter: brightness(1.1); }
+.reproductor-abrir:focus-visible,
+.reproductor-terminar:focus-visible { outline: 3px solid var(--accent-color-interactive); outline-offset: -3px; }
+.reproductor-terminar:focus-visible { outline-color: var(--text-color); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    .reproductor-estado::before { animation: none; }
+}
 
 /* ======== RECOMENDADOR "¿QUÉ LEO AHORA?" ======== */
 #recommend-modal {
@@ -3800,8 +3870,33 @@ body.dark-mode {
     --barra-seguro: env(safe-area-inset-bottom, 0px);
     --barra-alto: 0px;
     --barra-activo-fondo: rgba(154, 59, 59, 0.12);
+    /* Lo que ocupa el reproductor de sesión cuando está a la vista */
+    --reproductor-alto: 0px;
+    padding-bottom: var(--reproductor-alto);
 }
 body.dark-mode.con-barra { --barra-activo-fondo: rgba(96, 165, 250, 0.18); }
+body.con-barra:has(> #session-pill:not([hidden])) { --reproductor-alto: 4.75rem; }
+/* Al tabular, el navegador desplaza lo justo para ver el elemento enfocado:
+   sin este margen, con el reproductor a la vista quedaba debajo de él o de
+   la barra. Va en la raíz, que es la que desplaza y no ve las variables del
+   body: las alturas se repiten aquí. */
+:root:has(> body.con-barra > #session-pill:not([hidden])) { scroll-padding-bottom: 5.75rem; }
+
+/* Lo que flota abajo se apila: barra (móvil), reproductor y, encima, los
+   avisos. Con el banner de cookies pendiente mandan sus huecos, más abajo. */
+.con-barra .push-banner { bottom: calc(var(--barra-alto) + var(--reproductor-alto) + 1rem); }
+.con-barra .logro-toast {
+    --toast-inferior: calc(var(--barra-alto) + var(--reproductor-alto) + 2rem);
+    bottom: var(--toast-inferior);
+    transform: translate(-50%, calc(100% + var(--toast-inferior) + 24px));
+}
+.con-barra .logro-toast.logro-toast-visible { transform: translate(-50%, 0); }
+:root:not(.consentimiento-pendiente):not(.consentimiento-abierto) .con-barra .marca-interna {
+    bottom: calc(var(--barra-alto) + var(--reproductor-alto) + 0.5rem);
+}
+.consentimiento-pendiente body.con-barra { padding-bottom: calc(7rem + var(--reproductor-alto)); }
+.consentimiento-pendiente .con-barra .push-banner { bottom: calc(7.5rem + var(--reproductor-alto)); }
+.consentimiento-pendiente .con-barra .logro-toast { --toast-inferior: calc(7.5rem + var(--reproductor-alto)); }
 
 .barra-lista { display: flex; margin: 0; padding: 0; list-style: none; }
 .barra-item {
@@ -3859,8 +3954,11 @@ body.dark-mode.con-barra { --barra-activo-fondo: rgba(96, 165, 250, 0.18); }
 @media (max-width: 768px) {
     .con-barra {
         --barra-alto: calc(3.5rem + var(--barra-seguro));
-        padding-bottom: var(--barra-alto);
+        padding-bottom: calc(var(--barra-alto) + var(--reproductor-alto));
     }
+    body.con-barra:has(> #session-pill:not([hidden])) { --reproductor-alto: 4rem; }
+    :root:has(> body.con-barra) { scroll-padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px)); }
+    :root:has(> body.con-barra > #session-pill:not([hidden])) { scroll-padding-bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px)); }
     .barra-app {
         position: fixed;
         left: 0;
@@ -3914,7 +4012,8 @@ body.dark-mode.con-barra { --barra-activo-fondo: rgba(96, 165, 250, 0.18); }
     .con-barra .menu-sidebar,
     .con-barra .friends-sidebar {
         top: 0;
-        bottom: var(--barra-alto);
+        /* Con una sesión en curso, el reproductor sigue a la vista debajo */
+        bottom: calc(var(--barra-alto) + var(--reproductor-alto));
         height: auto;
         width: 100%;
         max-width: none;
@@ -3937,30 +4036,26 @@ body.dark-mode.con-barra { --barra-activo-fondo: rgba(96, 165, 250, 0.18); }
     .con-barra .sidebar-content { padding-bottom: 1rem; }
     body.con-barra:has(.menu-sidebar.open, .friends-sidebar.open) { overflow: hidden; }
 
-    /* Lo que flota abajo, por encima de la barra */
-    .con-barra .push-banner { bottom: calc(var(--barra-alto) + 1rem); }
-    .con-barra .session-pill { bottom: calc(var(--barra-alto) + 12px); }
-    .con-barra .logro-toast {
-        --toast-inferior: calc(var(--barra-alto) + 2rem);
-        bottom: var(--toast-inferior);
-        transform: translate(-50%, calc(100% + var(--toast-inferior) + 24px));
-    }
-    .con-barra .logro-toast.logro-toast-visible { transform: translate(-50%, 0); }
-    :root:not(.consentimiento-pendiente):not(.consentimiento-abierto) .con-barra .marca-interna {
+    /* Reproductor de sesión: a todo el ancho, justo encima de la barra (el
+       resto de lo que flota se apila encima con --reproductor-alto) */
+    .con-barra .session-pill {
+        left: 0.5rem;
+        right: 0.5rem;
+        width: auto;
         bottom: calc(var(--barra-alto) + 0.5rem);
     }
 
-    /* Banner de cookies: encima de la barra, no encima de ella. Los huecos
-       que el banner reserva se suman al de la barra. */
+    /* Banner de cookies: encima de la barra, sin taparla. Los huecos que el
+       banner reserva se suman al de la barra y al del reproductor. */
     .consentimiento-pendiente .con-barra .consentimiento,
     .consentimiento-abierto .con-barra .consentimiento {
         bottom: var(--barra-alto);
         padding-bottom: 1rem;
     }
-    .consentimiento-pendiente body.con-barra { padding-bottom: calc(13rem + var(--barra-alto)); }
-    .consentimiento-pendiente .con-barra .push-banner,
+    .consentimiento-pendiente body.con-barra { padding-bottom: calc(13rem + var(--barra-alto) + var(--reproductor-alto)); }
     .consentimiento-pendiente .con-barra .session-pill { bottom: calc(13.5rem + var(--barra-alto)); }
-    .consentimiento-pendiente .con-barra .logro-toast { --toast-inferior: calc(13.5rem + var(--barra-alto)); }
+    .consentimiento-pendiente .con-barra .push-banner { bottom: calc(13.5rem + var(--barra-alto) + var(--reproductor-alto)); }
+    .consentimiento-pendiente .con-barra .logro-toast { --toast-inferior: calc(13.5rem + var(--barra-alto) + var(--reproductor-alto)); }
 }
 
 @media (min-width: 769px) {

@@ -436,7 +436,25 @@
         </div>
     </dialog>
 
-    <button type="button" id="session-pill" class="session-pill" style="display:none;" title="Sesión de lectura en curso">📖 00:00</button>
+    <!-- Reproductor minimizado de la sesión de lectura en curso: encima de la
+         barra en móvil, tarjeta abajo a la derecha en escritorio. Lo pinta y lo
+         oculta el cronómetro de script.js. Tocarlo abre el libro; ⏹ abre
+         directamente el formulario para terminar la sesión. -->
+    <div id="session-pill" class="session-pill" role="group" aria-label="Sesión de lectura en curso" hidden>
+        <button type="button" class="reproductor-abrir">
+            <span class="reproductor-portada">
+                <svg class="reproductor-portada-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5C6.5 4.5 9.5 4.5 12 6c2.5-1.5 5.5-1.5 8-.5v13c-2.5-1-5.5-1-8 .5-2.5-1.5-5.5-1.5-8-.5z"/><path d="M12 6v13.5"/></svg>
+                <img id="reproductor-portada" alt="" width="32" height="46" hidden>
+            </span>
+            <span class="reproductor-textos">
+                <span id="reproductor-titulo" class="reproductor-titulo">Sesión de lectura</span>
+                <span class="reproductor-estado">Leyendo · <span id="reproductor-tiempo" class="reproductor-tiempo">00:00</span></span>
+            </span>
+        </button>
+        <button type="button" id="reproductor-terminar" class="reproductor-terminar" aria-label="Terminar sesión">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+        </button>
+    </div>
 
     <dialog id="recommend-modal">
         <div class="recommend-header">

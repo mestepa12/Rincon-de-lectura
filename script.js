@@ -1775,10 +1775,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const tapado = amigos || mas;
             [document.getElementById('main-content'), document.querySelector('.header-controls'),
                 document.querySelector('.header-search'), document.querySelector('.main-footer'),
-                document.getElementById('session-pill'), document.getElementById('btn-volver-casa')]
+                document.getElementById('btn-volver-casa')]
                 .forEach((el) => { if (el) el.inert = tapado; });
-            const barra = document.getElementById('barra-app');
-            if (barra) barra.inert = tapado && !barraMovil.matches;
+            // La barra y el reproductor de sesión quedan a la vista bajo los
+            // paneles en móvil; en escritorio los tapa el cajón.
+            const tapaAbajo = tapado && !barraMovil.matches;
+            ['barra-app', 'session-pill'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.inert = tapaAbajo;
+            });
         };
         barraMovil.addEventListener('change', reflejarPanelAbierto);
 
@@ -3530,12 +3535,42 @@ document.addEventListener('DOMContentLoaded', () => {
             return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
         };
 
+        // Reproductor minimizado (#session-pill): título y portada del libro
+        // de la sesión y el tiempo. El libro se busca en cada tic porque al
+        // retomar una sesión de otra visita los libros aún no han llegado; la
+        // portada y el título solo se tocan si cambian. Viendo la biblioteca
+        // de un amigo el libro no está en booksData: se deja lo último pintado
+        // y se esconde ⏹, que no tendría ficha que abrir.
+        const reproductorTitulo = document.getElementById('reproductor-titulo');
+        const reproductorTiempo = document.getElementById('reproductor-tiempo');
+        const reproductorPortada = document.getElementById('reproductor-portada');
+        const reproductorTerminar = document.getElementById('reproductor-terminar');
+        let reproductorPintado = '';
+        if (reproductorPortada) reproductorPortada.onerror = () => { reproductorPortada.hidden = true; };
+        const pintarReproductor = (s, elapsed) => {
+            if (reproductorTiempo) reproductorTiempo.textContent = elapsed;
+            const book = booksData.find(b => b.id === s.bookId);
+            if (reproductorTerminar) reproductorTerminar.hidden = !book;
+            if (book && reproductorTitulo && reproductorPortada) {
+                const clave = `${book.id}|${book.title}|${book.cover || ''}`;
+                if (clave !== reproductorPintado) {
+                    reproductorPintado = clave;
+                    reproductorTitulo.textContent = book.title;
+                    const portada = String(book.cover || '').trim();
+                    const valida = /^(https?:\/\/|data:image\/)/i.test(portada);
+                    reproductorPortada.hidden = !valida;
+                    if (valida) reproductorPortada.src = portada;
+                    else reproductorPortada.removeAttribute('src');
+                }
+            }
+            sessionPill.hidden = false;
+        };
+
         const tickSession = () => {
             const s = getActiveSession();
             if (!s) { stopSessionTicker(); return; }
             const elapsed = fmtDuracion(Date.now() - s.startAt);
-            sessionPill.textContent = `📖 ${elapsed}`;
-            sessionPill.style.display = '';
+            pintarReproductor(s, elapsed);
             // Si el modal abierto es el del libro de la sesión, refrescar botón
             if (bookDetailModal.open && bookDetailModal.dataset.bookId === s.bookId) {
                 sessionToggleBtn.textContent = `⏹ Terminar sesión · ${elapsed}`;
@@ -3549,7 +3584,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         const stopSessionTicker = () => {
             if (sessionTickId) { clearInterval(sessionTickId); sessionTickId = null; }
-            sessionPill.style.display = 'none';
+            sessionPill.hidden = true;
         };
 
         // Estado de la sección de sesión dentro del modal de detalle
@@ -3713,6 +3748,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sessionPill) sessionPill.addEventListener('click', () => {
             const s = getActiveSession();
             if (s && booksData.some(b => b.id === s.bookId)) openDetailModal(s.bookId);
+        });
+        // ⏹ del reproductor: la ficha del libro con el formulario de terminar
+        // ya abierto (antes: abrir la ficha y pulsar «Terminar sesión»).
+        if (reproductorTerminar) reproductorTerminar.addEventListener('click', (e) => {
+            e.stopPropagation(); // si no, el clic del reproductor abriría la ficha otra vez
+            const s = getActiveSession();
+            const book = s && booksData.find(b => b.id === s.bookId);
+            if (!book) return;
+            openDetailModal(book.id);
+            endSessionPrompt(book);
         });
 
         // Si quedó una sesión activa de una visita anterior, retomar el contador
