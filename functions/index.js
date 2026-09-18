@@ -63,23 +63,103 @@ function asString(v, maxLen = 100) {
 }
 
 /**
- * Devuelve los tokens FCM registrados en un documento de usuario.
- * Acepta tanto el array `fcmTokens` como el campo simple `fcmToken`.
- * Valida tipo y longitud de cada token y acota a 500 (límite multicast).
- * @param {object} userData Datos del documento del usuario.
- * @return {string[]} Lista de tokens (puede estar vacía).
+ * Filtra una lista de tokens FCM leída de Firestore: solo strings no vacíos
+ * de menos de 4096 caracteres.
+ * @param {*} lista Valor de origen (no confiable: lo escribe el cliente).
+ * @return {string[]} Tokens válidos (puede estar vacía).
  */
-function getUserTokens(userData) {
-  if (!userData || typeof userData !== "object") return [];
-  let tokens = [];
-  if (Array.isArray(userData.fcmTokens)) {
-    tokens = userData.fcmTokens;
-  } else if (userData.fcmToken) {
-    tokens = [userData.fcmToken];
+function tokensValidos(lista) {
+  if (!Array.isArray(lista)) return [];
+  return lista.filter((t) =>
+    typeof t === "string" && t.length > 0 && t.length < 4096);
+}
+
+/**
+ * Documento privado con los tokens FCM de una usuaria. Solo lo lee su
+ * dueña (firestore.rules); el perfil lo puede leer cualquier registrada.
+ * @param {string} uid UID de la usuaria.
+ * @return {object} DocumentReference de users/{uid}/privado/notificaciones.
+ */
+function refNotificaciones(uid) {
+  return db.collection("users").doc(uid)
+      .collection("privado").doc("notificaciones");
+}
+
+/**
+ * TRANSICIÓN: tokens que aún queden en el perfil, en `fcmTokens` o en el
+ * antiguo `fcmToken`. Los mueve scripts/migrar-tokens-fcm.mjs; cuando su
+ * recuento dé 0, esto se quita.
+ * @param {object} perfil Datos de users/{uid}.
+ * @return {string[]} Tokens válidos (puede estar vacía).
+ */
+function tokensDelPerfil(perfil) {
+  if (!perfil || typeof perfil !== "object") return [];
+  return tokensValidos([
+    ...(Array.isArray(perfil.fcmTokens) ? perfil.fcmTokens : []),
+    ...(perfil.fcmToken ? [perfil.fcmToken] : []),
+  ]);
+}
+
+/**
+ * Tokens FCM de una usuaria: los de su documento privado y, durante la
+ * transición, los que aún queden en su perfil. Sin repetidos y como mucho
+ * 500 (límite de un envío multicast).
+ * @param {string} uid UID de la usuaria.
+ * @param {object} perfil Datos de users/{uid} (TRANSICIÓN).
+ * @return {Promise<{todos: string[], privados: string[]}>} Todos, y cuáles
+ *   de ellos están en el documento privado.
+ */
+async function tokensDe(uid, perfil) {
+  const snap = await refNotificaciones(uid).get();
+  const privados = tokensValidos(snap.exists ? snap.data().tokens : []);
+  const todos = [...new Set([...privados, ...tokensDelPerfil(perfil)])];
+  return {todos: todos.slice(0, 500), privados};
+}
+
+/**
+ * Quita tokens inválidos de donde estén: del documento privado y, durante
+ * la transición, de los campos antiguos del perfil. Los campos antiguos
+ * solo se tocan si el perfil los tiene: un arrayRemove sobre un campo que
+ * no existe lo crearía vacío.
+ * @param {string} uid UID de la usuaria.
+ * @param {string[]} invalidos Tokens que FCM ha rechazado.
+ * @param {string[]} privados Tokens que había en el documento privado.
+ * @param {object} perfil Datos de users/{uid} (TRANSICIÓN).
+ * @return {Promise<void>}
+ */
+async function quitarTokens(uid, invalidos, privados, perfil) {
+  const batch = db.batch();
+  const enPrivado = invalidos.filter((t) => privados.includes(t));
+  if (enPrivado.length > 0) {
+    batch.update(refNotificaciones(uid), {
+      tokens: FieldValue.arrayRemove(...enPrivado),
+    });
   }
-  return tokens
-      .filter((t) => typeof t === "string" && t.length > 0 && t.length < 4096)
-      .slice(0, 500);
+
+  const enPerfil = {};
+  if (Array.isArray(perfil?.fcmTokens) &&
+      invalidos.some((t) => perfil.fcmTokens.includes(t))) {
+    enPerfil.fcmTokens = FieldValue.arrayRemove(...invalidos);
+  }
+  if (invalidos.includes(perfil?.fcmToken)) {
+    enPerfil.fcmToken = FieldValue.delete();
+  }
+  if (Object.keys(enPerfil).length > 0) {
+    batch.update(db.collection("users").doc(uid), enPerfil);
+  }
+
+  await batch.commit();
+}
+
+/**
+ * Lee el perfil de una usuaria.
+ * @param {string} uid UID de la usuaria.
+ * @return {Promise<object|null>} Sus datos, o null si no existe.
+ */
+async function leerPerfil(uid) {
+  if (!uid) return null;
+  const snap = await db.collection("users").doc(uid).get();
+  return snap.exists ? snap.data() || {} : null;
 }
 
 /**
@@ -130,15 +210,17 @@ async function simularEnvio(uid, message) {
  * Envía una notificación push a todos los tokens de un usuario y
  * elimina de Firestore los tokens que ya no son válidos.
  * @param {string} uid UID del usuario destinatario.
- * @param {string[]} tokens Tokens FCM del usuario.
+ * @param {object} perfil Datos de users/{uid}; hacen falta mientras dure
+ *   la transición, porque aún puede haber tokens en el perfil.
  * @param {string} title Título de la notificación.
  * @param {string} body Cuerpo de la notificación.
  * @param {string} url Ruta a abrir al pulsar la notificación (deep link).
- * @return {Promise<void>}
+ * @return {Promise<boolean>} false si no tenía ningún token.
  */
-async function sendPushToUser(uid, tokens, title, body,
+async function sendPushToUser(uid, perfil, title, body,
     url = "/biblioteca.html") {
-  if (tokens.length === 0) return;
+  const {todos: tokens, privados} = await tokensDe(uid, perfil);
+  if (tokens.length === 0) return false;
 
   // Payload híbrido: `notification` es imprescindible para iOS (Safari no
   // entrega push solo-data a PWAs); el SDK del SW lo auto-muestra. `data`
@@ -172,14 +254,13 @@ async function sendPushToUser(uid, tokens, title, body,
   });
 
   if (invalidTokens.length > 0) {
-    await db.collection("users").doc(uid).update({
-      fcmTokens: FieldValue.arrayRemove(...invalidTokens),
-    });
+    await quitarTokens(uid, invalidTokens, privados, perfil);
     logger.info("Tokens FCM inválidos eliminados", {
       uid,
       count: invalidTokens.length,
     });
   }
+  return true;
 }
 
 /**
@@ -337,16 +418,14 @@ exports.onReadingGoalMet = onDocumentUpdated("users/{uid}", async (event) => {
   if (!justMet) return null;
 
   const uid = event.params.uid;
-  const tokens = getUserTokens(after);
-  if (tokens.length === 0) return null;
-
-  await sendPushToUser(
+  const enviada = await sendPushToUser(
       uid,
-      tokens,
+      after,
       "🎯 ¡Objetivo cumplido!",
       `¡Enhorabuena! Has leído ${afterPages} páginas hoy y has alcanzado ` +
       `tu objetivo diario de ${objetivo}. ¡Págino está orgulloso de ti!`,
   );
+  if (!enviada) return null;
 
   logger.info("Notificación de objetivo cumplido enviada", {
     uid,
@@ -427,28 +506,23 @@ exports.checkStreakAtRisk = onSchedule(
           // Sin fecha o ya ha leído hoy: racha a salvo.
           if (days === null || days === 0) return;
 
-          const tokens = getUserTokens(userData);
-          if (tokens.length === 0) return;
-
           const racha = asNumber(userData.rachaActual);
-          if (days === 1) {
+          const enviada = days === 1 ?
             await sendPushToUser(
                 docSnap.id,
-                tokens,
+                userData,
                 "🧊 Tu racha se ha congelado",
                 `Tu racha de ${racha} días aguanta congelada, pero mañana ` +
                 "es el último día para salvarla. ¡Unas páginas y listo!",
-            );
-          } else {
+            ) :
             await sendPushToUser(
                 docSnap.id,
-                tokens,
+                userData,
                 "🔥 ¡Última oportunidad para tu racha!",
                 `Llevas ${days} días sin leer y tu racha de ${racha} días ` +
                 "se reinicia esta medianoche. ¡Sálvala con unas páginas!",
             );
-          }
-          notified++;
+          if (enviada) notified++;
         } catch (error) {
           logger.error("Error procesando usuario en checkStreakAtRisk", {
             uid: docSnap.id,
@@ -524,19 +598,18 @@ exports.onBookFinished = onDocumentUpdated("books/{bookId}", async (event) => {
   const uid = asString(after.userId, 128);
   if (!uid) return null;
 
-  const userSnap = await db.collection("users").doc(uid).get();
-  if (!userSnap.exists) return null;
-  const tokens = getUserTokens(userSnap.data() || {});
-  if (tokens.length === 0) return null;
+  const perfil = await leerPerfil(uid);
+  if (!perfil) return null;
 
   const title = asString(after.title, 80) || "tu libro";
-  await sendPushToUser(
+  const enviada = await sendPushToUser(
       uid,
-      tokens,
+      perfil,
       "🎉 ¡Libro terminado!",
       `Has acabado "${title}". Págino está dando saltos de alegría. ` +
       "Entra y ponle nota mientras lo tienes fresco.",
   );
+  if (!enviada) return null;
 
   logger.info("Notificación de libro terminado enviada", {uid});
   return null;
@@ -554,18 +627,17 @@ exports.onFriendRequestCreated = onDocumentCreated(
       const uid = event.params.uid;
       if (uid === event.params.requesterId) return null;
 
-      const userSnap = await db.collection("users").doc(uid).get();
-      if (!userSnap.exists) return null;
-      const tokens = getUserTokens(userSnap.data() || {});
-      if (tokens.length === 0) return null;
+      const perfil = await leerPerfil(uid);
+      if (!perfil) return null;
 
       const fromName = asString(req.fromUsername, 30) || "Alguien";
-      await sendPushToUser(
+      const enviada = await sendPushToUser(
           uid,
-          tokens,
+          perfil,
           "🤝 Nueva solicitud de amistad",
           `@${fromName} quiere ser tu amigo. ¡Échale un ojo a su biblioteca!`,
       );
+      if (!enviada) return null;
 
       logger.info("Notificación de solicitud de amistad enviada", {uid});
       return null;
@@ -579,18 +651,6 @@ exports.onFriendRequestCreated = onDocumentCreated(
  */
 function asMap(v) {
   return (v && typeof v === "object" && !Array.isArray(v)) ? v : {};
-}
-
-/**
- * Devuelve los tokens FCM de un usuario leyendo su documento.
- * @param {string} uid UID del usuario.
- * @return {Promise<string[]>} Tokens (vacío si no hay usuario/tokens).
- */
-async function fetchTokens(uid) {
-  if (!uid) return [];
-  const snap = await db.collection("users").doc(uid).get();
-  if (!snap.exists) return [];
-  return getUserTokens(snap.data() || {});
 }
 
 /**
@@ -608,20 +668,21 @@ exports.onBuddyReadCreated = onDocumentCreated(
       const invited = participants.find((p) => p !== creator);
       if (!creator || !invited) return null;
 
-      const tokens = await fetchTokens(invited);
-      if (tokens.length === 0) return null;
+      const perfil = await leerPerfil(invited);
+      if (!perfil) return null;
 
       const usernames = asMap(br.usernames);
       const creatorName = asString(usernames[creator], 30) || "un amigo";
       const title = asString(br.title, 80) || "un libro";
 
-      await sendPushToUser(
+      const enviada = await sendPushToUser(
           invited,
-          tokens,
+          perfil,
           "🤝 ¡Reto de lectura!",
           `@${creatorName} te propone leer "${title}" a la vez. ` +
           "Veréis el progreso del otro. ¿Aceptas?",
       );
+      if (!enviada) return null;
 
       logger.info("Notificación de lectura compartida enviada", {invited});
       return null;
@@ -666,11 +727,11 @@ exports.onBuddyReadUpdated = onDocumentUpdated(
 
         if (justFinished) {
           sends.push((async () => {
-            const tokens = await fetchTokens(other);
-            if (tokens.length === 0) return;
+            const perfil = await leerPerfil(other);
+            if (!perfil) return;
             await sendPushToUser(
                 other,
-                tokens,
+                perfil,
                 `🏁 @${pName} ha terminado "${title}"`,
                 "¡No te quedes atrás! Unas páginas hoy y cruzas " +
                 "tú también la meta.",
@@ -678,11 +739,11 @@ exports.onBuddyReadUpdated = onDocumentUpdated(
           })());
         } else if (overtook) {
           sends.push((async () => {
-            const tokens = await fetchTokens(other);
-            if (tokens.length === 0) return;
+            const perfil = await leerPerfil(other);
+            if (!perfil) return;
             await sendPushToUser(
                 other,
-                tokens,
+                perfil,
                 `👀 @${pName} te ha adelantado`,
                 `Va por la página ${asNumber(progAfter[p])} de "${title}". ` +
                 "¿Unas paginitas para recuperar el liderato?",
@@ -718,22 +779,20 @@ exports.onNewChatMessage = onDocumentCreated(
       ]);
       if (!toSnap.exists) return null;
 
-      const tokens = getUserTokens(toSnap.data() || {});
-      if (tokens.length === 0) return null;
-
       const senderName =
           asString((fromSnap.data() || {}).username, 30) || "un amigo";
       const body = msg.type === "book" ?
           "Te ha enviado un libro 📖" :
           (asString(msg.text, 120) || "Nuevo mensaje");
 
-      await sendPushToUser(
+      const enviada = await sendPushToUser(
           to,
-          tokens,
+          toSnap.data() || {},
           `💬 Nuevo mensaje de @${senderName}`,
           body,
           `/biblioteca.html?chat=${encodeURIComponent(from)}`,
       );
+      if (!enviada) return null;
 
       logger.info("Notificación de chat enviada", {to, from});
       return null;

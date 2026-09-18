@@ -16,7 +16,8 @@ after(async () => {
 test('con el emulador, getMessaging() no se llega a llamar y el envío se simula', async () => {
   const ana = 'ana-con-emulador';
   const bea = 'bea-con-emulador';
-  await adminDb.doc(`users/${ana}`).set({ uid: ana, username: 'AnaCon', fcmTokens: ['token-falso-1'] });
+  await adminDb.doc(`users/${ana}`).set({ uid: ana, username: 'AnaCon' });
+  await adminDb.doc(`users/${ana}/privado/notificaciones`).set({ tokens: ['token-falso-1'] });
   await adminDb.doc(`users/${bea}`).set({ uid: bea, username: 'BeaCon' });
 
   await funciones.onNewChatMessage.run(evento(
