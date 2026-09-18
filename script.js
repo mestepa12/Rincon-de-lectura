@@ -1,5 +1,5 @@
 import { notify, confirmDialog, promptDialog, confirmEscritoDialog, palabraConfirmacion } from './notify.js';
-import { googleBooksApiKey, fcmVapidKey } from './config.js';
+import { googleBooksApiKey, fcmVapidKey, urlProxyLibros } from './config.js';
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
 // firebase/messaging arrastra consigo @firebase/installations: entre los dos,
@@ -438,9 +438,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Escalera ante 503/429 sostenidos: Google limita por IP y las
             // redes móviles (CGNAT) la comparten entre miles de usuarios, así
             // que el 2º intento va por nuestra Cloud Function (IP de Google
-            // Cloud + caché CDN). URL absoluta: en la app Android (Capacitor)
-            // el origen no es el hosting y una ruta relativa no llegaría.
-            const proxy = `https://mi-rincon-de-lectura.web.app/api/buscar-libros?q=${query}`;
+            // Cloud + caché CDN). Ver urlProxyLibros en config.js.
+            const proxy = `${urlProxyLibros}?q=${query}`;
             const urls = [
                 `${base}&country=ES&printType=books${conKey}`,
                 proxy,

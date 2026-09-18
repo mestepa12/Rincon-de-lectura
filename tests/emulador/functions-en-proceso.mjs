@@ -10,6 +10,8 @@
 //
 // Importar después de entorno.mjs: ese fija los hosts del emulador, y el
 // Firestore de functions/index.js los usa igual que el Admin de las pruebas.
+import assert from 'node:assert/strict';
+import { EventEmitter } from 'node:events';
 import Module, { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 import { PROYECTO } from './entorno.mjs';
@@ -65,6 +67,42 @@ export function cargarFunctions({ emulador }) {
  * @return {object}
  */
 export const evento = (datos, params) => ({ data: { data: () => datos }, params });
+
+/**
+ * Llama a buscarLibros con un fetch falso y devuelve la URL que habría
+ * pedido a Google Books. No sale nada a la red.
+ * @param {object} funciones Módulo cargado con cargarFunctions().
+ * @param {string} q Texto de búsqueda (distinto en cada prueba: la función
+ *   guarda una caché en Firestore y, si acierta, no llama a fetch).
+ * @return {Promise<string>} URL pedida.
+ */
+export async function urlDeBusqueda(funciones, q) {
+  const pedidas = [];
+  const fetchOriginal = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    pedidas.push(String(url));
+    return { ok: true, status: 200, json: async () => ({ items: [] }) };
+  };
+  // onRequest no expone .run: se llama al handler exportado, que va envuelto
+  // en el middleware de cors. Esto es lo mínimo que ese middleware usa.
+  const cabeceras = {};
+  const res = Object.assign(new EventEmitter(), {
+    setHeader(k, v) { cabeceras[k.toLowerCase()] = v; },
+    getHeader(k) { return cabeceras[k.toLowerCase()]; },
+    status() { return this; },
+    set() { return this; },
+    json() { this.emit('finish'); return this; },
+    send() { this.emit('finish'); return this; },
+  });
+  const req = { method: 'GET', headers: {}, get: () => undefined, query: { q }, ip: '203.0.113.7' };
+  try {
+    await funciones.buscarLibros(req, res);
+  } finally {
+    globalThis.fetch = fetchOriginal;
+  }
+  assert.equal(pedidas.length, 1, 'buscarLibros tenía que pedir una vez a Google Books');
+  return pedidas[0];
+}
 
 /** Cierra la app por defecto que abre functions/index.js. */
 export async function cerrarFunctions() {

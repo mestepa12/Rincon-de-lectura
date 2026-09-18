@@ -11,16 +11,27 @@ const {initializeApp} = require("firebase-admin/app");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const {getMessaging} = require("firebase-admin/messaging");
 
+// El emulador de Functions arranca con el ID de producción (ver
+// scripts/dev-emuladores.mjs) y con las credenciales de `firebase login`, así
+// que todo lo que no esté emulado sale a producción. FUNCTIONS_EMULATOR solo
+// la define el emulador; en Cloud Functions y al desplegar no existe.
+const EN_EMULADOR = process.env.FUNCTIONS_EMULATOR === "true";
+
+// Sin el emulador de Firestore delante (p. ej. `firebase emulators:start
+// --only functions`), el Admin SDK leería y escribiría en el Firestore de
+// producción. Mejor no arrancar.
+if (EN_EMULADOR && !process.env.FIRESTORE_EMULATOR_HOST) {
+  throw new Error(
+      "Emulador de Functions sin el de Firestore: se usaría el Firestore " +
+      "de producción. Arranca los emuladores con `npm run dev:emu`.");
+}
+
 initializeApp();
 const db = getFirestore();
 
-// FCM no tiene emulador, y el de Functions arranca con el ID de producción
-// (ver scripts/dev-emuladores.mjs): un envío de verdad saldría al FCM real
-// con las credenciales de `firebase login` y llegaría a cualquier
-// dispositivo cuyo token estuviera en los datos del emulador. En el emulador
-// no se envía nada (ver simularEnvio). FUNCTIONS_EMULATOR solo la define el
-// emulador; en Cloud Functions no existe.
-const EN_EMULADOR = process.env.FUNCTIONS_EMULATOR === "true";
+// FCM no tiene emulador: un envío de verdad saldría al FCM real y llegaría a
+// cualquier dispositivo cuyo token estuviera en los datos del emulador. En el
+// emulador no se envía nada (ver simularEnvio).
 const messaging = EN_EMULADOR ? null : getMessaging();
 
 // En el emulador, los tokens con este prefijo fallan como un token dado de
@@ -234,7 +245,10 @@ exports.buscarLibros = onRequest(
         logger.warn("Caché de búsquedas no disponible", {error: error.message});
       }
 
-      const key = process.env.GOOGLE_BOOKS_API_KEY || "";
+      // En el emulador, sin key: el emulador carga functions/.env, que
+      // tiene la de producción, y gastaría su cuota en pruebas locales. Sin
+      // key, Google limita por IP, que en local basta.
+      const key = EN_EMULADOR ? "" : process.env.GOOGLE_BOOKS_API_KEY || "";
       const url = "https://www.googleapis.com/books/v1/volumes?q=" +
           encodeURIComponent(q) + "&maxResults=5&country=ES&printType=books" +
           `&quotaUser=${quotaUser}` + (key ? `&key=${key}` : "");

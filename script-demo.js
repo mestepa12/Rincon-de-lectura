@@ -1,5 +1,5 @@
 import { notify } from './notify.js';
-import { googleBooksApiKey } from './config.js';
+import { googleBooksApiKey, urlProxyLibros } from './config.js';
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 import { exportarCanvas } from './share-export.js';
 
@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (res.status !== 403) await new Promise(r => setTimeout(r, 1200));
                 // Proxy por Cloud Function: IP de Google Cloud + caché CDN,
                 // esquiva el rate limit por IP que sufren las redes móviles
-                res = await fetch(`https://mi-rincon-de-lectura.web.app/api/buscar-libros?q=${encodeURIComponent(titulo)}`);
+                res = await fetch(`${urlProxyLibros}?q=${encodeURIComponent(titulo)}`);
             }
             const data = await res.json();
             return data.items || [];

@@ -74,6 +74,22 @@ tokens, título y URL) y lo sacan en el log como `[FCM simulado]`. Los
 tokens que empiezan por `invalido-` fallan como un token dado de baja, para
 poder probar su limpieza. Ver `simularEnvio` en `functions/index.js`.
 
+### Búsqueda de libros
+
+Con `dev:emu`, el proxy de búsqueda (`urlProxyLibros` en `config.js`)
+apunta al emulador de Functions y no a producción, que guardaría cada
+búsqueda en la caché del Firestore real. En el emulador, `buscarLibros` no
+usa la key de Google Books: la de `functions/.env` es la de producción.
+Google limita las llamadas sin key por IP, que en local basta.
+
+### Functions sin Firestore
+
+Si el emulador de Functions arranca sin el de Firestore (`firebase
+emulators:start --only functions`, `firebase functions:shell`),
+`functions/index.js` se niega a cargar, porque el Admin SDK usaría el
+Firestore de producción. `npm run serve` dentro de `functions/` llama a
+`dev:emu`.
+
 ### Pruebas contra los emuladores
 
 ```bash
