@@ -5,8 +5,9 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { adminDb, cerrarAdmin } from './entorno.mjs';
-import { cargarFunctions, evento, cerrarFunctions } from './functions-en-proceso.mjs';
+import { cargarFunctions, evento, urlDeBusqueda, cerrarFunctions } from './functions-en-proceso.mjs';
 
+process.env.GOOGLE_BOOKS_API_KEY = 'clave-de-produccion-falsa';
 const { funciones, fcm, messagingRealCargado } = cargarFunctions({ emulador: false });
 
 after(async () => {
@@ -31,4 +32,9 @@ test('sin el emulador, el envío va a FCM y no se simula', async () => {
 
   const simulados = await adminDb.collection('_pushSimulados').where('uid', '==', ana).get();
   assert.equal(simulados.size, 0);
+});
+
+test('sin el emulador, buscarLibros usa la key', async () => {
+  const url = await urlDeBusqueda(funciones, 'busqueda sin emulador');
+  assert.match(url, /&key=clave-de-produccion-falsa$/);
 });
