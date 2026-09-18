@@ -64,6 +64,27 @@ a ejecutarse. `npm run emu:exportar` de vez en cuando cubre eso. Ojo: un
 `emulators:export --force` interrumpido borra el directorio destino antes
 de escribir, así que puede dejarte sin nada.
 
+### Notificaciones push
+
+FCM no tiene emulador, y el de Functions arranca con el ID de producción:
+un envío de verdad saldría al FCM real con tus credenciales de
+`firebase login`. Por eso, en el emulador las Functions **no envían
+nada**. Apuntan cada envío en la colección `_pushSimulados` (uid, número de
+tokens, título y URL) y lo sacan en el log como `[FCM simulado]`. Los
+tokens que empiezan por `invalido-` fallan como un token dado de baja, para
+poder probar su limpieza. Ver `simularEnvio` en `functions/index.js`.
+
+### Pruebas contra los emuladores
+
+```bash
+npm run test:emu
+```
+
+Arranca Auth, Firestore y Functions en limpio (sin tocar `.emuladores/`),
+corre `tests/emulador/` y los apaga. No se puede lanzar con `dev:emu`
+abierto, porque los puertos están ocupados. Va aparte de `npm test`, que
+no necesita emuladores.
+
 ### Cómo sé que no estoy tocando lo real
 
 Hacen falta **tres** condiciones a la vez para que el cliente hable con los
