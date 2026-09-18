@@ -1,0 +1,17 @@
+# Finales de línea que no pueden depender de core.autocrlf.
+#
+# Git for Windows trae core.autocrlf=true en su configuración de sistema:
+# cualquier checkout reescribe los ficheros de texto con CRLF. Para casi todo
+# el repo da igual; para estas rutas no. En el repositorio ya están en LF,
+# así que esto solo cambia lo que se escribe en disco al hacer checkout.
+
+# Functions: el eslint de functions/ (config google, linebreak-style: unix)
+# da un error por línea con CRLF, y el predeploy de firebase.json corre ese
+# lint, así que el despliegue se cortaría.
+functions/**/*.js text eol=lf
+
+# Wrapper de Gradle de la app Android: el script de shell no arranca con
+# CRLF ("bad interpreter") y el .bat es para cmd.exe. Es lo mismo que pone el
+# .gitattributes que genera Gradle.
+android/gradlew text eol=lf
+android/**/*.bat text eol=crlf
