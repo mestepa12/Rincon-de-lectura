@@ -13,7 +13,19 @@ const {getMessaging} = require("firebase-admin/messaging");
 
 initializeApp();
 const db = getFirestore();
-const messaging = getMessaging();
+
+// FCM no tiene emulador, y el de Functions arranca con el ID de producción
+// (ver scripts/dev-emuladores.mjs): un envío de verdad saldría al FCM real
+// con las credenciales de `firebase login` y llegaría a cualquier
+// dispositivo cuyo token estuviera en los datos del emulador. En el emulador
+// no se envía nada (ver simularEnvio). FUNCTIONS_EMULATOR solo la define el
+// emulador; en Cloud Functions no existe.
+const EN_EMULADOR = process.env.FUNCTIONS_EMULATOR === "true";
+const messaging = EN_EMULADOR ? null : getMessaging();
+
+// En el emulador, los tokens con este prefijo fallan como un token dado de
+// baja, para poder probar que se limpian.
+const PREFIJO_TOKEN_INVALIDO = "invalido-";
 
 // For cost control, limit the maximum number of containers that can be
 // running at the same time.
@@ -71,6 +83,50 @@ function getUserTokens(userData) {
 }
 
 /**
+ * Sustituto de FCM en el emulador: no envía nada. Apunta el envío en la
+ * colección `_pushSimulados` (uid, número de tokens, título y URL; ni un
+ * token ni el cuerpo, que puede llevar el texto de un mensaje de chat) y
+ * responde con la misma forma que sendEachForMulticast.
+ * @param {string} uid UID del usuario destinatario.
+ * @param {object} message Mensaje multicast que se habría enviado.
+ * @return {Promise<object>} Respuesta con la forma de un BatchResponse.
+ */
+async function simularEnvio(uid, message) {
+  const responses = message.tokens.map((token) =>
+    token.startsWith(PREFIJO_TOKEN_INVALIDO) ?
+      {
+        success: false,
+        error: {code: "messaging/registration-token-not-registered"},
+      } :
+      {success: true});
+  const failureCount = responses.filter((r) => !r.success).length;
+
+  logger.info("[FCM simulado] Notificación no enviada", {
+    uid,
+    tokens: message.tokens.length,
+    title: message.notification.title,
+  });
+
+  // Solo con el emulador de Firestore delante. Con `--only functions` el
+  // Admin SDK hablaría con la base de datos de producción.
+  if (process.env.FIRESTORE_EMULATOR_HOST) {
+    await db.collection("_pushSimulados").add({
+      uid,
+      tokens: message.tokens.length,
+      title: message.notification.title,
+      url: message.data.url,
+      at: FieldValue.serverTimestamp(),
+    });
+  }
+
+  return {
+    responses,
+    successCount: responses.length - failureCount,
+    failureCount,
+  };
+}
+
+/**
  * Envía una notificación push a todos los tokens de un usuario y
  * elimina de Firestore los tokens que ya no son válidos.
  * @param {string} uid UID del usuario destinatario.
@@ -88,7 +144,7 @@ async function sendPushToUser(uid, tokens, title, body,
   // entrega push solo-data a PWAs); el SDK del SW lo auto-muestra. `data`
   // lleva la URL para el click. El SW NO debe llamar a showNotification
   // cuando hay payload `notification` (duplicaría en escritorio).
-  const response = await messaging.sendEachForMulticast({
+  const message = {
     tokens,
     notification: {title, body},
     data: {url},
@@ -97,7 +153,10 @@ async function sendPushToUser(uid, tokens, title, body,
       notification: {icon: "/favicon.png", badge: "/favicon.png"},
       fcmOptions: {link: url},
     },
-  });
+  };
+  const response = EN_EMULADOR ?
+    await simularEnvio(uid, message) :
+    await messaging.sendEachForMulticast(message);
 
   const invalidTokens = [];
   response.responses.forEach((res, i) => {
