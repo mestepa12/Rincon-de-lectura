@@ -18,7 +18,8 @@ after(async () => {
 test('sin el emulador, el envío va a FCM y no se simula', async () => {
   const ana = 'ana-sin-emulador';
   const bea = 'bea-sin-emulador';
-  await adminDb.doc(`users/${ana}`).set({ uid: ana, username: 'AnaSin', fcmTokens: ['token-falso-1'] });
+  await adminDb.doc(`users/${ana}`).set({ uid: ana, username: 'AnaSin' });
+  await adminDb.doc(`users/${ana}/privado/notificaciones`).set({ tokens: ['token-falso-1'] });
   await adminDb.doc(`users/${bea}`).set({ uid: bea, username: 'BeaSin' });
 
   await funciones.onNewChatMessage.run(evento(

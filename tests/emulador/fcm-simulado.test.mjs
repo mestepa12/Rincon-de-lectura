@@ -10,9 +10,8 @@ after(cerrarAdmin);
 test('un mensaje de chat no sale a FCM: queda simulado y el token inválido se limpia', async () => {
   const ana = await crearUsuaria('ana-fcm@prueba.test');
   const bea = await crearUsuaria('bea-fcm@prueba.test');
-  await adminDb.doc(`users/${ana}`).set({
-    uid: ana, username: 'AnaFcm', fcmTokens: ['token-falso-1', 'invalido-1'],
-  });
+  await adminDb.doc(`users/${ana}`).set({ uid: ana, username: 'AnaFcm' });
+  await adminDb.doc(`users/${ana}/privado/notificaciones`).set({ tokens: ['token-falso-1', 'invalido-1'] });
   await adminDb.doc(`users/${bea}`).set({ uid: bea, username: 'BeaFcm' });
   await adminDb.doc(`users/${ana}/friends/${bea}`).set({ friendUid: bea, friendUsername: 'BeaFcm', since: new Date() });
   await adminDb.doc(`users/${bea}/friends/${ana}`).set({ friendUid: ana, friendUsername: 'AnaFcm', since: new Date() });
@@ -46,7 +45,7 @@ test('un mensaje de chat no sale a FCM: queda simulado y el token inválido se l
   // 'token-falso-1', que no es un token de verdad, y la limpieza lo habría
   // borrado: que siga ahí demuestra que no se llamó a FCM.
   const tokens = await esperar(async () => {
-    const t = (await adminDb.doc(`users/${ana}`).get()).data().fcmTokens;
+    const t = (await adminDb.doc(`users/${ana}/privado/notificaciones`).get()).data().tokens;
     return t.length === 1 ? t : null;
   }, { que: 'la limpieza del token inválido' });
   assert.deepEqual(tokens, ['token-falso-1']);

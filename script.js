@@ -143,9 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Adelantar runApp() es seguro porque ninguna de sus escrituras
         // puede fabricar un perfil a medias: evaluarLogros() y
         // checkStreakBreakOnLogin() salen si el documento no existe,
-        // obtainPushToken() usa updateDoc (que falla si no existe) y la
-        // sincronización de totalPaginasLeidas exige haber leído antes el
-        // perfil. Si eso cambia, este guard vuelve a ser bloqueante.
+        // obtainPushToken() escribe en la subcolección privado (un
+        // documento hijo no crea el perfil) y la sincronización de
+        // totalPaginasLeidas exige haber leído antes el perfil. Si eso
+        // cambia, este guard vuelve a ser bloqueante.
         getDoc(doc(db, 'users', user.uid))
             .then((perfil) => {
                 if (!perfilCompleto(perfil)) window.location.replace('onboarding.html');
@@ -2992,10 +2993,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (!token) return false;
 
-                // Guardar token (array: soporta varios dispositivos por usuario)
-                await updateDoc(doc(db, 'users', user.uid), {
-                    fcmTokens: arrayUnion(token)
-                });
+                // Guardar token (array: soporta varios dispositivos por
+                // usuario) en el documento privado, no en el perfil: el
+                // perfil lo puede leer cualquier usuaria registrada. merge
+                // crea el documento la primera vez.
+                await setDoc(doc(db, 'users', user.uid, 'privado', 'notificaciones'), {
+                    tokens: arrayUnion(token)
+                }, { merge: true });
 
                 // Notificaciones recibidas con la app abierta (primer plano).
                 // showNotification del SW, no `new Notification()`: en Android
