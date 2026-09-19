@@ -1307,6 +1307,8 @@ body.dark-mode .consentimiento-boton { color: #1A202C; }
 }
 
 .search-box-sidebar input {
+    flex: 1;
+    min-width: 0; /* que pueda encoger por debajo de su ancho intrínseco */
     padding: 0.4rem;
     font-size: 16px;
 }
@@ -1320,6 +1322,61 @@ body.dark-mode .consentimiento-boton { color: #1A202C; }
     cursor: pointer;
 }
 
+/* Tu nombre de usuario, para pasárselo a tus amigos (la búsqueda es por
+   nombre exacto). Sin display en el contenedor ni en los botones para que
+   el atributo hidden funcione. */
+.mi-nombre {
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+}
+
+.mi-nombre-etiqueta,
+.mi-nombre-ayuda,
+.friend-search-ayuda {
+    font-size: 0.8rem;
+    color: var(--accessible-muted-color);
+    margin: 0;
+}
+
+.mi-nombre-fila {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.25rem 0;
+}
+
+.mi-nombre-valor {
+    margin-right: auto;
+    font-weight: bold;
+    overflow-wrap: anywhere;
+    user-select: all;
+}
+
+.mi-nombre-btn {
+    padding: 0.3rem 0.7rem;
+    font: inherit;
+    font-size: 0.85rem;
+    color: var(--accent-color-interactive);
+    background: transparent;
+    border: 1px solid var(--accent-color-interactive);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.mi-nombre-btn:hover,
+.mi-nombre-btn:focus-visible {
+    color: var(--bg-color);
+    background-color: var(--accent-color-interactive);
+    outline: none;
+}
+
+.friend-search-ayuda {
+    margin-top: 0.4rem;
+}
+
 /* Listas de usuarios */
 .sidebar-list {
     display: flex;
@@ -1330,7 +1387,9 @@ body.dark-mode .consentimiento-boton { color: #1A202C; }
 
 .empty-msg {
     font-size: 0.8rem;
-    color: #888;
+    /* #888 daba 3.4 de contraste en los dos modos; el token accesible pasa
+       de 4.5 en claro y en oscuro. */
+    color: var(--accessible-muted-color);
     font-style: italic;
     text-align: center;
 }

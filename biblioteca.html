@@ -722,10 +722,20 @@
 
             <div class="sidebar-section">
                 <h3>🔍 Añadir Amigos</h3>
+                <div id="mi-nombre" class="mi-nombre" hidden>
+                    <p class="mi-nombre-etiqueta">Tu nombre de usuario</p>
+                    <div class="mi-nombre-fila">
+                        <span id="mi-nombre-valor" class="mi-nombre-valor"></span>
+                        <button type="button" id="mi-nombre-copiar" class="mi-nombre-btn">Copiar</button>
+                        <button type="button" id="mi-nombre-compartir" class="mi-nombre-btn" hidden>Compartir</button>
+                    </div>
+                    <p class="mi-nombre-ayuda">Pásaselo a tus amigos para que puedan añadirte.</p>
+                </div>
                 <div class="search-box-sidebar">
-                    <input type="text" id="friend-search-input" placeholder="Buscar usuario...">
+                    <input type="text" id="friend-search-input" placeholder="Nombre de usuario completo" aria-label="Nombre de usuario completo de tu amigo" aria-describedby="friend-search-ayuda" autocomplete="off" autocapitalize="none" spellcheck="false">
                     <button id="friend-search-btn">Ir</button>
                 </div>
+                <p id="friend-search-ayuda" class="friend-search-ayuda">Escribe su nombre de usuario completo; da igual mayúsculas o minúsculas. Si no lo sabes, pídeselo.</p>
                 <div id="friend-search-results" class="sidebar-list"></div>
             </div>
 
@@ -743,7 +753,7 @@
             <div class="sidebar-section full-height">
                 <h3>Mis Amigos</h3>
                 <div id="friends-list" class="sidebar-list">
-                    <p class="empty-msg">Aún no tienes amigos agregados.</p>
+                    <p class="empty-msg">Aún no tienes amigos. Comparte tu nombre de usuario para que te añadan.</p>
                 </div>
             </div>
 
