@@ -137,8 +137,13 @@ service cloud.firestore {
     // 2. COMENTARIOS DEL CLUB DE LECTURA (/book_comments)
     // =========================================================
     match /book_comments/{commentId} {
-      // Los usuarios autenticados pueden leer los comentarios
-      allow read: if request.auth != null;
+      // Leer: la autora o quien está en SU lista de amigos (el mismo
+      // criterio que /books y /users: decide quien escribe). Una consulta
+      // tiene que fijar la autora (where uid == X) para que esto se pueda
+      // comprobar; sin ese filtro, se deniega entera.
+      allow read: if request.auth != null
+                  && (resource.data.uid == request.auth.uid
+                      || exists(/databases/$(database)/documents/users/$(resource.data.uid)/friends/$(request.auth.uid)));
 
       // Crear: solo con tu uid, esquema estricto, texto <= 500 caracteres
       allow create: if request.auth != null
