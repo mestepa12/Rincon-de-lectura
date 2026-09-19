@@ -1387,7 +1387,9 @@ body.dark-mode .consentimiento-boton { color: #1A202C; }
 
 .empty-msg {
     font-size: 0.8rem;
-    color: #888;
+    /* #888 daba 3.4 de contraste en los dos modos; el token accesible pasa
+       de 4.5 en claro y en oscuro. */
+    color: var(--accessible-muted-color);
     font-style: italic;
     text-align: center;
 }
