@@ -272,11 +272,14 @@ service cloud.firestore {
     // =========================================================
     // 4. RESERVA DE NOMBRES DE USUARIO (/usernames)
     // ID del documento = username en minúsculas; contenido = { uid }.
-    // Lectura pública: el registro comprueba nombres libres ANTES de
-    // que exista la cuenta. Solo expone el propio username (dato público).
+    // get público: el registro comprueba nombres libres ANTES de que
+    // exista la cuenta, y la búsqueda de amigos es por nombre exacto.
+    // Sin list: nadie, con cuenta o sin ella, puede descargarse el
+    // directorio de nombres.
     // =========================================================
     match /usernames/{name} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if false;
 
       // Solo crear (nunca sobrescribir): la reserva es atómica, dos
       // registros simultáneos con el mismo nombre no pueden chocar.
@@ -307,9 +310,14 @@ service cloud.firestore {
     // =========================================================
     match /users/{userId} {
 
-      // Leer: solo usuarios autenticados (los perfiles ya no contienen email;
-      // el chequeo de nombres libres del registro usa la colección `usernames`)
-      allow read: if request.auth != null;
+      // Leer: la dueña o sus amigos, es decir, quien está en SU lista de
+      // amigos (la misma condición que /books). Cuesta una lectura extra
+      // por perfil ajeno; el propio no, porque la primera condición basta.
+      // Sin list: la búsqueda de amigos va por /usernames, por nombre exacto.
+      allow get: if request.auth != null
+                 && (request.auth.uid == userId
+                     || exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid)));
+      allow list: if false;
 
       // Crear: solo tu perfil, sin campos extra (p. ej. isAdmin), válidos
       allow create: if request.auth != null

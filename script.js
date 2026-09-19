@@ -62,6 +62,7 @@ import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './papelera.js';
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
 import { slugLibro, mismoLibro } from './libro-identidad.js';
+import { claveBusquedaUsuario } from './nombre-usuario.js';
 import { perfilCompleto } from './perfil.js';
 import { totalPaginasDeLibros, totalPaginasParaLogros } from './total-paginas.js';
 import { enviarEvento } from './analitica.js';
@@ -1834,15 +1835,61 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Escape' && friendsSidebar && friendsSidebar.classList.contains('open')) toggleSidebar(false);
         });
 
+        // === TU NOMBRE DE USUARIO, para que te encuentren ===
+        // La búsqueda de amigos es por nombre exacto, así que cada cual
+        // tiene que poder pasar el suyo con facilidad: copiarlo y, en el
+        // móvil, compartirlo con el menú del sistema.
+        const miNombreBloque = document.getElementById('mi-nombre');
+        const miNombreValor = document.getElementById('mi-nombre-valor');
+        const miNombreCopiar = document.getElementById('mi-nombre-copiar');
+        const miNombreCompartir = document.getElementById('mi-nombre-compartir');
+        let miNombre = '';
+
+        const mostrarMiNombre = (nombre) => {
+            if (!miNombreBloque || !nombre) return;
+            miNombre = nombre;
+            miNombreValor.textContent = `@${nombre}`;
+            miNombreBloque.hidden = false;
+            // Solo en pantallas táctiles con menú de compartir (Android,
+            // iOS). En escritorio basta con copiar.
+            miNombreCompartir.hidden = !(navigator.share && window.matchMedia('(pointer: coarse)').matches);
+        };
+
+        miNombreCopiar?.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(`@${miNombre}`);
+                notify('Nombre copiado.', 'success');
+            } catch {
+                // Sin portapapeles (contexto no seguro, permiso denegado):
+                // se deja seleccionado para copiarlo a mano.
+                const rango = document.createRange();
+                rango.selectNodeContents(miNombreValor);
+                const seleccion = window.getSelection();
+                seleccion.removeAllRanges();
+                seleccion.addRange(rango);
+                notify('No se pudo copiar solo: ya lo tienes seleccionado para copiarlo.', 'info');
+            }
+        });
+
+        miNombreCompartir?.addEventListener('click', async () => {
+            try {
+                await navigator.share({ text: `Añádeme en Mi Rincón de Lectura: soy @${miNombre}` });
+            } catch (error) {
+                // Cerrar el menú sin elegir nada también llega aquí.
+                if (error?.name !== 'AbortError') notify('No se pudo abrir el menú de compartir.', 'error');
+            }
+        });
+
         // 2. Cargar MI nombre de usuario
         const loadMyProfile = async () => {
             try {
                 const userDocRef = doc(db, 'users', user.uid); // Nueva forma
                 const userDocSnap = await getDoc(userDocRef);  // Nueva forma
-                
+
                 if (userDocSnap.exists()) {
                     const userData = userDocSnap.data();
                     currentUserDisplay.textContent = `@${userData.username}`;
+                    mostrarMiNombre(userData.username);
                 } else {
                     currentUserDisplay.textContent = user.email.split('@')[0];
                 }
@@ -1896,67 +1943,72 @@ document.addEventListener('DOMContentLoaded', () => {
         const friendSearchBtn = document.getElementById('friend-search-btn');
         const friendSearchResults = document.getElementById('friend-search-results');
 
+        // Búsqueda por nombre exacto: un get a su reserva en /usernames.
+        // Esa colección no se puede listar (firestore.rules), así que nadie
+        // puede descargarse el directorio de nombres. Tampoco se puede leer
+        // el perfil de quien aún no es tu amigo: lo único que se sabe de
+        // ella es su uid, que es lo que hace falta para la solicitud.
         const searchUsers = async () => {
-            const queryText = friendSearchInput.value.trim().toLowerCase();
-
-            if (queryText.length < 3) {
-                notify("Escribe al menos 3 letras para buscar.", 'warning');
-                return;
-            }
+            const escrito = friendSearchInput.value.trim().replace(/^@+/, '').trim();
+            if (!escrito) return;
+            const clave = claveBusquedaUsuario(escrito);
 
             friendSearchResults.innerHTML = '<p style="text-align:center; padding:10px; color:var(--accent-color);">Buscando...</p>';
 
             try {
-                const usersRef = collection(db, 'users');
-                const q = query(
-                    usersRef,
-                    where('searchKey', '>=', queryText),
-                    where('searchKey', '<=', queryText + '\uf8ff'),
-                    limit(5)
-                );
+                const reserva = clave ? await getDoc(doc(db, 'usernames', clave)) : null;
+                friendSearchResults.innerHTML = '';
 
-                const snapshot = await getDocs(q);
-                friendSearchResults.innerHTML = ''; 
-
-                if (snapshot.empty) {
+                if (!reserva?.exists()) {
                     friendSearchResults.innerHTML = `
                         <div style="text-align:center; padding: 1rem; color: var(--text-color); opacity: 0.7;">
                             <p style="font-size: 1.5rem; margin-bottom: 0.5rem;">😕</p>
-                            <p>No se encontraron usuarios con ese nombre.</p>
+                            <p>No hay nadie con ese nombre. Comprueba que esté completo y bien escrito.</p>
                         </div>
                     `;
                     return;
                 }
 
-                snapshot.forEach(docSnap => {
-                    const userData = docSnap.data();
-                    
-                    // Si el usuario soy yo mismo, no lo muestro
-                    if (userData.uid === user.uid) return;
+                const uid = reserva.data().uid;
+                if (typeof uid !== 'string' || !uid) {
+                    // Reserva mal formada: como si no hubiera nadie.
+                    friendSearchResults.innerHTML = '<p class="empty-msg">No hay nadie con ese nombre. Comprueba que esté completo y bien escrito.</p>';
+                    return;
+                }
+                if (uid === user.uid) {
+                    friendSearchResults.innerHTML = '<p class="empty-msg">Ese eres tú 🙂</p>';
+                    return;
+                }
 
-                    const userItem = document.createElement('div');
-                    userItem.className = 'user-card';
-                    userItem.style.cssText = `
-                        display: flex; justify-content: space-between; align-items: center; 
-                        padding: 10px; background: var(--bg-color); border-radius: 8px; 
-                        margin-bottom: 8px; border: 1px solid var(--border-color);
-                    `;
+                // El nombre de la tarjeta: si ya es tu amigo, el de tu lista
+                // (con sus mayúsculas); si no, lo que has escrito.
+                const userData = {
+                    uid,
+                    username: myFriendsInfo.find(f => f.uid === uid)?.username || escrito,
+                };
 
-                    userItem.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="user-avatar-placeholder" style="width:30px; height:30px; font-size:0.8rem;">👤</div>
-                            <span style="font-weight:bold;">@${escapeHtml(userData.username)}</span>
-                        </div>
-                        <button class="btn-add-friend" data-uid="${escapeHtml(userData.uid)}" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">Añadir</button>
-                    `;
-                    
-                    const addBtn = userItem.querySelector('.btn-add-friend');
-                    addBtn.addEventListener('click', () => {
-                        enviarSolicitudAmistad(userData);
-                    });
+                const userItem = document.createElement('div');
+                userItem.className = 'user-card';
+                userItem.style.cssText = `
+                    display: flex; justify-content: space-between; align-items: center; 
+                    padding: 10px; background: var(--bg-color); border-radius: 8px; 
+                    margin-bottom: 8px; border: 1px solid var(--border-color);
+                `;
 
-                    friendSearchResults.appendChild(userItem);
+                userItem.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="user-avatar-placeholder" style="width:30px; height:30px; font-size:0.8rem;">👤</div>
+                        <span style="font-weight:bold;">@${escapeHtml(userData.username)}</span>
+                    </div>
+                    <button class="btn-add-friend" data-uid="${escapeHtml(userData.uid)}" style="padding:5px 10px; font-size:0.8rem; cursor:pointer;">Añadir</button>
+                `;
+                
+                const addBtn = userItem.querySelector('.btn-add-friend');
+                addBtn.addEventListener('click', () => {
+                    enviarSolicitudAmistad(userData);
                 });
+
+                friendSearchResults.appendChild(userItem);
 
             } catch (error) {
                 console.error("Error buscando usuarios:", error);
@@ -2378,7 +2430,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (snapshot.empty) {
-                friendsList.innerHTML = '<p class="empty-msg">Aún no tienes amigos agregados.</p>';
+                friendsList.innerHTML = '<p class="empty-msg">Aún no tienes amigos. Comparte tu nombre de usuario para que te añadan.</p>';
             } else {
                 friendsList.innerHTML = '';
                 

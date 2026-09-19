@@ -62,6 +62,18 @@ export async function sesion(email) {
 }
 
 /**
+ * Cliente sin iniciar sesión, como la página de registro antes de crear la
+ * cuenta. Todo lo que haga pasa por las reglas sin token.
+ * @return {{db: object, cerrar: function(): Promise<void>}}
+ */
+export function clienteSinSesion() {
+  const app = iniciarCliente({ apiKey: 'fake-api-key', projectId: PROYECTO }, `anonimo-${Math.random()}`);
+  const db = firestoreCliente(app);
+  connectFirestoreEmulator(db, HOST, PUERTO_FIRESTORE);
+  return { db, cerrar: () => cerrarCliente(app) };
+}
+
+/**
  * Reintenta `fn` hasta que devuelva algo distinto de null/undefined/false.
  * Para esperar a los triggers de Functions, que llegan con retraso.
  * @param {function(): Promise<*>} fn Comprobación.
