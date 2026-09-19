@@ -308,6 +308,11 @@ document.addEventListener('DOMContentLoaded', () => {
         let currentFriendName = '';
         let myFriendIds = new Set();
         let myFriendsInfo = [];   // [{uid, username}] para el recomendador
+        // Se cumple con el primer envío de la lista de amigos (ver LISTA DE
+        // AMIGOS). El Club de lectura monta una escucha por amigo y tiene que
+        // esperar a saber quiénes son.
+        let avisarAmigosCargados;
+        const amigosCargados = new Promise((resolver) => { avisarAmigosCargados = resolver; });
 
         // Deep link de notificación push: /biblioteca.html?chat=<uid>
         // Se consume cuando llega la lista de amigos (se necesita el username).
@@ -1472,18 +1477,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             list.innerHTML = '<p class="comments-empty">Cargando comentarios…</p>';
 
-            // Solo igualdad en la query (sin índice compuesto); el filtro de
-            // página y de amigos se aplica en el cliente.
-            const qComments = query(collection(db, 'book_comments'), where('bookSlug', '==', slug));
-            unsubscribeComments = onSnapshot(qComments, (snapshot) => {
+            // Una escucha por autora: tú y cada amigo. Las reglas solo dejan
+            // leer un comentario a su autora y a quien está en la lista de
+            // amigos de la autora, y para comprobarlo la consulta tiene que
+            // fijar la autora (uid == X): así cada consulta se autoriza con un
+            // solo exists(), como la biblioteca de un amigo con /books. Dos
+            // igualdades sin orderBy: sin índice compuesto; el orden y el
+            // filtro de página (anti-spoiler) se hacen aquí.
+            const porAutora = new Map();   // uid -> comentarios de ese libro
+            const escuchas = [];
+            let cerrado = false;
+            let falloPropio = false;  // si falla lo propio, se queda el aviso de error
+            unsubscribeComments = () => {
+                cerrado = true;
+                escuchas.forEach((soltar) => soltar());
+                escuchas.length = 0;
+            };
+
+            const pintarComentarios = () => {
+                if (falloPropio) return;
                 const visibles = [];
-                snapshot.forEach(docSnap => {
-                    const c = docSnap.data();
-                    const isOwn = c.uid === user.uid;
-                    if (!isOwn && !myFriendIds.has(c.uid)) return;  // solo yo y mis amigos
-                    if ((c.page || 0) > safePage) return;           // anti-spoiler
-                    visibles.push({ ...c, id: docSnap.id, isOwn });
-                });
+                porAutora.forEach((comentarios) => comentarios.forEach((c) => {
+                    if ((c.page || 0) <= safePage) visibles.push(c);  // anti-spoiler
+                }));
                 visibles.sort((a, b) => (a.page - b.page) ||
                     ((a.timestamp?.toMillis?.() || 0) - (b.timestamp?.toMillis?.() || 0)));
 
@@ -1494,9 +1510,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     visibles.forEach(c => list.appendChild(renderComment(c, c.isOwn)));
                     list.scrollTop = list.scrollHeight;
                 }
-            }, (error) => {
-                console.error('Error cargando comentarios:', error);
-                list.innerHTML = '<p class="comments-empty">No se pudieron cargar los comentarios.</p>';
+            };
+
+            const escucharAutora = (autora) => {
+                const esPropia = autora === user.uid;
+                const q = query(collection(db, 'book_comments'),
+                    where('bookSlug', '==', slug), where('uid', '==', autora));
+                escuchas.push(onSnapshot(q, (snapshot) => {
+                    porAutora.set(autora, snapshot.docs.map((d) => ({ ...d.data(), id: d.id, isOwn: esPropia })));
+                    pintarComentarios();
+                }, (error) => {
+                    porAutora.delete(autora);
+                    if (esPropia) {
+                        falloPropio = true;
+                        console.error('Error cargando comentarios:', error);
+                        list.innerHTML = '<p class="comments-empty">No se pudieron cargar los comentarios.</p>';
+                        return;
+                    }
+                    if (error?.code === 'permission-denied') {
+                        // Esperable si la amistad solo consta en tu lista y no
+                        // en la suya: decide la lista de la autora. Se sigue con
+                        // el resto, pero queda rastro para diagnosticarlo.
+                        console.warn(`Club de lectura: sin permiso para los comentarios de ${autora} (¿amistad en un solo sentido?).`);
+                    } else {
+                        console.error(`Club de lectura: error leyendo los comentarios de ${autora}:`, error);
+                    }
+                    pintarComentarios();
+                }));
+            };
+
+            escucharAutora(user.uid);
+            amigosCargados.then(() => {
+                if (cerrado) return;  // se cerró el libro antes de llegar la lista
+                myFriendIds.forEach((amiga) => { if (amiga !== user.uid) escucharAutora(amiga); });
             });
 
             const sendComment = async () => {
@@ -2419,6 +2465,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 uid: d.data().friendUid || d.id,
                 username: d.data().friendUsername || '?'
             }));
+            avisarAmigosCargados();
 
             // Notificación de chat pulsada: abrir el chat con esa persona
             if (pendingChatUid) {
@@ -2472,6 +2519,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     friendsList.appendChild(div);
                 });
             }
+        }, (error) => {
+            console.error('Error cargando la lista de amigos:', error);
+            // Que el Club de lectura no se quede esperando: seguirá con los
+            // comentarios propios.
+            avisarAmigosCargados();
         });
 
 
