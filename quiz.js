@@ -6,7 +6,8 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     setPersistence,
-    browserLocalPersistence
+    browserLocalPersistence,
+    browserPopupRedirectResolver
 } from "firebase/auth";
 import { auth, db } from './firebase-init.js';
 import { loadHtml2canvas } from './lazy-libs.js';
@@ -127,7 +128,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('gate-google').addEventListener('click', () => {
         altaConGoogle = true;
         setPersistence(auth, browserLocalPersistence)
-            .then(() => signInWithPopup(auth, new GoogleAuthProvider()))
+            // El resolver va a mano: firebase-init.js crea Auth sin él para no
+            // cargar gapi en cada página (29ebb0a). Sin pasarlo aquí, esto
+            // fallaba con auth/argument-error y el botón no hacía nada.
+            .then(() => signInWithPopup(auth, new GoogleAuthProvider(), browserPopupRedirectResolver))
             .then(async (userCred) => {
                 const uid = userCred.user.uid;
                 const perfil = await getDoc(doc(db, 'users', uid));
