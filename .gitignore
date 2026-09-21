@@ -26,3 +26,7 @@ test-results/
 .emuladores/
 .emuladores-nuevo/
 .emuladores-anterior/
+
+# Recibos de borrado de cuenta (scripts/borrar-cuenta.mjs): llevan el uid
+# de una persona real, y el registro lo guardas tú, no el repositorio.
+recibos-borrado/
