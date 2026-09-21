@@ -243,6 +243,7 @@ firebase firestore:indexes --project dev > firestore.indexes.json
 ```bash
 npm run deploy
 npm run deploy -- --only hosting
+npm run deploy -- --only functions
 ```
 
 Pide una confirmación escrita con un código aleatorio distinto en cada

@@ -108,26 +108,40 @@ test('4. las notificaciones salen del documento privado y el token inválido se 
   assert.equal('fcmTokens' in (await adminDb.doc(`users/${ana}`).get()).data(), false);
 });
 
-test('5. lectura doble: un perfil con tokens antiguos sigue recibiendo avisos', async () => {
-  // Bea le pide amistad a Carla desde el cliente: dispara onFriendRequestCreated.
+test('5. un perfil con tokens antiguos ya NO recibe avisos por ellos', async () => {
+  // Los tokens viven solo en el documento privado. Carla sigue teniendo
+  // fcmTokens y fcmToken en su perfil (sembrados arriba, como una cuenta
+  // anterior a la migración) y no le debe llegar nada por ahí.
+  const previos = await adminDb.collection('_pushSimulados').get();
+  await Promise.all(previos.docs.map((d) => d.ref.delete()));
+
+  // Bea le pide amistad a Carla desde el cliente: dispara
+  // onFriendRequestCreated. Y a la vez, un mensaje de chat a Ana, que sí
+  // tiene token privado: es el testigo. Cuando llegue el aviso de Ana,
+  // el de Carla ya habría llegado si fuera a llegar.
   await setDoc(doc(sBea.db, 'users', carla, 'friend_requests', bea), {
     fromUid: bea, fromUsername: 'BeaTok', status: 'pending', timestamp: serverTimestamp(),
   });
+  const participantes = [ana, bea].sort();
+  const chatId = participantes.join('_');
+  await addDoc(collection(sBea.db, 'chats', chatId, 'messages'), {
+    from: bea, to: ana, type: 'text', text: 'testigo', timestamp: serverTimestamp(),
+  });
 
-  const simulado = await esperar(async () => {
-    const q = await adminDb.collection('_pushSimulados').where('uid', '==', carla).get();
+  await esperar(async () => {
+    const q = await adminDb.collection('_pushSimulados').where('uid', '==', ana).get();
     return q.empty ? null : q.docs[0].data();
-  }, { que: 'el envío simulado a Carla' });
-  assert.equal(simulado.tokens, 3, 'los de fcmTokens y el de fcmToken');
-  assert.equal(simulado.title, '🤝 Nueva solicitud de amistad');
+  }, { que: 'el envío simulado a Ana (testigo)' });
+  await new Promise((ok) => setTimeout(ok, 500)); // margen para el de Carla
 
-  const perfil = await esperar(async () => {
-    const d = (await adminDb.doc(`users/${carla}`).get()).data();
-    return d.fcmTokens.length === 1 ? d : null;
-  }, { que: 'la limpieza del token inválido de Carla' });
-  assert.deepEqual(perfil.fcmTokens, ['token-carla-1']);
+  const aCarla = await adminDb.collection('_pushSimulados').where('uid', '==', carla).get();
+  assert.equal(aCarla.size, 0, 'no sale ningún aviso a los tokens del perfil');
+
+  // Y sus campos antiguos se quedan como estaban: ya no se leen ni se limpian.
+  const perfil = (await adminDb.doc(`users/${carla}`).get()).data();
+  assert.deepEqual(perfil.fcmTokens, ['token-carla-1', 'invalido-carla']);
   assert.equal(perfil.fcmToken, 'token-carla-viejo');
-  assert.equal(await tokensPrivados(carla), null, 'la limpieza no crea el documento privado');
+  assert.equal(await tokensPrivados(carla), null, 'sin documento privado, no hay tokens');
 });
 
 /**
@@ -190,7 +204,11 @@ test('6. el script de migración mueve los tokens, no imprime ninguno y es idemp
   assert.equal(hana.length, 20);
   assert.equal(hana[0], 'tok-hana-nuevo', 'el del documento privado se queda');
   assert.ok(hana.includes('tok-hana-20') && !hana.includes('tok-hana-0'), 'del perfil, los más nuevos');
-  assert.deepEqual((await tokensPrivados(carla)).sort(), ['token-carla-1', 'token-carla-viejo']);
+  // Los tres de Carla, el inválido incluido: desde que las Functions no
+  // miran el perfil, nadie los limpia de ahí; los mueve la migración y ya
+  // los depurará el primer envío que los use.
+  assert.deepEqual((await tokensPrivados(carla)).sort(),
+    ['invalido-carla', 'token-carla-1', 'token-carla-viejo']);
   assert.equal((await adminDb.doc(`users/${carla}`).get()).data().rachaActual, 5, 'el resto del perfil no se toca');
 
   // Segunda pasada: nada que hacer.
