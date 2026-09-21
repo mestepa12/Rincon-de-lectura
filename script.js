@@ -62,7 +62,7 @@ import { decoUrl, decoAlto, decoConHalo } from './decos-svg.js';
 import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './papelera.js';
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
 import { slugLibro, mismoLibro } from './libro-identidad.js';
-import { claveBusquedaUsuario } from './nombre-usuario.js';
+import { claveBusquedaUsuario, nombrePublicable, obtenerMiNombre } from './nombre-usuario.js';
 import { cerrarSesionSinAvisos } from './cierre-sesion.js';
 import { perfilCompleto } from './perfil.js';
 import { totalPaginasDeLibros, totalPaginasParaLogros } from './total-paginas.js';
@@ -330,6 +330,22 @@ document.addEventListener('DOMContentLoaded', () => {
         let moodChartInst = null;
         let prevRacha = null;
         let lastUserData = null;
+
+        // Mi nombre de usuario antes de escribirlo en algo que ven otras
+        // personas. Si no se sabe, no se escribe: hasta ahora se guardaba el
+        // prefijo del correo, que publicaba la dirección de quien escribía
+        // (ver obtenerMiNombre en nombre-usuario.js).
+        const AVISO_SIN_NOMBRE = 'No hemos podido leer tu perfil; inténtalo de nuevo en un momento.';
+        const miNombreParaEscribir = () => obtenerMiNombre({
+            enMemoria: () => lastUserData?.username,
+            leerPerfil: () => getDoc(doc(db, 'users', user.uid)),
+        });
+        // Una cuenta sin documento de perfil tiene que elegir nombre; es lo
+        // mismo que hace el portero de arriba cuando le da tiempo a mirar.
+        const avisarSinNombre = (motivo) => {
+            if (motivo === 'sin-perfil') { window.location.replace('onboarding.html'); return; }
+            notify(AVISO_SIN_NOMBRE, 'error');
+        };
 
         // — Sincronización de totalPaginasLeidas —
         // El recálculo vivía dentro del onSnapshot de libros y escribía en
@@ -1558,10 +1574,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 sendBtn.disabled = true;
                 try {
+                    const { nombre, motivo } = await miNombreParaEscribir();
+                    // Sin nombre no se publica y el texto se queda escrito:
+                    // es un momento malo, no un comentario perdido.
+                    if (!nombre) { avisarSinNombre(motivo); return; }
                     await addDoc(collection(db, 'book_comments'), {
                         bookSlug: slug,
                         uid: user.uid,
-                        username: lastUserData?.username || user.email?.split('@')[0] || '?',
+                        username: nombre,
                         page,
                         text,
                         timestamp: serverTimestamp()
@@ -1933,13 +1953,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userDocRef = doc(db, 'users', user.uid); // Nueva forma
                 const userDocSnap = await getDoc(userDocRef);  // Nueva forma
 
-                if (userDocSnap.exists()) {
-                    const userData = userDocSnap.data();
-                    currentUserDisplay.textContent = `@${userData.username}`;
-                    mostrarMiNombre(userData.username);
-                } else {
-                    currentUserDisplay.textContent = user.email.split('@')[0];
-                }
+                // Sin nombre el hueco se queda vacío: el portero ya está
+                // mandando a elegirlo. Antes se pintaba el prefijo del correo
+                // (y "@undefined" si el perfil existía pero sin nombre).
+                const miNombreGuardado = nombrePublicable(userDocSnap.data()?.username);
+                currentUserDisplay.textContent = miNombreGuardado ? `@${miNombreGuardado}` : '';
+                if (miNombreGuardado) mostrarMiNombre(miNombreGuardado);
             } catch (error) {
                 console.error("Error cargando perfil:", error);
             }
@@ -2134,23 +2153,26 @@ document.addEventListener('DOMContentLoaded', () => {
 // --- Lógica para Aceptar/Rechazar ---
         const aceptarSolicitud = async (friendId, requestData) => {
             try {
+                // Mi nombre primero: si no se sabe, no se escribe nada (antes
+                // se colaba aquí el prefijo de mi correo, en la lista de la
+                // otra persona).
+                const { nombre: myUsername, motivo } = await miNombreParaEscribir();
+                if (!myUsername) { avisarSinNombre(motivo); return; }
+
                 const batch = writeBatch(db);
 
-                // 1. Añadirlo a MIS amigos
+                // 1. Añadirlo a MIS amigos. El nombre viene de su solicitud:
+                // si llega vacío se guarda '?', que es lo que la lista ya
+                // pinta, en vez de propagar cualquier cosa.
+                const suNombre = nombrePublicable(requestData.fromUsername) || '?';
                 const myFriendRef = doc(db, 'users', user.uid, 'friends', friendId);
                 batch.set(myFriendRef, {
                     friendUid: friendId,
-                    friendUsername: requestData.fromUsername,
+                    friendUsername: suNombre,
                     since: serverTimestamp()
                 });
 
                 // 2. Añadirme a SUS amigos (recíproco)
-                const myProfileSnap = await getDoc(doc(db, 'users', user.uid));
-                
-                // --- SOLUCIÓN AQUÍ ---
-                const myUsername = myProfileSnap.exists() && myProfileSnap.data().username 
-                    ? myProfileSnap.data().username 
-                    : user.email.split('@')[0];
 
                 const theirFriendRef = doc(db, 'users', friendId, 'friends', user.uid);
                 batch.set(theirFriendRef, {
@@ -2164,7 +2186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 batch.delete(reqRef);
 
                 await batch.commit();
-                notify(`¡Ahora eres amigo de @${requestData.fromUsername}!`, 'success');
+                notify(`¡Ahora eres amigo de @${suNombre}!`, 'success');
 
             } catch (error) {
                 console.error("Error al aceptar:", error);
@@ -2204,12 +2226,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if(btn) btn.textContent = "Enviando...";
 
             try {
-                const myProfileSnap = await getDoc(doc(db, 'users', user.uid));
-                
-                // --- SOLUCIÓN AQUÍ ---
-                const myUsername = myProfileSnap.exists() && myProfileSnap.data().username 
-                    ? myProfileSnap.data().username 
-                    : user.email.split('@')[0];
+                // Sin nombre no se envía: la solicitud lo enseña a la otra
+                // persona, y el prefijo de mi correo no es mi nombre.
+                const { nombre: myUsername, motivo } = await miNombreParaEscribir();
+                if (!myUsername) {
+                    if (btn) btn.textContent = 'Reintentar';
+                    avisarSinNombre(motivo);
+                    return;
+                }
 
                 const requestRef = doc(db, 'users', targetUser.uid, 'friend_requests', user.uid);
 
@@ -3614,7 +3638,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const slug = generateBookSlug(book.title, book.author);
                     const participants = [user.uid, friend.uid].sort();
                     const id = `${participants[0]}_${participants[1]}_${slug}`;
-                    const myName = lastUserData?.username || user.email?.split('@')[0] || 'yo';
+                    const { nombre: myName, motivo } = await miNombreParaEscribir();
+                    // El botón vuelve a quedar usable: se puede reintentar.
+                    if (!myName) { btn.disabled = false; avisarSinNombre(motivo); return; }
                     const fin = book.section === 'libros-terminados';
                     await setDoc(doc(db, 'buddy_reads', id), {
                         participants,
@@ -4172,7 +4198,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const mySnap = await getDoc(doc(db, 'users', user.uid));
                 const myData = mySnap.data() || {};
                 const entries = [{
-                    username: myData.username || user.email?.split('@')[0] || 'Yo',
+                    username: nombrePublicable(myData.username) || 'Yo',
                     paginas: myData.totalPaginasLeidas || 0,
                     isMe: true
                 }];
