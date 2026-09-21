@@ -26,7 +26,10 @@ try {
     // Mismo ID que dev:emu: es solo una etiqueta local.
     '--project', PROD,
     '--only', 'auth,firestore,functions',
-    'node --test tests/emulador/*.test.mjs',
+    // En serie (--test-concurrency=1): los ficheros comparten un único
+    // emulador, y la limpieza de cuentas huérfanas de borrar-cuenta.mjs
+    // mira toda la base de datos, no solo lo que siembra su fichero.
+    'node --test --test-concurrency=1 tests/emulador/*.test.mjs',
   ], { env: { ...jdk.env, RINCON_TEST_EMULADOR: '1' } });
 } catch (error) {
   console.error(color.rojo(`\n✗ ${error.message}\n`));
