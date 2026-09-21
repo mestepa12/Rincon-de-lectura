@@ -49,7 +49,7 @@ export async function crearUsuaria(email) {
  * Inicia sesión como una usuaria con el SDK de cliente, igual que la app.
  * Todo lo que se haga con `db` pasa por las reglas con su token.
  * @param {string} email Correo de una usuaria creada con crearUsuaria().
- * @return {Promise<{db: object, uid: string, cerrar: function(): Promise<void>}>}
+ * @return {Promise<{db: object, auth: object, uid: string, cerrar: function(): Promise<void>}>}
  */
 export async function sesion(email) {
   const app = iniciarCliente({ apiKey: 'fake-api-key', projectId: PROYECTO }, `cliente-${email}`);
@@ -58,7 +58,7 @@ export async function sesion(email) {
   const db = firestoreCliente(app);
   connectFirestoreEmulator(db, HOST, PUERTO_FIRESTORE);
   const { user } = await signInWithEmailAndPassword(auth, email, CLAVE);
-  return { db, uid: user.uid, cerrar: () => cerrarCliente(app) };
+  return { db, auth, uid: user.uid, cerrar: () => cerrarCliente(app) };
 }
 
 /**
