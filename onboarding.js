@@ -48,11 +48,9 @@ onAuthStateChanged(auth, async (user) => {
         lineaCuenta.hidden = false;
     }
 
-    // Sugerencia inicial a partir del nombre de Google, saneada al patrón.
-    if (!input.value && user.displayName) {
-        const sugerido = user.displayName.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 30);
-        if (sugerido.length >= 3) input.value = sugerido;
-    }
+    // El campo se queda vacío a propósito: rellenarlo con el nombre de la
+    // cuenta de Google empujaba a publicar el nombre real sin pensarlo, que
+    // es justo lo que pasó con las cuentas creadas desde el muro del test.
     input.focus();
 });
 
@@ -104,7 +102,10 @@ form.addEventListener('submit', async (e) => {
         // Auth. También llega aquí una cuenta de correo cuyo perfil falló.
         if (!perfilYaExistia) {
             const conGoogle = user.providerData.some((p) => p.providerId === 'google.com');
-            await enviarAlta(conGoogle ? 'google' : 'email'); // ≤1 s, antes de salir
+            // Desde el muro del test el alta empieza allí, así que el origen
+            // se fuerza: si no, aquí se perdería y contaría como directo.
+            const desdeElTest = Boolean(sessionStorage.getItem('quiz_retorno'));
+            await enviarAlta(conGoogle ? 'google' : 'email', desdeElTest ? { origen: '/quiz' } : {}); // ≤1 s, antes de salir
         }
         window.location.href = destinoTrasAuth();
     } catch (err) {

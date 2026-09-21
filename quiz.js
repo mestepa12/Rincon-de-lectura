@@ -1,6 +1,6 @@
 // Test de personalidad literaria: preguntas públicas sin fricción, muro de
 // conversión antes del resultado, e infografía compartible.
-import { doc, getDoc, setDoc, updateDoc, FieldPath } from "firebase/firestore";
+import { doc, getDoc, updateDoc, FieldPath } from "firebase/firestore";
 import {
     onAuthStateChanged,
     signInWithPopup,
@@ -14,7 +14,7 @@ import { loadHtml2canvas } from './lazy-libs.js';
 import { exportarBlob } from './share-export.js';
 import { QUIZ_TROPOS } from './quiz-data.js';
 import { perfilCompleto } from './perfil.js';
-import { enviarEvento, enviarAlta } from './analitica.js';
+import { enviarEvento } from './analitica.js';
 
 const QUIZ_ID = 'tropo-literario';
 const CLAVE_RESPUESTAS = 'quiz_respuestas_' + QUIZ_ID; // sobrevive al viaje a login/registro
@@ -119,9 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     // Mientras dura el alta con Google desde el muro, el flujo lo lleva el
-    // handler del popup. Sin esta marca, onAuthStateChanged se adelantaba,
-    // guardaba el resultado antes de que existiera el perfil y el handler
-    // creía que la cuenta ya tenía uno: quedaba sin username.
+    // handler del popup. Sin esta marca, onAuthStateChanged llamaría a la vez
+    // a calcularYMostrar() y los dos caminos se pisarían (dos idas al
+    // onboarding, o el resultado a medio pintar).
     let altaConGoogle = false;
 
     // Google en un clic desde el propio muro (mismo alta de perfil que auth.js)
@@ -132,26 +132,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             // cargar gapi en cada página (29ebb0a). Sin pasarlo aquí, esto
             // fallaba con auth/argument-error y el botón no hacía nada.
             .then(() => signInWithPopup(auth, new GoogleAuthProvider(), browserPopupRedirectResolver))
-            .then(async (userCred) => {
-                const uid = userCred.user.uid;
-                const perfil = await getDoc(doc(db, 'users', uid));
-                if (!perfilCompleto(perfil)) {
-                    const nombreGoogle = userCred.user.displayName ? userCred.user.displayName.replace(/\s+/g, '').slice(0, 26) : 'Lector';
-                    const username = nombreGoogle + Math.floor(Math.random() * 1000);
-                    // Primero la reserva, como en el onboarding: si el nombre
-                    // está cogido falla aquí, antes de escribir el perfil.
-                    await setDoc(doc(db, 'usernames', username.toLowerCase()), { uid });
-                    // Con merge: un perfil que existía sin nombre conserva lo
-                    // que tuviera (p. ej. un resultado anterior del quiz).
-                    await setDoc(doc(db, 'users', uid), {
-                        username, searchKey: username.toLowerCase(), uid
-                    }, { merge: true });
-                    // Alta nueva; un perfil que existía sin nombre se repara
-                    // pero no es un alta. Sin redirección detrás.
-                    if (!perfil.exists()) enviarAlta('google', { origen: '/quiz', navega: false });
-                }
+            .then(async () => {
+                // El nombre de usuario NO se inventa aquí: si la cuenta aún
+                // no tiene perfil con nombre, calcularYMostrar() manda al
+                // onboarding, que lo pregunta, lo sanea y vuelve al test.
                 localStorage.setItem('rincon_logged_in', '1');
-                calcularYMostrar();
+                await calcularYMostrar();
             })
             .catch(err => {
                 if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return;
@@ -185,6 +171,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const calcularYMostrar = async () => {
+        // El test no crea perfiles ni inventa nombres. Sin perfil con nombre,
+        // el nombre se elige en el onboarding, que vuelve aquí (marca
+        // CLAVE_RETORNO, que por eso todavía no se borra) y entonces sí se
+        // guarda el resultado y se enseña.
+        const miPerfil = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        if (!perfilCompleto(miPerfil)) {
+            // La marca de retorno también se pone aquí: quien ya tenía sesión
+            // (perfil antiguo sin nombre) no pasó por el muro, y sin ella el
+            // onboarding acabaría en la biblioteca y el resultado se perdería.
+            sessionStorage.setItem(CLAVE_RETORNO, '1');
+            window.location.replace('onboarding.html');
+            return;
+        }
+
         sessionStorage.removeItem(CLAVE_RETORNO);
         const { ganadorId, afinidades } = puntuar();
         const perfil = quiz.perfiles[ganadorId];
