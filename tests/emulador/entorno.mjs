@@ -33,7 +33,7 @@ const { getAuth: authAdmin } = require('firebase-admin/auth');
 
 const admin = initializeApp({ projectId: PROYECTO }, 'pruebas-admin');
 export const adminDb = getFirestore(admin);
-const adminAuth = authAdmin(admin);
+export const adminAuth = authAdmin(admin);
 
 /**
  * Crea una usuaria en el emulador de Auth, con el correo ya verificado.

@@ -6,7 +6,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, rmSync, existsSync, readdirSync } from 'node:fs';
-import { adminDb, crearUsuaria, cerrarAdmin, PROYECTO } from './entorno.mjs';
+import { adminDb, adminAuth, crearUsuaria, cerrarAdmin, PROYECTO } from './entorno.mjs';
 
 const CARPETA_RECIBOS = 'recibos-borrado';
 
@@ -203,14 +203,14 @@ test('9. un perfil huérfano (sin cuenta en Auth) también se limpia', async () 
   assert.equal((await adminDb.collection('books').where('userId', '==', huerfano).get()).size, 0);
 });
 
-test('10. se niega a trabajar sin destino, sin cuenta o con las dos cosas', () => {
+test('10. se niega a trabajar sin destino, sin cuenta o con varias cosas a la vez', () => {
   const sinDestino = spawnSync(process.execPath, ['scripts/borrar-cuenta.mjs', '--uid', 'x'], { encoding: 'utf8' });
   assert.equal(sinDestino.status, 1);
   assert.match(sinDestino.stderr, /Indica UN destino/);
 
   const sinCuenta = borrar([]);
   assert.equal(sinCuenta.status, 1);
-  assert.match(sinCuenta.salida, /Indica UNA cuenta/);
+  assert.match(sinCuenta.salida, /Indica UNA cosa que borrar/);
 
   const dosCuentas = borrar(['--uid', 'x', '--correo', 'y@z.test']);
   assert.equal(dosCuentas.status, 1);
@@ -230,4 +230,82 @@ test('10. se niega a trabajar sin destino, sin cuenta o con las dos cosas', () =
   );
   assert.equal(sinTerminal.status, 1);
   assert.match(sinTerminal.stderr, /confirmación interactiva/);
+});
+
+// --- Modo --huerfanos: limpiar las cuentas que ya no están en Auth --------
+
+let viva;      // cuenta con sesión de verdad: no se puede tocar
+let huerfanaA; // perfil de una cuenta que ya no existe
+let huerfanaB; // solo aparece en la lista de amigos de la viva
+
+test('11. --huerfanos encuentra las cuentas sin Auth y no borra nada sin --aplicar', async () => {
+  viva = await crearUsuaria('viva-borrar@prueba.test');
+  huerfanaA = 'huerfana-a-de-prueba';
+  huerfanaB = 'huerfana-b-de-prueba';
+  const ahora = new Date();
+
+  await adminDb.doc(`users/${viva}`).set({ uid: viva, username: 'VivaBorrar', searchKey: 'vivaborrar' });
+  await adminDb.doc('usernames/vivaborrar').set({ uid: viva });
+  await adminDb.collection('books').add({ userId: viva, title: 'De la viva', section: 'leyendo-ahora' });
+
+  // A: tiene perfil, reserva y libros.
+  await adminDb.doc(`users/${huerfanaA}`).set({ uid: huerfanaA, username: 'HuerfanaA', searchKey: 'huerfanaa' });
+  await adminDb.doc('usernames/huerfanaa').set({ uid: huerfanaA });
+  await adminDb.collection('books').add({ userId: huerfanaA, title: 'De la huérfana', section: 'leyendo-ahora' });
+  // Y está en la lista de la viva, que es lo que hay que limpiar de ahí.
+  await adminDb.doc(`users/${viva}/friends/${huerfanaA}`).set({
+    friendUid: huerfanaA, friendUsername: 'HuerfanaA', since: ahora,
+  });
+  // B: ni perfil ni nada suyo; solo una solicitud que envió a la viva.
+  await adminDb.doc(`users/${viva}/friend_requests/${huerfanaB}`).set({
+    fromUid: huerfanaB, fromUsername: 'HuerfanaB', status: 'pending',
+  });
+
+  const r = borrar(['--huerfanos']);
+  assert.equal(r.status, 0, r.salida);
+  assert.match(r.salida, /Cuentas huérfanas con datos:\s+[1-9]/);
+  assert.ok(!r.salida.includes(huerfanaA), 'no puede imprimir uids');
+  assert.ok(!r.salida.includes(viva), 'ni el de la cuenta viva');
+
+  // Nada se ha tocado todavía.
+  assert.equal(await existe(`users/${huerfanaA}`), true);
+  assert.equal(await existe(`users/${viva}/friends/${huerfanaA}`), true);
+});
+
+test('12. --huerfanos --aplicar limpia las huérfanas y deja intacta la cuenta viva', async () => {
+  const r = borrar(['--huerfanos', '--aplicar']);
+  assert.equal(r.status, 0, r.salida);
+
+  // Lo de las huérfanas, fuera: perfil, reserva, libros y sus rastros en la
+  // cuenta viva.
+  assert.equal(await existe(`users/${huerfanaA}`), false, 'el perfil huérfano');
+  assert.equal(await existe('usernames/huerfanaa'), false, 'su reserva de nombre');
+  assert.equal((await adminDb.collection('books').where('userId', '==', huerfanaA).get()).size, 0, 'sus libros');
+  assert.equal(await existe(`users/${viva}/friends/${huerfanaA}`), false,
+    'su entrada en la lista de la cuenta viva');
+  assert.equal(await existe(`users/${viva}/friend_requests/${huerfanaB}`), false,
+    'la solicitud de una cuenta que ya no existe');
+
+  // La cuenta viva, intacta.
+  assert.equal(await existe(`users/${viva}`), true, 'el perfil de la cuenta viva');
+  assert.equal(await existe('usernames/vivaborrar'), true, 'su reserva de nombre');
+  assert.equal((await adminDb.collection('books').where('userId', '==', viva).get()).size, 1, 'sus libros');
+  const enAuth = await adminAuth.getUser(viva).then(() => true, () => false);
+  assert.equal(enAuth, true, 'y su cuenta de Authentication');
+
+  // Un recibo por cuenta huérfana.
+  const recibos = readdirSync(CARPETA_RECIBOS);
+  assert.ok(recibos.some((n) => n.startsWith(huerfanaA)), 'recibo de la huérfana con perfil');
+  assert.ok(recibos.some((n) => n.startsWith(huerfanaB)), 'recibo de la que solo estaba en listas ajenas');
+  for (const nombre of recibos) {
+    const recibo = JSON.parse(readFileSync(`${CARPETA_RECIBOS}/${nombre}`, 'utf8'));
+    assert.ok(!JSON.stringify(recibo).includes('@'), 'ningún recibo lleva correos');
+  }
+});
+
+test('13. una segunda limpieza no encuentra nada', () => {
+  const r = borrar(['--huerfanos']);
+  assert.equal(r.status, 0, r.salida);
+  assert.match(r.salida, /Cuentas huérfanas con datos:\s+0/);
+  assert.match(r.salida, /Documentos que se borrarían: 0/);
 });

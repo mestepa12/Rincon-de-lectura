@@ -4,6 +4,7 @@
 //
 //   node scripts/borrar-cuenta.mjs --emulador --correo alguien@ejemplo.test
 //   node scripts/borrar-cuenta.mjs --proyecto prod --uid abc123   [--aplicar]
+//   node scripts/borrar-cuenta.mjs --proyecto prod --huerfanos    [--aplicar]
 //
 // Para qué: es lo que promete el apartado 6 de privacidad.html cuando
 // alguien pide la baja. La aplicación todavía no tiene botón de borrado, así
@@ -30,18 +31,27 @@
 // Con --uid vale también para un perfil huérfano (el documento existe pero
 // ya no hay cuenta en Authentication): borra lo de Firestore y lo dice.
 //
-// No imprime nombres, correos ni contenidos: solo recuentos. Al aplicar deja
-// un recibo local con el uid, la fecha y los recuentos —sin el correo—, que
-// es lo que hace falta para acreditar que la solicitud se atendió.
+// Con --huerfanos busca TODAS las cuentas que ya no existen en
+// Authentication y de las que aún quedan datos: perfiles sin cuenta y
+// también uids que solo aparecen en listas de amigos o en solicitudes de
+// otras personas. Es la limpieza que pide la política: los datos se guardan
+// mientras la cuenta está activa. Una cuenta que existe en Authentication
+// NUNCA se toca en este modo; si Authentication no devuelve ni una cuenta,
+// el script se planta antes de borrar nada.
+//
+// No imprime nombres, correos, uids ni contenidos: solo recuentos. Al
+// aplicar deja un recibo local por cuenta con el uid, la fecha y los
+// recuentos —sin el correo—, que es lo que hace falta para acreditar que la
+// solicitud se atendió.
 //
 // Mismas guardas que scripts/migrar-tokens-fcm.mjs: hay que elegir destino,
 // no habla con un proyecto real si las variables de emulador están puestas,
 // y contra un proyecto real pide confirmación escrita con un código
-// aleatorio. firebase-admin se toma de functions/node_modules.
-// Ejecutar desde la raíz del repo.
+// aleatorio (una sola para todas las huérfanas). firebase-admin se toma de
+// functions/node_modules. Ejecutar desde la raíz del repo.
 //
 // Permisos de la credencial: roles/datastore.user (escribe) y
-// roles/firebaseauth.admin (borra cuentas de Authentication).
+// roles/firebaseauth.admin (lee y borra cuentas de Authentication).
 import { createRequire } from 'node:module';
 import { resolve, join } from 'node:path';
 import { randomBytes } from 'node:crypto';
@@ -57,6 +67,7 @@ const CARPETA_RECIBOS = 'recibos-borrado';
 const args = process.argv.slice(2);
 const usarEmulador = args.includes('--emulador');
 const aplicar = args.includes('--aplicar');
+const huerfanos = args.includes('--huerfanos');
 const valor = (bandera) => {
   const i = args.indexOf(bandera);
   return i === -1 ? null : args[i + 1] || null;
@@ -73,11 +84,12 @@ if (usarEmulador === Boolean(alias) || (alias && !['prod', 'dev'].includes(alias
 `));
   process.exit(1);
 }
-if (Boolean(correo) === Boolean(uidArg)) {
+if ([correo, uidArg, huerfanos ? '--huerfanos' : null].filter(Boolean).length !== 1) {
   console.error(color.rojo(`
-✗ Indica UNA cuenta:
+✗ Indica UNA cosa que borrar:
     --correo alguien@ejemplo.com   se resuelve en Authentication
     --uid abc123                   directo (vale para un perfil huérfano)
+    --huerfanos                    todas las cuentas que ya no están en Auth
   Sin --aplicar solo cuenta lo que hay; con --aplicar borra.
 `));
   process.exit(1);
@@ -122,10 +134,11 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 console.log(color.negrita(
-  `\n▶ Borrado de cuenta · ${usarEmulador ? `EMULADOR ${EMULADOR_FIRESTORE}` : `PROYECTO ${projectId}`}\n`,
+  `\n▶ ${huerfanos ? 'Limpieza de cuentas huérfanas' : 'Borrado de cuenta'} · ` +
+  `${usarEmulador ? `EMULADOR ${EMULADOR_FIRESTORE}` : `PROYECTO ${projectId}`}\n`,
 ));
 
-/** Resuelve la cuenta: uid y si existe en Authentication. */
+/** Resuelve la cuenta indicada: uid y si existe en Authentication. */
 async function resolverCuenta() {
   if (correo) {
     try {
@@ -143,26 +156,60 @@ async function resolverCuenta() {
   return { uid: uidArg, enAuth: existe };
 }
 
-const { uid, enAuth } = await resolverCuenta();
+/** Todos los uid que existen hoy en Authentication. */
+async function uidsEnAuth() {
+  const vivos = new Set();
+  let pagina = await auth.listUsers(1000);
+  for (;;) {
+    pagina.users.forEach((u) => vivos.add(u.uid));
+    if (!pagina.pageToken) break;
+    pagina = await auth.listUsers(1000, pagina.pageToken);
+  }
+  return vivos;
+}
+
+/**
+ * Cuentas de las que quedan datos y que ya no existen en Authentication:
+ * perfiles sin cuenta y uids que solo aparecen en listas de amigos o en
+ * solicitudes de otras personas.
+ * @param {Set<string>} vivos Los uid que sí existen.
+ * @return {Promise<string[]>} Uids huérfanos, ordenados.
+ */
+async function buscarHuerfanos(vivos) {
+  const encontrados = new Set();
+  for await (const snap of db.collection('users').select().stream()) {
+    if (!vivos.has(snap.id)) encontrados.add(snap.id);
+  }
+  for (const grupo of ['friends', 'friend_requests']) {
+    const docs = (await db.collectionGroup(grupo).select().get()).docs;
+    docs.forEach((d) => { if (!vivos.has(d.id)) encontrados.add(d.id); });
+  }
+  return [...encontrados].sort();
+}
 
 /** Documentos de una consulta, como referencias. */
 const refsDe = async (consulta) => (await consulta.get()).docs.map((d) => d.ref);
 
 /**
- * Documentos de un grupo de colecciones cuyo ID es el uid y que cuelgan de
+ * Documentos de un grupo de colecciones cuyo ID es este uid y que cuelgan de
  * OTRA cuenta (los de la propia van con su perfil).
  * @param {string} grupo Nombre de la subcolección.
+ * @param {string} uid Cuenta.
  * @return {Promise<object[]>} Referencias.
  */
-async function refsEnOtrasCuentas(grupo) {
+async function refsEnOtrasCuentas(grupo, uid) {
   const snap = await db.collectionGroup(grupo).select().get();
   return snap.docs
     .filter((d) => d.id === uid && d.ref.parent.parent?.id !== uid)
     .map((d) => d.ref);
 }
 
-/** Todo lo que hay que borrar, agrupado por sitio. */
-async function inventario() {
+/**
+ * Todo lo que hay que borrar de una cuenta, agrupado por sitio.
+ * @param {string} uid Cuenta.
+ * @return {Promise<object>} Referencias por sitio.
+ */
+async function inventario(uid) {
   const perfil = db.collection('users').doc(uid);
   const chats = (await db.collection('chats').where('participants', 'array-contains', uid).get()).docs;
 
@@ -173,8 +220,8 @@ async function inventario() {
   }
 
   return {
-    enListasDeOtras: await refsEnOtrasCuentas('friends'),
-    solicitudesEnviadas: await refsEnOtrasCuentas('friend_requests'),
+    enListasDeOtras: await refsEnOtrasCuentas('friends', uid),
+    solicitudesEnviadas: await refsEnOtrasCuentas('friend_requests', uid),
     lecturasCompartidas: await refsDe(db.collection('buddy_reads').where('participants', 'array-contains', uid)),
     chats: chats.map((d) => d.ref),
     mensajesSuyos: mensajes,
@@ -189,9 +236,6 @@ async function inventario() {
     perfil: (await perfil.get()).exists ? [perfil] : [],
   };
 }
-
-const inv = await inventario();
-const cuantos = Object.fromEntries(Object.entries(inv).map(([k, v]) => [k, v.length]));
 
 const ETIQUETAS = {
   enListasDeOtras: 'en listas de amigos de otras cuentas',
@@ -208,41 +252,45 @@ const ETIQUETAS = {
   comentarios: 'comentarios del Club',
   reservasDeNombre: 'reservas de nombre de usuario',
 };
-console.log(`  Cuenta en Authentication: ${enAuth ? 'sí' : color.amarillo('NO (perfil huérfano)')}`);
-for (const [clave, etiqueta] of Object.entries(ETIQUETAS)) {
-  console.log(`    ${etiqueta}:`.padEnd(48) + cuantos[clave]);
-}
-// Las conversaciones van aparte del total: solo se borra la que se quede sin
-// mensajes, y eso no se sabe hasta haber borrado los suyos.
-console.log('    conversaciones en las que participa:'.padEnd(48) + cuantos.chats +
-  '  (solo se borra la que se quede vacía)');
-const totalDocs = Object.entries(cuantos)
-  .filter(([clave]) => clave !== 'chats')
-  .reduce((suma, [, v]) => suma + v, 0);
-console.log(color.negrita(`\n  Documentos que se borrarían: ${totalDocs}\n`));
 
-if (!aplicar) {
-  console.log('  Sin --aplicar no se ha borrado nada.\n');
-  await db.terminate();
-  process.exit(0);
+/** Cuántas referencias hay en cada sitio. */
+const recuento = (inv) => Object.fromEntries(Object.entries(inv).map(([k, v]) => [k, v.length]));
+
+/** Suma dos recuentos, sitio a sitio. */
+const sumar = (a, b) => Object.fromEntries(
+  Object.keys(b).map((k) => [k, (a[k] || 0) + b[k]]),
+);
+
+/**
+ * Pinta los recuentos y devuelve el total de documentos que se borrarían.
+ * Las conversaciones van aparte: solo se borra la que se quede sin mensajes,
+ * y eso no se sabe hasta haber borrado los suyos.
+ * @param {object} cuantos Recuento por sitio.
+ * @return {number} Total, sin contar las conversaciones.
+ */
+function pintar(cuantos) {
+  for (const [clave, etiqueta] of Object.entries(ETIQUETAS)) {
+    console.log(`    ${etiqueta}:`.padEnd(48) + cuantos[clave]);
+  }
+  console.log('    conversaciones en las que participa:'.padEnd(48) + cuantos.chats +
+    '  (solo se borra la que se quede vacía)');
+  const total = Object.entries(cuantos)
+    .filter(([clave]) => clave !== 'chats')
+    .reduce((suma, [, v]) => suma + v, 0);
+  console.log(color.negrita(`\n  Documentos que se borrarían: ${total}\n`));
+  return total;
 }
 
 /** Confirmación escrita con código aleatorio, como el despliegue. */
-async function confirmar() {
+async function confirmar(queSeBorra) {
   const codigo = randomBytes(3).toString('hex');
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const respuesta = await rl.question(
-    `  ${color.amarillo(`Esto BORRA la cuenta en ${projectId} y no se puede deshacer.`)}\n` +
+    `  ${color.amarillo(`Esto BORRA ${queSeBorra} en ${projectId} y no se puede deshacer.`)}\n` +
     `  Para continuar, escribe ${color.negrita(`borrar ${codigo}`)}\n  > `,
   );
   rl.close();
   return respuesta.trim() === `borrar ${codigo}`;
-}
-
-if (alias && !(await confirmar())) {
-  console.log(color.rojo('\n  Cancelado: no se ha borrado nada.\n'));
-  await db.terminate();
-  process.exit(1);
 }
 
 /**
@@ -257,56 +305,144 @@ async function borrar(refs) {
   await lotes.close();
 }
 
-// 1. Lo suyo dentro de otras cuentas, primero: es lo que deja su nombre a la
-//    vista de otras personas.
-await borrar(inv.enListasDeOtras);
-await borrar(inv.solicitudesEnviadas);
+/**
+ * Borra todo lo de una cuenta, en el orden que importa, y deja el recibo.
+ * @param {string} uid Cuenta.
+ * @param {object} inv Su inventario.
+ * @param {boolean} enAuth Si tiene cuenta en Authentication.
+ * @return {Promise<{chatsBorrados: number, ruta: string}>}
+ */
+async function borrarCuenta(uid, inv, enAuth) {
+  // 1. Lo suyo dentro de otras cuentas, primero: es lo que deja su nombre a
+  //    la vista de otras personas.
+  await borrar(inv.enListasDeOtras);
+  await borrar(inv.solicitudesEnviadas);
 
-// 2. Las lecturas compartidas, enteras.
-await borrar(inv.lecturasCompartidas);
+  // 2. Las lecturas compartidas, enteras.
+  await borrar(inv.lecturasCompartidas);
 
-// 3. Sus mensajes. La conversación solo se borra si se queda vacía: los
-//    mensajes de la otra persona son datos suyos.
-await borrar(inv.mensajesSuyos);
-let chatsBorrados = 0;
-for (const chat of inv.chats) {
-  const quedan = await chat.collection('messages').limit(1).get();
-  if (quedan.empty) {
-    await chat.delete();
-    chatsBorrados++;
+  // 3. Sus mensajes. La conversación solo se borra si se queda vacía: los
+  //    mensajes de la otra persona son datos suyos.
+  await borrar(inv.mensajesSuyos);
+  let chatsBorrados = 0;
+  for (const chat of inv.chats) {
+    const quedan = await chat.collection('messages').limit(1).get();
+    if (quedan.empty) {
+      await chat.delete();
+      chatsBorrados++;
+    }
   }
+
+  // 4. Lo suyo.
+  await borrar([
+    ...inv.privado, ...inv.sesiones, ...inv.susAmigos, ...inv.solicitudesRecibidas,
+    ...inv.libros, ...inv.papelera, ...inv.comentarios, ...inv.perfil,
+  ]);
+
+  // 5. El nombre, que queda libre.
+  await borrar(inv.reservasDeNombre);
+
+  // 6. Y por último la cuenta: si algo de lo anterior falla, sigue existiendo.
+  if (enAuth) await auth.deleteUser(uid);
+
+  // Recibo: lo que hace falta para acreditar que se atendió la solicitud.
+  // Sin el correo, que es justo lo que se ha pedido borrar.
+  const cuantos = recuento(inv);
+  const total = Object.entries(cuantos)
+    .filter(([clave]) => clave !== 'chats')
+    .reduce((suma, [, v]) => suma + v, 0);
+  const recibo = {
+    uid,
+    proyecto: projectId,
+    fecha: new Date().toISOString(),
+    cuentaDeAuthBorrada: enAuth,
+    documentosBorrados: { ...cuantos, chats: chatsBorrados },
+    total: total + chatsBorrados,
+  };
+  mkdirSync(CARPETA_RECIBOS, { recursive: true });
+  const ruta = join(CARPETA_RECIBOS, `${uid}-${recibo.fecha.slice(0, 10)}.json`);
+  writeFileSync(ruta, `${JSON.stringify(recibo, null, 2)}\n`);
+  return { chatsBorrados, ruta };
 }
 
-// 4. Lo suyo.
-await borrar([
-  ...inv.privado, ...inv.sesiones, ...inv.susAmigos, ...inv.solicitudesRecibidas,
-  ...inv.libros, ...inv.papelera, ...inv.comentarios, ...inv.perfil,
-]);
+// ===========================================================================
+// Modo cuentas huérfanas
+// ===========================================================================
+if (huerfanos) {
+  const vivos = await uidsEnAuth();
+  // Si Authentication no devuelve nada, TODO parecería huérfano: mejor
+  // plantarse que borrar la base de datos entera por un fallo de permisos.
+  if (vivos.size === 0) {
+    console.error(color.rojo(
+      '\n✗ Authentication no ha devuelto ninguna cuenta. Con esa lista vacía, todos los\n' +
+      '  perfiles parecerían huérfanos. Revisa los permisos de la credencial.\n',
+    ));
+    await db.terminate();
+    process.exit(1);
+  }
 
-// 5. El nombre, que queda libre.
-await borrar(inv.reservasDeNombre);
+  const lista = await buscarHuerfanos(vivos);
+  console.log(`  Cuentas vivas en Authentication: ${vivos.size}`);
+  console.log(`  Cuentas huérfanas con datos:     ${lista.length}\n`);
 
-// 6. Y por último la cuenta: si algo de lo anterior falla, sigue existiendo.
-let authBorrada = false;
-if (enAuth) {
-  await auth.deleteUser(uid);
-  authBorrada = true;
+  const inventarios = new Map();
+  let cuantos = Object.fromEntries(Object.keys(ETIQUETAS).concat('chats').map((k) => [k, 0]));
+  for (const uid of lista) {
+    const inv = await inventario(uid);
+    inventarios.set(uid, inv);
+    cuantos = sumar(cuantos, recuento(inv));
+  }
+  const total = pintar(cuantos);
+
+  if (!aplicar) {
+    console.log('  Sin --aplicar no se ha borrado nada.\n');
+    await db.terminate();
+    process.exit(0);
+  }
+  if (lista.length === 0) {
+    console.log('  Nada que limpiar.\n');
+    await db.terminate();
+    process.exit(0);
+  }
+  if (alias && !(await confirmar(`${lista.length} cuentas huérfanas (${total} documentos)`))) {
+    console.log(color.rojo('\n  Cancelado: no se ha borrado nada.\n'));
+    await db.terminate();
+    process.exit(1);
+  }
+
+  let chats = 0;
+  for (const uid of lista) {
+    // enAuth siempre false: son justo las que ya no están.
+    const { chatsBorrados } = await borrarCuenta(uid, inventarios.get(uid), false);
+    chats += chatsBorrados;
+  }
+  await db.terminate();
+  console.log(color.verde(`  ✓ ${lista.length} cuentas huérfanas limpiadas. ` +
+    `Conversaciones eliminadas por quedarse vacías: ${chats}`));
+  console.log(`  Un recibo por cuenta en ${CARPETA_RECIBOS}/\n`);
+  process.exit(0);
 }
 
-// Recibo: lo que hace falta para acreditar que se atendió la solicitud. Sin
-// el correo, que es justo lo que se ha pedido borrar.
-const recibo = {
-  uid,
-  proyecto: projectId,
-  fecha: new Date().toISOString(),
-  cuentaDeAuthBorrada: authBorrada,
-  documentosBorrados: { ...cuantos, chats: chatsBorrados },
-  total: totalDocs + chatsBorrados,
-};
-mkdirSync(CARPETA_RECIBOS, { recursive: true });
-const ruta = join(CARPETA_RECIBOS, `${uid}-${recibo.fecha.slice(0, 10)}.json`);
-writeFileSync(ruta, `${JSON.stringify(recibo, null, 2)}\n`);
+// ===========================================================================
+// Modo una cuenta
+// ===========================================================================
+const { uid, enAuth } = await resolverCuenta();
+const inv = await inventario(uid);
+console.log(`  Cuenta en Authentication: ${enAuth ? 'sí' : color.amarillo('NO (perfil huérfano)')}`);
+pintar(recuento(inv));
 
+if (!aplicar) {
+  console.log('  Sin --aplicar no se ha borrado nada.\n');
+  await db.terminate();
+  process.exit(0);
+}
+if (alias && !(await confirmar('la cuenta'))) {
+  console.log(color.rojo('\n  Cancelado: no se ha borrado nada.\n'));
+  await db.terminate();
+  process.exit(1);
+}
+
+const { chatsBorrados, ruta } = await borrarCuenta(uid, inv, enAuth);
 await db.terminate();
 console.log(color.verde(`  ✓ Cuenta borrada. Conversaciones eliminadas por quedarse vacías: ${chatsBorrados}`));
 console.log(`  Recibo: ${ruta}\n`);
