@@ -1,7 +1,7 @@
 import { notify, confirmDialog, promptDialog, confirmEscritoDialog, palabraConfirmacion } from './notify.js';
 import { googleBooksApiKey, fcmVapidKey, urlProxyLibros } from './config.js';
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, query, where, onSnapshot, orderBy, serverTimestamp, deleteField, writeBatch, limit, arrayUnion, arrayRemove } from "firebase/firestore";
 // firebase/messaging arrastra consigo @firebase/installations: entre los dos,
 // ~91 kB de fuente que con un import estático viajaban DENTRO del chunk de
 // /biblioteca y se ejecutaban al arrancar (isSupported() toca IndexedDB y el
@@ -63,6 +63,7 @@ import { DIAS_PAPELERA, soloCamposDeLibro, idsAPurgar, diasRestantes } from './p
 import { COLUMNAS_EXPORTACION, ESTADO_CSV_PAPELERA, SECCIONES_CSV, esCsvGoodreads, esCsvPropio, filaPropiaALibro } from './csv-formato.js';
 import { slugLibro, mismoLibro } from './libro-identidad.js';
 import { claveBusquedaUsuario } from './nombre-usuario.js';
+import { cerrarSesionSinAvisos } from './cierre-sesion.js';
 import { perfilCompleto } from './perfil.js';
 import { totalPaginasDeLibros, totalPaginasParaLogros } from './total-paginas.js';
 import { enviarEvento } from './analitica.js';
@@ -3083,6 +3084,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // imports). Se pide una sola vez: el propio import() cachea.
         const cargarMessaging = () => import('firebase/messaging');
 
+        // El token de FCM de este navegador y el registro del service worker,
+        // tal como los dio getToken() en esta carga. Al cerrar sesión hacen
+        // falta para quitarlo (ver cierre-sesion.js).
+        let tokenPush = null;
+        let registroPush = null;
+
         const obtainPushToken = async () => {
             try {
                 const swRegistration = await navigator.serviceWorker.register(
@@ -3096,6 +3103,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     serviceWorkerRegistration: swRegistration
                 });
                 if (!token) return false;
+                tokenPush = token;
+                registroPush = swRegistration;
 
                 // Guardar token (array: soporta varios dispositivos por
                 // usuario) en el documento privado, no en el perfil: el
@@ -5188,17 +5197,62 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
         if (logoutBtn) {
-    logoutBtn.addEventListener('click', (e) => {
+    logoutBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        signOut(auth).then(() => {
+        if (logoutBtn.disabled) return;  // un doble toque no lo lanza dos veces
+        const contenidoOriginal = logoutBtn.innerHTML;
+        logoutBtn.disabled = true;
+        logoutBtn.innerHTML = '<span class="mi-ico">🚪</span> Cerrando sesión…';
+        try {
+            // Antes del signOut, con la sesión aún abierta: que este navegador
+            // deje de recibir los avisos de la cuenta. En un dispositivo
+            // compartido, quien entre después no debe verlos. Nunca se queda
+            // colgado: como mucho 3 s, y los fallos van a console.warn
+            // (ver cierre-sesion.js).
+            await cerrarSesionSinAvisos({
+                tokenConocido: tokenPush,
+                permiso: ('Notification' in window) ? Notification.permission : 'no-disponible',
+                obtenerToken: async () => {
+                    // Sin red no puede salir bien, y el SDK de Installations
+                    // deja además una promesa rechazada sin capturar: al plan B.
+                    if (navigator.onLine === false) throw Object.assign(new Error('Sin conexión'), { code: 'sin-red' });
+                    const registro = registroPush || await navigator.serviceWorker?.getRegistration();
+                    if (!registro) return null;
+                    const { getMessaging, getToken } = await cargarMessaging();
+                    const token = await getToken(getMessaging(app), {
+                        vapidKey: fcmVapidKey,
+                        serviceWorkerRegistration: registro
+                    });
+                    registroPush = registro;
+                    return token || null;
+                },
+                quitarDeFirestore: (token) => updateDoc(
+                    doc(db, 'users', user.uid, 'privado', 'notificaciones'),
+                    { tokens: arrayRemove(token) }
+                ),
+                borrarEnFcm: async () => {
+                    const { getMessaging, deleteToken } = await cargarMessaging();
+                    await deleteToken(getMessaging(app));
+                },
+                desuscribir: async () => {
+                    const registro = registroPush || await navigator.serviceWorker?.getRegistration();
+                    const suscripcion = await registro?.pushManager?.getSubscription();
+                    if (suscripcion) await suscripcion.unsubscribe();
+                },
+                cerrarSesion: () => signOut(auth),
+                avisar: (mensaje) => console.warn(`Cerrar sesión: ${mensaje}`),
+            });
             localStorage.removeItem('rincon_user_email');
             localStorage.removeItem('rincon_user_pass');
             localStorage.removeItem('rincon_logged_in');
             // Esto obliga a ir a index y evita que el usuario pueda volver atrás
             window.location.replace('index.html');
-        }).catch((error) => {
+        } catch (error) {
+            // Solo llega aquí si falla el propio signOut: la limpieza nunca lanza.
             console.error("Error al salir:", error);
-        });
+            logoutBtn.disabled = false;
+            logoutBtn.innerHTML = contenidoOriginal;
+        }
     });
 }
 
@@ -5574,8 +5628,10 @@ document.addEventListener('DOMContentLoaded', () => {
         closeMenuBtn?.addEventListener('click', () => abrirMenu(false));
         menuOverlay?.addEventListener('click', () => abrirMenu(false));
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') abrirMenu(false); });
-        // Al elegir cualquier opción, el menú se cierra (la acción sigue su curso)
-        menuSidebar?.querySelectorAll('.menu-item').forEach(el =>
+        // Al elegir cualquier opción, el menú se cierra (la acción sigue su curso).
+        // Cerrar sesión no: mientras quita el token de este navegador (hasta 3 s)
+        // el botón dice «Cerrando sesión…» y tiene que verse.
+        menuSidebar?.querySelectorAll('.menu-item:not(#logout-btn)').forEach(el =>
             el.addEventListener('click', () => abrirMenu(false)));
 
         // === BARRA DE NAVEGACIÓN ===
