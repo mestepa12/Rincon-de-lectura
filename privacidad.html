@@ -49,19 +49,48 @@
         <a href="index.html" class="btn-back">← Volver al inicio</a>
         
         <h1>Política de Privacidad y Cookies</h1>
-        <p><strong>Última actualización:</strong> Septiembre de 2026</p>
+        <p><strong>Última actualización:</strong> 21 de septiembre de 2026</p>
         <p>En <strong>Mi Rincón de Lectura</strong> (en adelante, "la Web") respetamos tu privacidad y protegemos tus datos personales. A continuación, te explicamos de forma transparente qué información recopilamos y para qué la utilizamos.</p>
 
         <h2>1. Responsable de los datos</h2>
-        <p>El responsable del tratamiento de los datos recogidos en esta web es <strong>Miguel Ángel Estepa Reina</strong>, creador de Mi Rincón de Lectura. Puedes contactar con nosotros para cualquier duda legal, o para ejercer los derechos que se explican en el <a href="#derechos">apartado 5</a>, a través del correo: <strong>hola@rinconlectura.es</strong>.</p>
+        <p>El responsable del tratamiento de los datos recogidos en esta web es <strong>Miguel Ángel Estepa Reina</strong>, creador de Mi Rincón de Lectura. Puedes contactar con nosotros para cualquier duda legal, o para ejercer los derechos que se explican en el <a href="#derechos">apartado 6</a>, a través del correo: <strong>hola@rinconlectura.es</strong>.</p>
 
-        <h2>2. Datos que recopilamos</h2>
-        <p>Para poder utilizar las funciones de la Web, recopilamos los siguientes datos mínimos y necesarios:</p>
+        <h2>2. Qué datos guardamos y para qué</h2>
+        <p>Solo lo que hace falta para que la aplicación funcione. Te lo contamos por partes, para que sepas exactamente qué se guarda de cada cosa que haces y quién puede verlo.</p>
+
+        <h3>Tu cuenta</h3>
         <ul>
-            <li><strong>Dirección de correo electrónico:</strong> Necesaria para crear tu cuenta, iniciar sesión y recuperar tu contraseña de forma segura mediante Firebase Authentication.</li>
-            <li><strong>Nombre de usuario:</strong> Utilizado para identificarte dentro de la plataforma y en las interacciones con otros usuarios (sistema de amigos).</li>
-            <li><strong>Datos de uso de tu biblioteca:</strong> Los libros que añades, tus notas, puntuaciones y progreso de lectura, guardados en nuestra base de datos (Firebase Firestore) para que puedas acceder a ellos desde cualquier dispositivo.</li>
+            <li><strong>Tu correo electrónico</strong> lo custodia <strong>Firebase Authentication</strong>: ahí viven tu sesión, tu contraseña cifrada y los enlaces de verificación y de recuperación. <strong>No se copia a la base de datos de la aplicación</strong>: ni tu biblioteca, ni tus comentarios, ni tus amistades llevan tu dirección en ninguna parte.</li>
+            <li><strong>Tu nombre de usuario</strong> lo eliges tú al registrarte (y, si entras con Google, en la pantalla siguiente). Es lo que ven las demás personas, así que no hace falta que sea tu nombre real. Se guarda en tu perfil y se reserva en un directorio de nombres para que nadie más pueda usarlo.</li>
+            <li><strong>Si entras con Google</strong>, Firebase Authentication recibe también el nombre y la foto de esa cuenta de Google. <strong>La aplicación no los usa</strong>: no se copian a la base de datos, no aparecen en ninguna pantalla y tu nombre de usuario tampoco sale de ahí, porque te lo preguntamos. Se quedan en la ficha de Authentication mientras exista tu cuenta.</li>
         </ul>
+
+        <h3>Tu biblioteca y tu progreso</h3>
+        <p>Los libros que añades con su título, autor, portada, notas, puntuación, fechas y páginas; tu racha de días, tus objetivos, el total de páginas leídas, los logros que desbloqueas y los adornos de tu estantería. Sirven para pintar tu biblioteca y tus estadísticas desde cualquier dispositivo. Los ves tú y las personas que tengas agregadas como amigos, que pueden abrir tu biblioteca desde la suya.</p>
+
+        <h3>Tus sesiones de lectura</h3>
+        <p>Si usas el cronómetro, se guarda cuándo leíste, cuánto rato y de qué página a qué página, para calcular tu ritmo y tus estadísticas. <strong>Estas solo las ves tú</strong>: ni siquiera tus amigos tienen acceso.</p>
+
+        <h3>Amigos y solicitudes</h3>
+        <p>Para añadir a alguien tienes que escribir su nombre de usuario completo: la búsqueda es exacta y el directorio de nombres <strong>no se puede listar</strong>, así que nadie puede sacar la lista de quién usa la aplicación ni encontrarte por casualidad.</p>
+        <p>De una solicitud se guarda quién la envía, a quién y cuándo; al aceptarla, cada persona queda en la lista de la otra con su nombre de usuario y la fecha. <strong>Tu perfil solo lo podéis leer tú y quienes estén en tu lista de amigos</strong>; para el resto de cuentas es invisible.</p>
+
+        <h3>Chat y lecturas compartidas</h3>
+        <p>Los mensajes del chat son entre dos personas y <strong>solo los leen esas dos</strong>. Cuando retas a alguien a leer un libro a la vez, se guarda el libro, el progreso de cada quien y vuestros nombres de usuario, y también lo veis solo las dos personas que participáis.</p>
+
+        <h3>Club de lectura</h3>
+        <p>Cada comentario que escribes en un libro guarda tu nombre de usuario, el texto y la página por la que ibas (así la aplicación puede taparlo si quien lee va más atrás y sería un spoiler). <strong>Tus comentarios los leéis tú y tus amigos</strong>, y nadie más.</p>
+
+        <h3>Test de tropos</h3>
+        <p>El test se juega sin cuenta. <strong>Tus respuestas concretas no salen de tu navegador</strong>: se calculan ahí mismo y solo se guardan en él mientras dura la visita. Si tienes la sesión abierta, <strong>el resultado se guarda en tu perfil</strong> para que puedas volver a verlo cuando quieras.</p>
+        <p>Si has aceptado la analítica (<a href="#cookies">apartado 4</a>), al terminar el test se envía a Google Analytics <strong>el tropo que te ha salido</strong>, para saber qué resultados son más frecuentes; también se registra que has llegado a la pantalla de registro del test. No se envían tus respuestas ni los porcentajes de afinidad. Si no la has aceptado, no se envía nada de esto.</p>
+
+        <h3>Notificaciones</h3>
+        <p>Si las activas, tu navegador genera un identificador de ese dispositivo (un «token») que se guarda en un documento privado dentro de tu cuenta, <strong>que solo puedes leer tú</strong>. Al cerrar sesión se borra, para que ese dispositivo deje de recibir tus avisos.</p>
+        <p>Para que el aviso llegue a tu móvil pasa por <strong>Firebase Cloud Messaging</strong> y por el <strong>servicio de notificaciones del navegador que uses</strong> (Apple, Mozilla, Microsoft o Google, según el navegador). Esos servicios ven el contenido del aviso: el título y el cuerpo, que en un mensaje de chat incluye <strong>los primeros 120 caracteres</strong> de lo que te han escrito.</p>
+
+        <h3>Registros técnicos</h3>
+        <p>Las funciones que corren en el servidor dejan una línea en los registros de Google Cloud cuando envían un aviso o cuando algo falla. Guardan <strong>tu identificador interno de usuario</strong>, nunca tu correo ni el texto de los mensajes. Además, las búsquedas de libros pasan por una función intermedia, y esas peticiones quedan registradas <strong>con tu dirección IP y el texto que buscaste</strong>. Todos estos registros se borran solos a los <strong>30 días</strong>.</p>
 
         <h2>3. Finalidad del tratamiento</h2>
         <p>Utilizamos tus datos <strong>exclusivamente para el funcionamiento de la aplicación</strong>. No vendemos, cedemos ni compartimos tus datos personales o tu lista de libros con terceros para fines comerciales o publicitarios.</p>
@@ -74,6 +103,10 @@
             <li><strong>corsproxy.io</strong>: solo si una portada no se puede cargar de otra forma al compartir una tarjeta como imagen.</li>
         </ul>
         <p>Salvo Firebase, estos servicios solo reciben tu dirección IP y lo imprescindible de cada petición (la portada que se muestra o el texto que buscas), nunca los datos de tu cuenta.</p>
+
+        <h3>Con qué base legal</h3>
+        <p>Todo lo anterior —tu cuenta, tu biblioteca y tu progreso, las funciones sociales (amigos, chat y lecturas compartidas), el Club de lectura, el test y las notificaciones que tú activas— lo tratamos porque <strong>hace falta para darte el servicio que pides al registrarte</strong>. En términos legales, es la ejecución del contrato entre tú y nosotros: el <strong>artículo 6.1.b del RGPD</strong>. Sin esos datos la aplicación no puede funcionar, así que no te pedimos permiso aparte para cada uno.</p>
+        <p>La única excepción es Google Analytics, que <strong>solo funciona si lo aceptas</strong>. Lo tienes explicado en el <a href="#cookies">apartado 4</a>.</p>
 
         <h2 id="cookies">4. Cookies y analítica</h2>
 
@@ -93,7 +126,7 @@
             <li><strong>Qué recoge:</strong> un identificador aleatorio guardado en una cookie, las páginas y acciones que acabamos de describir, el tipo de dispositivo y de navegador, y una ubicación aproximada (país o ciudad) que Google deduce de tu dirección IP. <strong>No es anónimo:</strong> ese identificador permite reconocer el mismo navegador en visitas distintas, aunque no sepamos quién eres. Nunca enviamos a Analytics tu correo, tu nombre de usuario ni tus libros.</li>
             <li><strong>Sin publicidad:</strong> la web desactiva las señales de Google y la personalización de anuncios, así que estos datos no se usan para mostrarte publicidad.</li>
             <li><strong>Base legal:</strong> tu consentimiento (artículo 6.1.a del RGPD y artículo 22.2 de la LSSI).</li>
-            <li><strong>Conservación:</strong> los datos de cada visita se guardan en Analytics como máximo 14 meses; después solo quedan informes con cifras agregadas.</li>
+            <li><strong>Conservación:</strong> los datos de cada visita se guardan en Analytics 14 meses desde tu última visita (cada visita nueva reinicia la cuenta); después solo quedan informes con cifras agregadas.</li>
             <li><strong>Transferencias internacionales:</strong> Google puede tratar estos datos en Estados Unidos. Google LLC está adherida al Marco de Privacidad de Datos UE-EE. UU., que la Comisión Europea reconoce como garantía adecuada.</li>
         </ul>
 
@@ -115,7 +148,17 @@
         <p><button type="button" class="btn-preferencias" data-abrir-consentimiento>Cambiar mis preferencias de cookies</button></p>
         <p>Si lo retiras, dejamos de enviar datos desde ese momento y borramos las cookies de Analytics de esta web. Retirarlo no afecta a lo que se recogió mientras estaba aceptado. También puedes borrar las cookies desde la configuración de tu navegador; en ese caso, te volveremos a preguntar.</p>
 
-        <h2 id="derechos">5. Tus Derechos</h2>
+        <h2 id="conservacion">5. Cuánto tiempo guardamos cada cosa</h2>
+        <ul>
+            <li><strong>Tu cuenta y todo lo que hay en ella:</strong> mientras la cuenta siga activa. Si nos pides que la borremos, la borramos (te contamos en el <a href="#derechos">apartado 6</a> qué desaparece exactamente).</li>
+            <li><strong>La papelera:</strong> 30 días. Los libros que borras se guardan ahí por si te arrepientes y se eliminan del todo cuando pasan esos 30 días, <strong>la próxima vez que abres la aplicación</strong>: la limpieza la hace la propia aplicación al arrancar, no un proceso que corra por su cuenta.</li>
+            <li><strong>Las copias de seguridad:</strong> la base de datos guarda un histórico de <strong>7 días</strong> que permite devolverla a un momento anterior. Sirve solo para recuperarnos de un fallo grave, no para consultarlo, así que algo que borres seguirá en esa copia como mucho una semana más.</li>
+            <li><strong>Los mensajes del chat:</strong> se quedan mientras exista la conversación. La aplicación todavía no permite borrar mensajes sueltos; si quieres que quitemos alguno, escríbenos.</li>
+            <li><strong>Los registros técnicos:</strong> 30 días, como te contamos en el apartado 2.</li>
+            <li><strong>Google Analytics:</strong> 14 meses desde tu última visita —cada visita nueva reinicia la cuenta— y solo si lo has aceptado (<a href="#cookies">apartado 4</a>).</li>
+        </ul>
+
+        <h2 id="derechos">6. Tus Derechos</h2>
         <p>De acuerdo con la normativa vigente (RGPD), en cualquier momento tienes derecho a:</p>
         <ul>
             <li><strong>Acceso:</strong> saber qué datos tuyos guardamos y obtener una copia.</li>
@@ -125,7 +168,16 @@
             <li><strong>Limitación:</strong> que conservemos tus datos pero no los usemos durante un tiempo, por ejemplo, mientras comprobamos una corrección que nos has pedido.</li>
             <li><strong>Portabilidad:</strong> recibir los datos que nos has facilitado, como tu cuenta y tu biblioteca, en un formato estructurado y de uso común para llevarlos a otro servicio.</li>
         </ul>
-        <p>Para ejercer estos derechos, simplemente envía un correo electrónico a <strong>hola@rinconlectura.es</strong> indicando en el asunto "Baja de cuenta" o "Protección de datos", o utiliza las herramientas que se habiliten dentro de la plataforma.</p>
+        <h3>Qué pasa cuando pides que borremos tu cuenta</h3>
+        <p>Se borra la cuenta entera, no solo el acceso. Desaparecen:</p>
+        <ul>
+            <li>Tu cuenta de Firebase Authentication, con tu correo y, si entraste con Google, el nombre y la foto que guardaba de esa cuenta.</li>
+            <li>Tu perfil, tus libros, tu papelera, tus sesiones de lectura, tus comentarios del Club, el resultado del test y el identificador de tus notificaciones.</li>
+            <li><strong>Tus datos dentro de las cuentas de otras personas:</strong> tu entrada en la lista de amigos de cada una de ellas, las solicitudes que enviaste y siguen pendientes, y las lecturas compartidas en las que participabas, que se borran enteras.</li>
+            <li><strong>Los mensajes que tú enviaste</strong> en cada conversación. Si la conversación se queda sin mensajes, se borra también.</li>
+        </ul>
+        <p>Los mensajes que <strong>otras personas te escribieron</strong> se conservan, porque son datos suyos y forman parte de su copia de la conversación. Tu nombre de usuario queda libre y podrá cogerlo otra persona. Y, como te contamos en el <a href="#conservacion">apartado 5</a>, las copias de seguridad mantienen lo borrado hasta 7 días más, solo por si hay que recuperar la base de datos de un fallo grave.</p>
+        <p>Para ejercer cualquiera de estos derechos, envía un correo electrónico a <strong>hola@rinconlectura.es</strong> indicando en el asunto "Baja de cuenta" o "Protección de datos", o utiliza las herramientas que se habiliten dentro de la plataforma. <strong>Te responderemos en el plazo de un mes</strong> desde que recibamos tu solicitud, como exige el RGPD; si el caso fuera especialmente complejo, te avisaríamos dentro de ese mes de que necesitamos más tiempo.</p>
         <p>Si consideras que no hemos atendido tu solicitud o que tratamos tus datos de forma indebida, puedes presentar una reclamación ante la <strong>Agencia Española de Protección de Datos</strong> (<a href="https://www.aepd.es">www.aepd.es</a>).</p>
     </main>
 
