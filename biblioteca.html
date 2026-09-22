@@ -454,6 +454,11 @@
         <button type="button" id="reproductor-terminar" class="reproductor-terminar" aria-label="Terminar sesión">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
         </button>
+        <!-- Salida de emergencia: descartar no depende del libro, ni de la
+             red, ni de Firestore, así que este botón está siempre. -->
+        <button type="button" id="reproductor-descartar" class="reproductor-descartar" aria-label="Descartar sesión">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 7l10 10M17 7L7 17"/></svg>
+        </button>
     </div>
 
     <dialog id="recommend-modal">

@@ -66,6 +66,10 @@ import { claveBusquedaUsuario, nombrePublicable, obtenerMiNombre } from './nombr
 import { cerrarSesionSinAvisos } from './cierre-sesion.js';
 import { perfilCompleto } from './perfil.js';
 import { totalPaginasDeLibros, totalPaginasParaLogros } from './total-paginas.js';
+import {
+    MAX_DURACION_MIN, UMBRAL_REVISION_MIN, normalizarSesion, duracionMin,
+    evaluarCierre, minutosValidos, clasificarFalloGuardado, duracionEnTexto,
+} from './sesion-lectura.js';
 import { enviarEvento } from './analitica.js';
 
 
@@ -291,6 +295,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         let booksData = [];
+        // ¿booksData es ya la biblioteca propia y completa? Hasta que el
+        // onSnapshot de /books no ha llegado —o mientras se mira la de un
+        // amigo, que la sustituye— no se puede afirmar que un libro no exista.
+        // Sin esta bandera, la sesión de lectura acusaría de "libro borrado"
+        // en cada arranque en frío.
+        let librosCargados = false;
         // La biblioteca propia se ha visto vacía en esta sesión (add_first_book)
         let bibliotecaVistaVacia = false;
 
@@ -2557,6 +2567,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cargarBibliotecaAmigo = async (friendUid, friendName) => {
 
             viewingFriendLibrary = true;
+            librosCargados = false;
             currentFriendName = friendName;
 
             document.getElementById('site-title').textContent = `Biblioteca de @${friendName}`;
@@ -2578,6 +2589,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cargar sus libros
             const q = query(collection(db, 'books'), where("userId", "==", friendUid));
             onSnapshot(q, (snapshot) => {
+                librosCargados = false;  // booksData pasa a ser la del amigo
                 booksData = [];
                 snapshot.forEach(doc => { booksData.push(normalizarCover({ id: doc.id, ...doc.data() })); });
                 booksData.sort((a, b) => a.title.localeCompare(b.title));
@@ -3375,8 +3387,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Cambio de sección solo si el usuario eligió una diferente
             const newSection = moveBookSelect.value;
+            let descartarSesionAlMover = false;
             if (newSection !== book.section) {
                 updatedData.section = newSection;
+
+                // Sacar el libro de "Leyendo ahora" con el cronómetro en
+                // marcha dejaba la sesión sin sitio donde cerrarse: la ficha
+                // esconde la sección de sesión fuera de esa estantería. Se
+                // avisa antes de escribir y se le da la salida de cerrarla
+                // ella misma si quiere conservarla.
+                const sesionEnCurso = getActiveSession();
+                if (newSection !== 'leyendo-ahora' && sesionEnCurso && sesionEnCurso.bookId === book.id) {
+                    const seguir = await confirmDialog({
+                        title: '¿Mover el libro con la sesión en curso?',
+                        message: `Tienes una sesión de lectura de ${duracionEnTexto(duracionMin(sesionEnCurso))} en este libro. ` +
+                                 `Al moverlo a ${SECTIONS[newSection]} se descartará.\n\n` +
+                                 `Si quieres conservarla, termínala antes desde aquí.`,
+                        confirmText: 'Mover y descartar la sesión',
+                        cancelText: 'Cancelar',
+                        danger: true
+                    });
+                    if (!seguir) {
+                        moveBookSelect.value = book.section;
+                        return;
+                    }
+                    descartarSesionAlMover = true;
+                }
 
                 // Qué pasa con el progreso según el destino. Antes se borraba
                 // siempre, y eso perdía datos en silencio: mover un libro de
@@ -3442,6 +3478,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 await updateDoc(doc(db, 'books', bookId), updatedData);
+                // El libro ya está fuera de "Leyendo ahora": soltar la sesión
+                // antes de nada más, para que ningún fallo posterior la deje
+                // viva sin sitio donde cerrarse.
+                if (descartarSesionAlMover) descartarSesion();
                 if (paginaProgresada) {
                     await updateStreak();
                     const paginasAvanzadas = (updatedData.currentPage) - (book.currentPage || 0);
@@ -3676,10 +3716,40 @@ document.addEventListener('DOMContentLoaded', () => {
         const sessionDiscardBtn = document.getElementById('session-discard-btn');
         const sessionPrediction = document.getElementById('session-prediction');
         const sessionPill = document.getElementById('session-pill');
+        const reproductorDescartar = document.getElementById('reproductor-descartar');
         let sessionTickId = null;
 
+        /**
+         * Sesión activa utilizable, o null. El saneado vive en
+         * sesion-lectura.js; aquí solo se lee y, si lo que hay no sirve (JSON
+         * roto, startAt imposible, sesión de otra cuenta), se borra la clave
+         * en el momento: una sesión que no se puede interpretar no se puede
+         * cerrar, y esa es justo la trampa de la que salimos.
+         * @return {?object} Sesión saneada.
+         */
         const getActiveSession = () => {
-            try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+            let bruto = null;
+            try { bruto = JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { bruto = null; }
+            if (bruto === null) return null;
+            const limpia = normalizarSesion(bruto, { uid: user?.uid || null });
+            if (!limpia) {
+                try { localStorage.removeItem(SESSION_KEY); } catch { /* modo privado */ }
+                return null;
+            }
+            return limpia;
+        };
+
+        /**
+         * Tira la sesión activa. Es la salida de emergencia de todo el
+         * sistema, así que no depende de nada: ni del libro, ni de la red, ni
+         * de Firestore, ni de que booksData haya cargado. Solo localStorage.
+         * @return {void}
+         */
+        const descartarSesion = () => {
+            try { localStorage.removeItem(SESSION_KEY); } catch { /* modo privado */ }
+            stopSessionTicker();
+            const abierto = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
+            if (abierto && bookDetailModal.open) refreshSessionUI(abierto);
         };
 
         const fmtDuracion = (ms) => {
@@ -3696,8 +3766,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // de la sesión y el tiempo. El libro se busca en cada tic porque al
         // retomar una sesión de otra visita los libros aún no han llegado; la
         // portada y el título solo se tocan si cambian. Viendo la biblioteca
-        // de un amigo el libro no está en booksData: se deja lo último pintado
-        // y se esconde ⏹, que no tendría ficha que abrir.
+        // de un amigo el libro no está en booksData: se deja lo último pintado.
+        //
+        // El ⏹ NO se esconde nunca aunque falte el libro. Esconderlo era el
+        // fallo de producción: con el libro en la papelera la barra se quedaba
+        // sin ningún control, contando para siempre. Ahora siempre lanza el
+        // cierre, que ya decide si toca guardar, preguntar o avisar.
         const reproductorTitulo = document.getElementById('reproductor-titulo');
         const reproductorTiempo = document.getElementById('reproductor-tiempo');
         const reproductorPortada = document.getElementById('reproductor-portada');
@@ -3707,7 +3781,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const pintarReproductor = (s, elapsed) => {
             if (reproductorTiempo) reproductorTiempo.textContent = elapsed;
             const book = booksData.find(b => b.id === s.bookId);
-            if (reproductorTerminar) reproductorTerminar.hidden = !book;
             if (book && reproductorTitulo && reproductorPortada) {
                 const clave = `${book.id}|${book.title}|${book.cover || ''}`;
                 if (clave !== reproductorPintado) {
@@ -3718,6 +3791,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     reproductorPortada.hidden = !valida;
                     if (valida) reproductorPortada.src = portada;
                     else reproductorPortada.removeAttribute('src');
+                }
+            } else if (!book && librosCargados && reproductorTitulo) {
+                // El libro ya no está y booksData es de fiar: decirlo en la
+                // propia barra, sin esperar a que pulse nada. Antes se quedaba
+                // el título del libro borrado, que era desconcertante.
+                const clave = `sin-libro|${s.bookId}`;
+                if (clave !== reproductorPintado) {
+                    reproductorPintado = clave;
+                    reproductorTitulo.textContent = 'Libro no disponible';
+                    if (reproductorPortada) {
+                        reproductorPortada.hidden = true;
+                        reproductorPortada.removeAttribute('src');
+                    }
                 }
             }
             sessionPill.hidden = false;
@@ -3748,13 +3834,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const refreshSessionUI = (book) => {
             if (!sessionToggleBtn) return;
             const s = getActiveSession();
+            const esSuSesion = !!s && s.bookId === book.id;
             sessionEndForm.style.display = 'none';
-            if (viewingFriendLibrary || book.section !== 'leyendo-ahora') {
+            // Fuera de "Leyendo ahora" la sección no se pinta... salvo que el
+            // libro tenga la sesión activa. Esconderla también entonces dejaba
+            // la sesión sin ningún control: el libro existía y la ficha abría,
+            // pero no había forma de terminarla ni de descartarla.
+            if (viewingFriendLibrary || (book.section !== 'leyendo-ahora' && !esSuSesion)) {
                 document.getElementById('session-section').style.display = 'none';
                 return;
             }
             document.getElementById('session-section').style.display = '';
-            if (s && s.bookId === book.id) {
+            if (esSuSesion) {
                 sessionToggleBtn.textContent = `⏹ Terminar sesión · ${fmtDuracion(Date.now() - s.startAt)}`;
                 sessionToggleBtn.classList.add('session-active');
             } else if (s) {
@@ -3772,39 +3863,156 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(SESSION_KEY, JSON.stringify({
                 bookId: book.id,
                 startAt: Date.now(),
-                startPage: book.currentPage || 0
+                startPage: book.currentPage || 0,
+                // El uid impide que en un navegador compartido la siguiente
+                // cuenta herede esta sesión y se quede con una barra que
+                // apunta a un libro que no es suyo.
+                uid: user.uid
             }));
             enviarEvento('reading_session_start'); // el cronómetro ya corre
             startSessionTicker();
             refreshSessionUI(book);
         };
 
-        const endSessionPrompt = (book) => {
+        /**
+         * Diálogo de "el libro de esta sesión ya no está". Única salida:
+         * descartar. No se ofrece guardar porque no hay nada que guardar.
+         * @param {number} minutos Duración cronometrada.
+         * @return {Promise<boolean>} true si se descartó.
+         */
+        const avisarSesionSinLibro = async (minutos) => {
+            const ok = await confirmDialog({
+                title: 'El libro de esta sesión ya no está',
+                message: `Llevas ${duracionEnTexto(minutos)} cronometrados, pero el libro está en la papelera ` +
+                         `o se ha borrado, así que la sesión no se puede guardar.\n\n` +
+                         `Si lo restauras desde la papelera podrás volver a cronometrarlo.`,
+                confirmText: 'Descartar la sesión',
+                cancelText: 'Ahora no',
+                danger: true
+            });
+            if (ok) descartarSesion();
+            return ok;
+        };
+
+        /**
+         * Pide confirmación del tiempo en las sesiones largas. No da por hecho
+         * que el cronómetro esté mal: si lo que marca cabe en una sesión, ese
+         * es el valor propuesto y confirmar son dos toques. Solo cuando no cabe
+         * hay que escribir otro número, y se explica por qué sin reprochar
+         * nada. Insiste mientras la respuesta no valga: recortar a escondidas
+         * sería inventarse el dato.
+         * @param {number} minutos Lo que marca el cronómetro.
+         * @param {number} propuestos Valor de partida del campo.
+         * @param {boolean} cabe Si lo que marca el cronómetro se puede guardar.
+         * @return {Promise<?number>} Minutos válidos, o null si se descartó o canceló.
+         */
+        const preguntarMinutosReales = async (minutos, propuestos, cabe) => {
+            const explicacion = cabe
+                ? `El cronómetro marca ${duracionEnTexto(minutos)}. Si es el tiempo que leíste, guárdalo tal cual; ` +
+                  `si se quedó en marcha, ajusta los minutos.`
+                : `El cronómetro marca ${duracionEnTexto(minutos)}, más de lo que cabe en una sesión ` +
+                  `(el máximo son ${MAX_DURACION_MIN} minutos, 24 horas). Pon los minutos que quieras guardar.`;
+            let aviso = '';
+            for (let intento = 0; intento < 3; intento++) {
+                const texto = await promptDialog({
+                    title: '¿Cuánto tiempo anotamos?',
+                    message: `${aviso}${explicacion}`,
+                    value: String(propuestos),
+                    confirmText: 'Guardar',
+                    cancelText: 'Descartar sesión'
+                });
+                if (texto === null) {   // "Descartar sesión" o ESC
+                    const ok = await confirmDialog({
+                        title: '¿Descartar la sesión?',
+                        message: `No se guardará el tiempo de esta sesión. Tu página de lectura no se toca.`,
+                        confirmText: 'Descartar',
+                        cancelText: 'Volver',
+                        danger: true
+                    });
+                    if (ok) { descartarSesion(); return null; }
+                    continue;
+                }
+                const validos = minutosValidos(texto);
+                if (validos !== null) return validos;
+                aviso = `De 1 a ${MAX_DURACION_MIN} minutos. `;
+            }
+            return null;
+        };
+
+        const discardSession = () => descartarSesion();
+
+        // Minutos que la usuaria ha confirmado a mano para el cierre en curso.
+        // null = vale lo que marque el cronómetro.
+        let minutosDeCierre = null;
+
+        /**
+         * Abre el formulario de terminar sesión, o el aviso que corresponda.
+         * Aquí es donde se decide qué pasa con una sesión rara: sin libro,
+         * demasiado larga o normal. Antes esto era un `return` mudo.
+         * @param {?object} book Libro de la sesión, si está en booksData.
+         * @return {Promise<void>}
+         */
+        const endSessionPrompt = async (book) => {
             const s = getActiveSession();
             if (!s) return;
+
+            const decision = evaluarCierre({
+                sesion: s,
+                libroExiste: !!book && book.id === s.bookId,
+                librosCargados,
+            });
+
+            if (decision.estado === 'esperando') {
+                notify('Tu biblioteca todavía se está cargando. Inténtalo en un momento.', 'info');
+                return;
+            }
+            if (decision.estado === 'sin-libro') {
+                await avisarSesionSinLibro(decision.minutos);
+                return;
+            }
+
+            // A partir de aquí el libro existe. Si el cronómetro se pasó del
+            // umbral, se confirma el tiempo ANTES de enseñar el formulario: no
+            // tiene sentido pedir la página si la sesión va a acabar descartada.
+            let minutosForzados = null;
+            if (decision.estado === 'revisar') {
+                minutosForzados = await preguntarMinutosReales(
+                    decision.minutos, decision.minutosPropuestos, decision.cabe);
+                if (minutosForzados === null) return;   // descartada o abandonada
+            }
+            minutosDeCierre = minutosForzados;
+
             sessionEndForm.style.display = '';
             sessionEndPage.value = parseInt(currentPageInput.value, 10) || s.startPage || 0;
             sessionEndPage.max = book.totalPages || 100000;
             sessionEndPage.focus();
         };
 
-        const discardSession = () => {
-            localStorage.removeItem(SESSION_KEY);
-            stopSessionTicker();
-            const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
-            if (book) refreshSessionUI(book);
-        };
-
+        /**
+         * Escribe en Firestore lo que ya no se puede perder: primero el doc de
+         * sesión y, en cuanto está, se suelta la sesión local. El progreso de
+         * página va en su propio intento, con su propio mensaje: mezclarlos
+         * hacía que un fallo al actualizar la página dijera "no se pudo
+         * guardar la sesión" cuando sí se había guardado, y reintentar
+         * duplicaba el documento.
+         * @return {Promise<void>}
+         */
         const saveSession = async () => {
             const s = getActiveSession();
             const book = booksData.find(b => b.id === bookDetailModal.dataset.bookId);
-            if (!s || !book || s.bookId !== book.id) return;
+            if (!s) return;
+            if (!book || s.bookId !== book.id) {
+                // Sin libro no hay guardado posible: en vez de no hacer nada
+                // (el fallo de producción), se dice y se ofrece descartar.
+                await endSessionPrompt(book || null);
+                return;
+            }
 
             let endPage = parseInt(sessionEndPage.value, 10);
             if (isNaN(endPage) || endPage < 0) endPage = s.startPage;
             if (book.totalPages > 0 && endPage > book.totalPages) endPage = book.totalPages;
 
-            const durationMin = Math.max(1, Math.round((Date.now() - s.startAt) / 60000));
+            const durationMin = minutosDeCierre !== null ? minutosDeCierre : duracionMin(s);
             const pagesRead = Math.max(0, endPage - (s.startPage || 0));
 
             sessionSaveBtn.disabled = true;
@@ -3818,8 +4026,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     pagesRead,
                     endAt: serverTimestamp()
                 });
+            } catch (error) {
+                console.error('Error guardando la sesión:', error);
+                await avisarFalloGuardado(error, durationMin, book, endPage);
+                return;
+            } finally {
+                sessionSaveBtn.disabled = false;
+            }
 
-                if (endPage > (book.currentPage || 0)) {
+            // La sesión ya está a salvo en Firestore: soltarla aquí mismo,
+            // antes de tocar nada más, para que ningún fallo posterior la
+            // deje viva y acabe escribiéndose dos veces.
+            try { localStorage.removeItem(SESSION_KEY); } catch { /* modo privado */ }
+            minutosDeCierre = null;
+            stopSessionTicker();
+            refreshSessionUI(book);
+
+            if (endPage > (book.currentPage || 0)) {
+                try {
                     await updateDoc(doc(db, 'books', book.id), { currentPage: endPage });
                     await updateStreak();
                     await updatePaginasObjetivo(pagesRead);
@@ -3829,23 +4053,97 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateProgressVisuals(endPage, book.totalPages || 0);
                     syncBuddyProgress(book);
                     evaluarLogros();
+                } catch (error) {
+                    console.error('Error actualizando el progreso tras la sesión:', error);
+                    notify('La sesión se guardó, pero no se pudo actualizar tu página. Vuelve a escribirla en la ficha.', 'error');
+                    return;
                 }
-
-                localStorage.removeItem(SESSION_KEY);
-                stopSessionTicker();
-                refreshSessionUI(book);
-
-                // ¿Terminó el libro en esta sesión? Ofrecer pasarlo a Terminados
-                if (book.totalPages > 0 && endPage >= book.totalPages) {
-                    const moved = await promptFinishBook(book);
-                    if (moved) openDetailModal(book.id);  // repintar ficha como Terminado (valoración, etc.)
-                }
-            } catch (error) {
-                console.error('Error guardando la sesión:', error);
-                notify('No se pudo guardar la sesión.', 'error');
-            } finally {
-                sessionSaveBtn.disabled = false;
             }
+
+            // ¿Terminó el libro en esta sesión? Ofrecer pasarlo a Terminados
+            if (book.totalPages > 0 && endPage >= book.totalPages) {
+                const moved = await promptFinishBook(book);
+                if (moved) openDetailModal(book.id);  // repintar ficha como Terminado (valoración, etc.)
+            }
+        };
+
+        /**
+         * Qué se le cuenta a la usuaria cuando el guardado falla, y qué salida
+         * se le da. El invariante: todos los caminos ofrecen descartar, para
+         * que la barra no se quede nunca encallada.
+         * @param {*} error Error de Firestore.
+         * @param {number} durationMin Duración que se intentó escribir.
+         * @param {object} book Libro de la sesión.
+         * @param {number} endPage Página final tecleada.
+         * @return {Promise<void>}
+         */
+        const avisarFalloGuardado = async (error, durationMin, book, endPage) => {
+            const causa = clasificarFalloGuardado(error);
+
+            if (causa === 'permisos') {
+                // Casi siempre es la duración: las reglas topan en
+                // MAX_DURACION_MIN. Se ofrece rescatar lo que de verdad
+                // importa —la página— y tirar el cronómetro.
+                const rescatar = await confirmDialog({
+                    title: 'No se pudo guardar la sesión',
+                    message: `El servidor ha rechazado una sesión de ${duracionEnTexto(durationMin)}` +
+                             (durationMin > MAX_DURACION_MIN ? ` (el máximo son ${MAX_DURACION_MIN} minutos).` : '.') +
+                             `\n\nPuedes guardar solo tu página de lectura y descartar el cronómetro.`,
+                    confirmText: 'Guardar mi página y descartar',
+                    cancelText: 'Volver a intentarlo',
+                    danger: true
+                });
+                if (!rescatar) return;
+                try {
+                    if (endPage > (book.currentPage || 0)) {
+                        await updateDoc(doc(db, 'books', book.id), { currentPage: endPage });
+                        book.currentPage = endPage;
+                        currentPageInput.value = endPage;
+                        updateProgressVisuals(endPage, book.totalPages || 0);
+                    }
+                    notify('Guardada tu página. La sesión se ha descartado.', 'info');
+                } catch (e) {
+                    console.error('Error guardando la página de rescate:', e);
+                    notify('Tampoco se pudo guardar la página. La sesión se ha descartado igualmente.', 'error');
+                }
+                descartarSesion();
+                return;
+            }
+
+            const mensaje = causa === 'sin-red'
+                ? 'Sin conexión: la sesión no se ha guardado. Puedes reintentarlo cuando vuelva la red, o descartarla.'
+                : 'No se pudo guardar la sesión. Puedes reintentarlo, o descartarla.';
+            const descartar = await confirmDialog({
+                title: 'No se pudo guardar la sesión',
+                message: mensaje,
+                confirmText: 'Descartar la sesión',
+                cancelText: 'Reintentar luego',
+                danger: true
+            });
+            if (descartar) descartarSesion();
+        };
+
+        /**
+         * Se llama cuando ya se sabe qué libros hay. Si la sesión activa
+         * apunta a un libro que ya no está, se avisa sin esperar a que la
+         * usuaria pulse nada: la barra sola no explicaba nada.
+         * Solo una vez por carga, para no repetir el diálogo en cada snapshot.
+         * @return {void}
+         */
+        let sesionHuerfanaAvisada = false;
+        const revisarSesionActiva = () => {
+            const s = getActiveSession();
+            if (!s) { sesionHuerfanaAvisada = false; return; }
+            startSessionTicker();
+            if (sesionHuerfanaAvisada) return;
+            const decision = evaluarCierre({
+                sesion: s,
+                libroExiste: booksData.some(b => b.id === s.bookId),
+                librosCargados,
+            });
+            if (decision.estado !== 'sin-libro') return;
+            sesionHuerfanaAvisada = true;
+            avisarSesionSinLibro(decision.minutos);
         };
 
         // Predicción de fin: velocidad media de tus últimas sesiones del libro
@@ -3904,20 +4202,45 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sessionDiscardBtn) sessionDiscardBtn.addEventListener('click', discardSession);
         if (sessionPill) sessionPill.addEventListener('click', () => {
             const s = getActiveSession();
-            if (s && booksData.some(b => b.id === s.bookId)) openDetailModal(s.bookId);
+            if (!s) return;
+            // Con el libro delante, la ficha. Sin él, el aviso: antes este
+            // clic no hacía nada y la barra parecía muerta.
+            if (booksData.some(b => b.id === s.bookId)) openDetailModal(s.bookId);
+            else endSessionPrompt(null);
         });
         // ⏹ del reproductor: la ficha del libro con el formulario de terminar
         // ya abierto (antes: abrir la ficha y pulsar «Terminar sesión»).
+        // Sin libro ya no se rinde: endSessionPrompt da el aviso y la salida.
         if (reproductorTerminar) reproductorTerminar.addEventListener('click', (e) => {
             e.stopPropagation(); // si no, el clic del reproductor abriría la ficha otra vez
             const s = getActiveSession();
-            const book = s && booksData.find(b => b.id === s.bookId);
-            if (!book) return;
-            openDetailModal(book.id);
-            endSessionPrompt(book);
+            if (!s) return;
+            const book = booksData.find(b => b.id === s.bookId);
+            if (book) openDetailModal(book.id);
+            endSessionPrompt(book || null);
+        });
+        // ✕ del reproductor: la salida de emergencia. Está siempre, no mira
+        // booksData, no toca la red y no puede fallar. Pide confirmación solo
+        // para que no se descarte de un roce.
+        if (reproductorDescartar) reproductorDescartar.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const s = getActiveSession();
+            if (!s) { stopSessionTicker(); return; }
+            const ok = await confirmDialog({
+                title: '¿Descartar la sesión?',
+                message: `Llevas ${duracionEnTexto(duracionMin(s))} cronometrados. ` +
+                         `Si la descartas no se guardará, pero tu página de lectura no se toca.`,
+                confirmText: 'Descartar',
+                cancelText: 'Seguir leyendo',
+                danger: true
+            });
+            if (ok) descartarSesion();
         });
 
-        // Si quedó una sesión activa de una visita anterior, retomar el contador
+        // Si quedó una sesión activa de una visita anterior, retomar el
+        // contador. El aviso de "tu libro ya no está" no se da aquí: booksData
+        // todavía está vacío, así que lo lanza revisarSesionActiva() cuando
+        // llega el primer snapshot.
         if (getActiveSession()) startSessionTicker();
 
         // ===============================================
@@ -4842,6 +5165,13 @@ document.addEventListener('DOMContentLoaded', () => {
             // ─────────────────────────────────────────────────────────────────
 
             evaluarLogros();
+
+            // A partir de aquí booksData es la biblioteca propia y completa:
+            // si un libro no está, es que de verdad no está. La sesión de
+            // lectura lo necesita para poder decir "tu libro ya no existe"
+            // sin equivocarse durante el arranque.
+            librosCargados = true;
+            revisarSesionActiva();
         }, (error) => {
             console.error("Error al recibir datos de Firebase: ", error);
         });
@@ -5175,6 +5505,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // se lee por encima; "tus notas (320 caracteres)" se lee.
             const detalles = [`Libro: «${libro.title}»`];
             if (libro.author) detalles.push(`Autor: ${libro.author}`);
+            // Si el libro tiene la sesión en curso hay que decirlo aquí: al
+            // salir de /books la sesión se queda apuntando a un libro que ya
+            // no existe, y ese era justo el atasco del reproductor.
+            const sesionDelLibro = getActiveSession();
+            const conSesion = !!sesionDelLibro && sesionDelLibro.bookId === libro.id;
+            if (conSesion) {
+                detalles.push(`Sesión de lectura en curso: ${duracionEnTexto(duracionMin(sesionDelLibro))}. Se descartará.`);
+            }
             if (libro.currentPage > 0) detalles.push(`Progreso: página ${libro.currentPage} de ${libro.totalPages || '?'}`);
             if (libro.rating > 0) detalles.push(`Tu valoración: ${libro.rating} de 5 estrellas`);
             if (libro.notes) detalles.push(`Tus notas: ${libro.notes.length} caracteres`);
@@ -5190,6 +5528,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (ok) {
                 handleDeleteBook(libro);
+                // Antes de cerrar la ficha, porque descartarSesion() repinta
+                // la sección de sesión del modal si sigue abierto.
+                if (conSesion) descartarSesion();
                 bookDetailModal.close();
                 notify(`«${libro.title}» está en la papelera. Puedes restaurarlo durante ${DIAS_PAPELERA} días.`, 'info');
             }
@@ -5271,6 +5612,10 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('rincon_user_email');
             localStorage.removeItem('rincon_user_pass');
             localStorage.removeItem('rincon_logged_in');
+            // La sesión de lectura también se va: si no, la siguiente cuenta
+            // que entre en este navegador hereda una barra que apunta a un
+            // libro que no es suyo, y no hay forma de que la entienda.
+            localStorage.removeItem('rincon_session_v1');
             // Esto obliga a ir a index y evita que el usuario pueda volver atrás
             window.location.replace('index.html');
         } catch (error) {
