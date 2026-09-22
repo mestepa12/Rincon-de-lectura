@@ -708,6 +708,30 @@ form input:focus, form select:focus { outline: none; border-color: var(--accent-
 .reproductor-abrir:focus-visible,
 .reproductor-terminar:focus-visible { outline: 3px solid var(--accent-color-interactive); outline-offset: -3px; }
 .reproductor-terminar:focus-visible { outline-color: var(--text-color); outline-offset: 2px; }
+/* Descartar: siempre presente, pero secundario. No compite con ⏹, que es lo
+   que se pulsa a diario; este es el que saca a la barra de un atasco. */
+.reproductor-descartar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 44px;
+    border: 0;
+    background: transparent;
+    color: var(--text-color);
+    opacity: 0.6;
+    cursor: pointer;
+}
+.reproductor-descartar svg {
+    width: 1.1rem;
+    height: 1.1rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+.reproductor-descartar:hover { opacity: 1; }
+.reproductor-descartar:focus-visible { outline: 3px solid var(--text-color); outline-offset: -3px; opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
     .reproductor-estado::before { animation: none; }
 }

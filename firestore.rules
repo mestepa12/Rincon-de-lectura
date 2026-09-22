@@ -338,6 +338,12 @@ service cloud.firestore {
                     && validUser(request.resource.data, request.resource.data.diff(resource.data).affectedKeys());
 
       // === A. SESIONES DE LECTURA (privadas, solo el dueño) ===
+      // El tope de durationMin (1440) está duplicado en sesion-lectura.js
+      // como MAX_DURACION_MIN, porque el cliente tiene que saber qué va a
+      // rechazar el servidor antes de intentarlo: si no, una sesión larga
+      // muere aquí en silencio y la barra del reproductor se queda encallada.
+      // Hay una prueba (tests/sesion-lectura.test.mjs) que comprueba que los
+      // dos números siguen siendo el mismo.
       match /sessions/{sessionId} {
         allow read, delete: if request.auth != null && request.auth.uid == userId;
 
