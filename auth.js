@@ -14,10 +14,11 @@ import {
 import {
     doc,
     getDoc,
-    setDoc
+    writeBatch
 } from "firebase/firestore";
 import { app, auth, db } from "./firebase-init.js";
 import { perfilCompleto } from "./perfil.js";
+import { altaConCorreo, unoALaVez } from "./registro.js";
 import { enviarAlta, recordarOrigenDesdeReferrer } from "./analitica.js";
 
 // 1. LIMPIEZA DE CREDENCIALES ANTIGUAS
@@ -244,9 +245,14 @@ const iniciarAuth = () => {
     }
  
     // --- REGISTRO ---
+    // La lógica del alta está en registro.js; aquí solo lo que toca la página.
     if (registerForm) {
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+        const registerBtn = registerForm.querySelector('button[type="submit"]');
+
+        // Un alta a la vez: un doble toque creó dos cuentas con el mismo
+        // correo (ver registro.js). El botón desactivado es lo que se ve; la
+        // guarda de unoALaVez es lo que lo garantiza, también con Enter.
+        const registrar = unoALaVez(async () => {
             const email = document.getElementById('register-email').value;
             const pass = regPasswordInput.value;
             const usernameInputVal = regUsernameInput.value.trim();
@@ -268,56 +274,74 @@ const iniciarAuth = () => {
                 return;
             }
 
-            try {
-                // Chequeo de nombre libre contra la colección pública `usernames`
-                // (un doc por nombre, ID = username en minúsculas). La colección
-                // `users` ya no es legible sin autenticar.
-                const usernameKey = usernameInputVal.toLowerCase();
-                const nameSnap = await getDoc(doc(db, "usernames", usernameKey));
+            registerError.textContent = '';
+            if (registerBtn) registerBtn.disabled = true;
 
-                if (nameSnap.exists()) {
-                    registerError.textContent = 'Este nombre de usuario ya está en uso. Por favor, elige otro.';
-                    return;
-                }
-
-                const userCred = await createUserWithEmailAndPassword(auth, email, pass);
-
+            let userCred;
+            const r = await altaConCorreo({ username: usernameInputVal }, {
+                // Colección pública `usernames` (ID = nombre en minúsculas):
+                // `users` no se puede leer sin sesión.
+                nombreLibre: async (clave) => !(await getDoc(doc(db, "usernames", clave))).exists(),
+                crearCuenta: async () => {
+                    userCred = await createUserWithEmailAndPassword(auth, email, pass);
+                    return userCred.user.uid;
+                },
+                // En un lote: o perfil y reserva, o nada. Si el nombre se lo
+                // acaba de quedar otra cuenta, las reglas rechazan la reserva
+                // (solo create) y con ella el perfil.
                 // PRIVACIDAD: el email NO se guarda en Firestore (Auth lo custodia)
-                await setDoc(doc(db, "users", userCred.user.uid), {
-                    username: usernameInputVal,
-                    searchKey: usernameKey,
-                    uid: userCred.user.uid
-                });
-                // Reservar el username: las reglas solo permiten create (no
-                // sobrescribir), así que dos registros simultáneos no chocan.
-                await setDoc(doc(db, "usernames", usernameKey), {
-                    uid: userCred.user.uid
-                });
+                guardarPerfilYReserva: (uid, username, clave) => {
+                    const lote = writeBatch(db);
+                    lote.set(doc(db, "usernames", clave), { uid });
+                    lote.set(doc(db, "users", uid), { username, searchKey: clave, uid });
+                    return lote.commit();
+                },
+                medirAlta: () => enviarAlta('email'),
+                enviarVerificacion: () => sendEmailVerification(userCred.user),
+            });
 
-                // Alta completa: cuenta, perfil y nombre reservado. No se mide
-                // tras createUser…: si el perfil fallara, la cuenta no serviría.
-                const altaMedida = enviarAlta('email');
-
-                await sendEmailVerification(userCred.user);
-
-                // La sesión se queda iniciada a propósito: sin verificar no se
-                // puede entrar a la biblioteca, y así el banner de login puede
-                // mostrar el correo y reenviar el enlace sin volver a loguear.
-                limpiarCredencialesAntiguas();
-                await altaMedida; // que el evento salga antes de cambiar de página (≤1 s)
-                // Desde el muro del test: directo al resultado (la sesión queda
-                // iniciada); el aviso de verificación le esperará en el login.
-                if (sessionStorage.getItem('quiz_retorno')) {
-                    window.location.href = 'quiz.html';
-                    return;
-                }
-                sessionStorage.setItem('registro_recien_creado', '1');
-                window.location.href = 'login.html';
-
-            } catch (error) {
-                console.error("Error en el registro:", error.code);
-                registerError.textContent = mensajeDeErrorAuth(error.code);
+            if (r.estado === 'nombre-ocupado' || r.estado === 'sin-cuenta') {
+                // No se ha creado nada: se puede corregir y volver a enviar.
+                registerError.textContent = r.estado === 'nombre-ocupado'
+                    ? 'Este nombre de usuario ya está en uso. Por favor, elige otro.'
+                    : mensajeDeErrorAuth(r.error?.code);
+                if (r.error) console.error("Error en el registro:", r.error.code);
+                if (registerBtn) registerBtn.disabled = false;
+                return;
             }
+
+            // La cuenta existe: pase lo que pase, el botón NO se reactiva.
+            // La sesión se queda iniciada a propósito: sin verificar no se
+            // puede entrar a la biblioteca, y así el banner de login puede
+            // mostrar el correo y reenviar el enlace sin volver a loguear.
+            limpiarCredencialesAntiguas();
+
+            if (r.estado === 'sin-perfil') {
+                // El nombre no se guardó (se acaba de ocupar, o sin red): lo
+                // elige en el onboarding, que ya sabe terminar estas cuentas.
+                console.error("Registro sin perfil:", r.error?.code);
+                registerError.textContent = 'Tu cuenta está creada, pero no se pudo guardar el nombre. Te llevamos a elegirlo…';
+                window.location.href = 'onboarding.html';
+                return;
+            }
+
+            // 'completa' o 'sin-verificacion': en el login le espera el aviso,
+            // con el botón para reenviar el correo si no salió.
+            if (r.estado === 'sin-verificacion') console.error("Registro sin correo de verificación:", r.error?.code);
+            // Desde el muro del test: directo al resultado (la sesión queda
+            // iniciada); el aviso de verificación le esperará en el login.
+            if (sessionStorage.getItem('quiz_retorno')) {
+                window.location.href = 'quiz.html';
+                return;
+            }
+            sessionStorage.setItem('registro_recien_creado', '1');
+            window.location.href = 'login.html';
+        });
+        registerForm.addEventListener('submit', (e) => {
+            // Fuera de la guarda: el envío que se ignora tampoco puede seguir
+            // su curso nativo, que recargaría la página a mitad del alta.
+            e.preventDefault();
+            registrar();
         });
     }
 
