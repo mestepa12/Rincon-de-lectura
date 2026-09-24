@@ -31,6 +31,7 @@ async function haySesionPersistida() {
     }
 }
 
+// Se programa en idle: la comprobación no compite con el primer pintado.
 async function cargarAuthSiHaySesion() {
     if (await haySesionPersistida()) {
         import('./auth.js');

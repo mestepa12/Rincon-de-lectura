@@ -436,6 +436,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? AbortSignal.any([signal, AbortSignal.timeout(timeoutMs)])
                 : signal;
 
+        // Fuente de reserva: sin cuota ni API key, pero con peor catálogo en
+        // español. Nunca lanza: un fallo cuenta como "sin resultados" para no
+        // tumbar la búsqueda combinada.
         async function buscarEnOpenLibrary(query, signal) {
             try {
                 // Búsqueda por título (title=), no genérica (q=): la genérica es
@@ -533,6 +536,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // (borrar y reescribir, volver atrás...) no debe gastar cuota de API.
         const busquedasCache = new Map();
 
+        // Google Books manda (mejor catálogo en español); OpenLibrary solo decide
+        // si Google falla o viene vacío. `googleCaido` deja a la interfaz
+        // distinguir "ese libro no existe" de "el servicio no responde".
         async function buscarLibroPorTitulo(titulo, signal) {
             const cacheKey = titulo.toLowerCase();
             if (busquedasCache.has(cacheKey)) return busquedasCache.get(cacheKey);
@@ -693,6 +699,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const PALETA_LOMOS = ['#7C3A3A', '#9A3B3B', '#B5651D', '#6B8E5A', '#3E6257', '#4A5A7A', '#7A4A6E', '#8A6D3B', '#5C4A72', '#2F6690', '#A0522D', '#556B2F'];
 
+        // Hash determinista (estilo String.hashCode de Java): el mismo libro sale
+        // siempre con el mismo color, grosor y adornos, así la estantería no
+        // cambia de aspecto entre recargas.
         const hashLibro = (s) => {
             let h = 0;
             for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -727,6 +736,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const lomosEnVuelo = new Map(); // dedupe: vista y tarjeta pueden pedir a la vez
 
+        // Muestrear la portada en canvas es caro: una promesa compartida por URL
+        // (lomosEnVuelo) y la caché en localStorage evitan repetirlo.
         const generarLomo = (coverUrl) => {
             if (!coverUrl || !/^https?:/i.test(coverUrl)) return Promise.resolve({ color: null, textura: null, textoOscuro: false });
             const cacheada = lomosCache[coverUrl];
@@ -853,6 +864,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, { rootMargin: '400px 0px' });
 
+        // Lo "aleatorio" (libros de frente, grosor) sale del hash del libro, no de
+        // Math.random(): cada render dibuja exactamente la misma estantería.
         const crearLibroEstanteria = (book) => {
             const h = hashLibro(book.id || book.title || '');
             const el = document.createElement('article');
@@ -2372,6 +2385,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return bubble;
         };
 
+        // El ID del chat son los dos uids ordenados: las reglas de Firestore
+        // comprueban la pertenencia leyendo el propio ID, sin lecturas extra.
+        // limit(200) acota lo que cuesta abrir una conversación larga.
         const openChat = async (friendUid, friendUsername) => {
             currentChatFriend = { uid: friendUid, username: friendUsername };
             document.getElementById('chat-title').textContent = `💬 @${friendUsername}`;
@@ -2792,6 +2808,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         };
 
+        // Lee el documento de usuario recién pedido, no el estado local: la racha
+        // y las páginas del día también las cambian las Cloud Functions y otros
+        // dispositivos, y un logro concedido con datos viejos ya no se retira.
         const evaluarLogros = async () => {
             const userRef = doc(db, 'users', user.uid);
             try {
@@ -2927,6 +2946,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (current && genres.includes(current)) sel.value = current;
         };
 
+        // Chart.js se descarga aquí, bajo demanda: solo paga su peso quien abre
+        // las estadísticas. Las gráficas previas se destruyen porque Chart.js no
+        // reutiliza un canvas que ya tiene una instancia.
         const renderStats = async () => {
             await loadChart(); // carga Chart.js bajo demanda (define window.Chart)
             [pieChartInst, barChartInst, genreChartInst, ratingChartInst, authorsChartInst, ritmoChartInst, moodChartInst].forEach(c => { if (c) c.destroy(); });
@@ -3266,6 +3288,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
 
+        // Red de seguridad en el cliente: resetExpiredStreaks ya pone a cero las
+        // rachas caducadas cada noche, pero así una racha muerta no se muestra
+        // nunca, aunque la tarea programada falle o aún no haya corrido.
         const checkStreakBreakOnLogin = async () => {
             const userRef = doc(db, 'users', user.uid);
             try {
@@ -3293,6 +3318,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const getTodayStr = () => fechaLocal();
         const getWeekStartStr = () => inicioSemanaLocal();
 
+        // Cada contador guarda su fecha al lado: si no es la de hoy (o la de esta
+        // semana), se reinicia al escribir. Así no hace falta ninguna tarea que
+        // los ponga a cero a medianoche.
         const updatePaginasObjetivo = async (paginasAvanzadas) => {
             const userRef = doc(db, 'users', user.uid);
             try {
@@ -3855,6 +3883,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderPrediction(book);
         };
 
+        // La sesión vive en localStorage, no en Firestore: el cronómetro sobrevive
+        // a recargas y a cerrar la app sin escribir nada hasta que se guarda.
         const startSession = (book) => {
             localStorage.setItem(SESSION_KEY, JSON.stringify({
                 bookId: book.id,
@@ -4351,6 +4381,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return candidates;
         };
 
+        // Puntuación heurística y explicable: cada señal suma y deja una razón
+        // legible, para que la recomendación diga POR QUÉ. Los topes (Math.min)
+        // evitan que un único género o estado de ánimo lo arrase todo.
         const scoreCandidates = (candidates, profile) => {
             const topRitmo = Object.entries(profile.ritmos).sort((a, b) => b[1] - a[1])[0]?.[0];
             return candidates.map(c => {
@@ -4578,6 +4611,8 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace('&edge=curl', '')
             .replace(/(covers\.openlibrary\.org\/b\/.+)-M\.jpg$/i, '$1-L.jpg');
 
+        // html2canvas no puede pintar imágenes sin CORS (contaminan el canvas):
+        // se convierten a data URL probando fuentes cada vez más permisivas.
         const fetchImageAsDataUrl = async (url) => {
             if (!url) return null;
             const toDataUrl = async (fetchUrl) => {
@@ -5036,6 +5071,8 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDoc(doc(db, 'books', String(bookId)), { rating: rating }).catch(error => console.error("Error al valorar:", error));
         };
         
+        // Delegación de eventos: un único listener para todas las tarjetas, que
+        // renderBooks() destruye y recrea en cada pintado.
         const handleMainContentClick = (e) => {
             const bookElement = e.target.closest('.book, .shelf-book');
             if (!bookElement) {
@@ -5271,6 +5308,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 'success');
         };
 
+        // Parser CSV propio en vez de split(','): la exportación de Goodreads
+        // lleva comas, comillas y saltos de línea dentro de títulos y reseñas.
         const importGoodreadsCSV = async (file) => {
             const raw = await file.text();
             const csvText = raw.replace(/^\uFEFF/, ''); // Eliminar BOM
