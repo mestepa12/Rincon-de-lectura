@@ -97,7 +97,12 @@ form.addEventListener('submit', async (e) => {
             uid: user.uid
         }, { merge: true });
 
-        localStorage.setItem('rincon_logged_in', '1');
+        // Una cuenta de correo sin verificar (su alta falló al guardar el
+        // nombre) no puede entrar en la biblioteca: la echaría al login, y
+        // con esta marca puesta el login la devolvería a la biblioteca, en
+        // bucle. Va al aviso de verificación, sin la marca.
+        const aVerificar = !user.emailVerified && !sessionStorage.getItem('quiz_retorno');
+        if (user.emailVerified) localStorage.setItem('rincon_logged_in', '1');
         // El alta con Google acaba aquí: hasta ahora solo había cuenta de
         // Auth. También llega aquí una cuenta de correo cuyo perfil falló.
         if (!perfilYaExistia) {
@@ -106,6 +111,11 @@ form.addEventListener('submit', async (e) => {
             // se fuerza: si no, aquí se perdería y contaría como directo.
             const desdeElTest = Boolean(sessionStorage.getItem('quiz_retorno'));
             await enviarAlta(conGoogle ? 'google' : 'email', desdeElTest ? { origen: '/quiz' } : {}); // ≤1 s, antes de salir
+        }
+        if (aVerificar) {
+            sessionStorage.setItem('registro_recien_creado', '1');
+            window.location.href = 'login.html';
+            return;
         }
         window.location.href = destinoTrasAuth();
     } catch (err) {
