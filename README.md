@@ -20,7 +20,7 @@ Goodreads apenas ha cambiado en años, no está bien traducido y no ayuda a leer
 - **Estadísticas** de lo que lees y a qué ritmo
 - **Parte social:** amigos, chat, club de lectura con comentarios sin spoilers y lecturas conjuntas
 
-Está en producción con usuarias reales.
+Está en producción con 72 usuarias activas (dato de Firebase Analytics).
 
 <p align="center">
   <img src="public/og-image.png" alt="Mi Rincón de Lectura: convierte la lectura en tu mejor hábito" width="720">
