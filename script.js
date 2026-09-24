@@ -66,6 +66,7 @@ import { claveBusquedaUsuario, nombrePublicable, obtenerMiNombre } from './nombr
 import { cerrarSesionSinAvisos } from './cierre-sesion.js';
 import { perfilCompleto } from './perfil.js';
 import { totalPaginasDeLibros, totalPaginasParaLogros } from './total-paginas.js';
+import { fechaLocal, inicioSemanaLocal } from './fecha-local.js';
 import {
     MAX_DURACION_MIN, UMBRAL_REVISION_MIN, normalizarSesion, duracionMin,
     evaluarCierre, minutosValidos, clasificarFalloGuardado, duracionEnTexto,
@@ -3288,14 +3289,9 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         checkStreakBreakOnLogin();
 
-        const getTodayStr = () => new Date().toISOString().split('T')[0];
-        const getWeekStartStr = () => {
-            const d = new Date();
-            const day = d.getDay();
-            const monday = new Date(d);
-            monday.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
-            return monday.toISOString().split('T')[0];
-        };
+        // Fecha local, no UTC: ver fecha-local.js
+        const getTodayStr = () => fechaLocal();
+        const getWeekStartStr = () => inicioSemanaLocal();
 
         const updatePaginasObjetivo = async (paginasAvanzadas) => {
             const userRef = doc(db, 'users', user.uid);
@@ -5755,10 +5751,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let leidoHoy = false;
             if (ultimaTs && ultimaTs.toDate) {
                 const ultima = ultimaTs.toDate();
-                const ultStr = ultima.getFullYear() + '-' +
-                    String(ultima.getMonth() + 1).padStart(2, '0') + '-' +
-                    String(ultima.getDate()).padStart(2, '0');
-                leidoHoy = ultStr === hoyStr;
+                leidoHoy = fechaLocal(ultima) === hoyStr;
             }
 
             const mascotaEl = document.getElementById('racha-modal-mascota');
@@ -5916,7 +5909,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ].map(csvCampo).join(','));
             // BOM inicial (U+FEFF): Excel abre el UTF-8 con acentos correctos
             const csv = '﻿' + [cols.join(','), ...filas].join('\r\n');
-            const fecha = new Date().toISOString().slice(0, 10);
+            const fecha = fechaLocal();
             descargarBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `mi-rincon-de-lectura-${fecha}.csv`);
             marcarCopiaHecha();
             const enPapelera = filasPapelera.length;

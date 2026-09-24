@@ -2,6 +2,7 @@ import { notify } from './notify.js';
 import { googleBooksApiKey, urlProxyLibros } from './config.js';
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 import { exportarCanvas } from './share-export.js';
+import { fechaLocal, parsearFechaLocal } from './fecha-local.js';
 
 // Entradas suaves de las secciones de la landing al hacer scroll.
 // La clase js-reveal activa el estado oculto SOLO si este script cargó:
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ya haya jugado con la demo.
     if (!localStorage.getItem('demo_racha')) {
         localStorage.setItem('demo_racha', '14');
-        localStorage.setItem('demo_ultima_lectura', new Date().toISOString().split('T')[0]);
+        localStorage.setItem('demo_ultima_lectura', fechaLocal());
         localStorage.setItem('demo_logros', JSON.stringify([
             'primer_libro', 'primer_terminado', 'cinco_libros',
             'maraton', 'critico', 'racha_7'
@@ -178,12 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateStreakDemo() {
         const hoy = new Date();
         hoy.setHours(0, 0, 0, 0);
-        const todayStr = hoy.toISOString().split('T')[0];
+        const todayStr = fechaLocal(hoy);
         const savedDate = localStorage.getItem('demo_ultima_lectura');
         let racha = parseInt(localStorage.getItem('demo_racha') || '0', 10);
         if (!savedDate) { racha = 1; }
         else {
-            const ultima = new Date(savedDate); ultima.setHours(0,0,0,0);
+            const ultima = parsearFechaLocal(savedDate);
             const d = Math.round((hoy - ultima) / 86400000);
             if (d === 0) return; else if (d === 1) racha++; else racha = 1;
         }
