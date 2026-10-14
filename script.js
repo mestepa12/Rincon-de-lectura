@@ -16,6 +16,7 @@ import { app, auth, db } from './firebase-init.js';
 import { loadChart, loadHtml2canvas } from './lazy-libs.js';
 import { exportarCanvas, descargarBlob } from './share-export.js';
 import { planDeAislamiento } from './captura-aislada.js';
+import { periodoHalloween, temaHalloweenActivo, CLAVE_APAGADO_HALLOWEEN } from './tema-estacional.js';
 
 // iOS Safari mata en silencio el canvas de html2canvas cuando se queda sin
 // memoria; con bibliotecas grandes (decenas de portadas) el scale 2 sobre la
@@ -396,6 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mainContent = document.getElementById('main-content');
         const toggleViewBtn = document.getElementById('toggle-view');
         const toggleThemeBtn = document.getElementById('toggle-theme');
+        const toggleHalloweenBtn = document.getElementById('toggle-halloween');
         const searchBar = document.getElementById('search-bar');
         const addBookModal = document.getElementById('add-book-modal');
         const addBookForm = document.getElementById('add-book-form');
@@ -5136,6 +5138,34 @@ document.addEventListener('DOMContentLoaded', () => {
             if (statsModal?.open) renderStats();
         };
 
+        // --- TEMA DE HALLOWEEN (decorativo) ---
+        // Solo una clase en el body que redefine los tokens de color: ni
+        // lógica ni Firestore. Apagarlo guarda el año del periodo en
+        // localStorage (preferencia de este navegador): sigue apagado hasta
+        // que acabe y el año siguiente vuelve solo.
+        // aria-pressed es el estado para el lector de pantalla y, por CSS,
+        // el del interruptor visual (.menu-interruptor)
+        const pintarBotonHalloween = (activo) => toggleHalloweenBtn?.setAttribute('aria-pressed', String(activo));
+        const setupTemaHalloween = () => {
+            const hoy = new Date();
+            let apagadoEn = null;
+            try { apagadoEn = localStorage.getItem(CLAVE_APAGADO_HALLOWEEN); } catch { /* sin almacenamiento: activo */ }
+            const activo = temaHalloweenActivo(hoy, apagadoEn);
+            document.body.classList.toggle('tema-halloween', activo);
+            if (toggleHalloweenBtn) toggleHalloweenBtn.hidden = periodoHalloween(hoy) === null;
+            pintarBotonHalloween(activo);
+        };
+        const toggleTemaHalloween = () => {
+            const periodo = periodoHalloween(new Date());
+            if (periodo === null) return;
+            const activo = document.body.classList.toggle('tema-halloween');
+            try {
+                if (activo) localStorage.removeItem(CLAVE_APAGADO_HALLOWEEN);
+                else localStorage.setItem(CLAVE_APAGADO_HALLOWEEN, periodo);
+            } catch { /* sin almacenamiento: vale para esta visita */ }
+            pintarBotonHalloween(activo);
+        };
+
         // --- LISTENER TIEMPO REAL FIREBASE ---
         // 1. Definimos la referencia a la colección 'books'
         const booksRef = collection(db, 'books');
@@ -5519,6 +5549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('click', (e) => { if (!e.target.closest('.hmenu')) cerrarMenus(null); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenus(null); });
         toggleThemeBtn.addEventListener('click', toggleTheme);
+        toggleHalloweenBtn?.addEventListener('click', toggleTemaHalloween);
         mainContent.addEventListener('click', handleMainContentClick);
         searchBar.addEventListener('input', handleSearch);
         saveDetailsBtn.addEventListener('click', handleSaveDetails);
@@ -6085,5 +6116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         setupTheme(); // (Esta línea ya la tenías al final)
+        setupTemaHalloween();
     }
 });
