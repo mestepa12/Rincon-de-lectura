@@ -14,11 +14,12 @@
 // títulos: solo recuentos.
 //
 // Coste acotado por número de perfiles, no por tamaño de las bibliotecas:
-// por cada perfil hace 4 count() (libros, libros de Goodreads, sesiones y
-// amigos), que cobran 1 lectura por cada mil entradas del índice (mínimo 1),
-// y 1 get() de privado/notificaciones. Más 1 lectura por perfil al recorrer
-// /users (con select() de los dos campos de fecha). Unas 6 lecturas por
-// perfil: ~600 para 100 perfiles. Recorrer Authentication no cobra.
+// por cada perfil hace 9 count() (libros, libros de Goodreads, uno por cada
+// una de las 5 secciones, sesiones y amigos), que cobran 1 lectura por cada
+// mil entradas del índice (mínimo 1), y 1 get() de privado/notificaciones.
+// Más 1 lectura por perfil al recorrer /users (con select() del campo de
+// fecha). Unas 11 lecturas por perfil: ~1.100 para 100 perfiles. Recorrer
+// Authentication no cobra.
 //
 // Mismas guardas que los demás scripts: hay que elegir destino, no habla con
 // un proyecto real si las variables de emulador están puestas, credenciales
@@ -38,6 +39,8 @@ const MS_POR_DIA = 24 * 60 * 60 * 1000;
 // Consultas por perfil en vuelo a la vez: de sobra para 100 perfiles sin
 // abrir cientos de peticiones de golpe.
 const PARALELO = 10;
+// Las mismas claves que SECTIONS en script.js.
+const SECCIONES = ['leyendo-ahora', 'proximas-lecturas', 'libros-terminados', 'lista-deseos', 'libros-abandonados'];
 
 const args = process.argv.slice(2);
 const usarEmulador = args.includes('--emulador');
@@ -165,12 +168,13 @@ async function cuentasAuth() {
 async function datosDePerfil(uid) {
   const libros = db.collection('books').where('userId', '==', uid);
   const perfil = db.collection('users').doc(uid);
-  const [nLibros, nGoodreads, nSesiones, nAmigos, privado] = await Promise.all([
+  const [nLibros, nGoodreads, nSesiones, nAmigos, privado, ...nSecciones] = await Promise.all([
     libros.count().get(),
     libros.where('importedFrom', '==', 'goodreads').count().get(),
     perfil.collection('sessions').count().get(),
     perfil.collection('friends').count().get(),
     perfil.collection('privado').doc('notificaciones').get(),
+    ...SECCIONES.map((s) => libros.where('section', '==', s).count().get()),
   ]);
   const tokens = privado.exists ? privado.get('tokens') : null;
   return {
@@ -179,6 +183,8 @@ async function datosDePerfil(uid) {
     sesiones: nSesiones.data().count,
     amigos: nAmigos.data().count,
     notificaciones: Array.isArray(tokens) && tokens.length > 0,
+    // sección → nº de libros de este perfil en ella
+    secciones: Object.fromEntries(SECCIONES.map((s, i) => [s, nSecciones[i].data().count])),
   };
 }
 
@@ -230,6 +236,17 @@ let conLibros = 0;
 let conLibrosYSesion = 0;
 let conTresLibros = 0;
 let fechaRara = 0;
+// Libros de los perfiles por sección, y perfiles con al menos uno en cada una
+const librosPorSeccion = new Map(SECCIONES.map((s) => [s, 0]));
+const perfilesPorSeccion = new Map(SECCIONES.map((s) => [s, 0]));
+let librosTotales = 0;
+// Perfiles con libros pero ninguno en Leyendo ahora: no ven ni el campo de
+// página ni el cronómetro (solo se pintan en esa sección)
+let conLibrosSinLeyendo = 0;
+// Dónde tienen los libros esos perfiles (una sección puede repetirse)
+const sinLeyendoPorSeccion = new Map(SECCIONES.map((s) => [s, 0]));
+let conLeyendo = 0;
+let conLeyendoYFecha = 0;
 
 for (const p of perfiles) {
   contar(porLibros, tramo(TRAMOS_LIBROS, p.libros));
@@ -246,6 +263,18 @@ for (const p of perfiles) {
     if (p.sesiones > 0) conLibrosYSesion++;
   }
   if (p.libros >= 3) conTresLibros++;
+  librosTotales += p.libros;
+  for (const s of SECCIONES) {
+    librosPorSeccion.set(s, librosPorSeccion.get(s) + p.secciones[s]);
+    if (p.secciones[s] > 0) contar(perfilesPorSeccion, s);
+  }
+  if (p.secciones['leyendo-ahora'] > 0) {
+    conLeyendo++;
+    if (p.ultimaLectura !== null) conLeyendoYFecha++;
+  } else if (p.libros > 0) {
+    conLibrosSinLeyendo++;
+    for (const s of SECCIONES) if (p.secciones[s] > 0) contar(sinLeyendoPorSeccion, s);
+  }
 }
 
 // Accesos (Auth) de todas las cuentas, tengan perfil o no.
@@ -297,6 +326,24 @@ fila('De los que tienen libros, sin ninguna', conLibros - conLibrosYSesion, conL
 
 titulo('Libros por perfil');
 for (const [t, n] of porLibros) fila(`  ${t}`, n, nPerfiles);
+
+titulo('Libros por sección (de los perfiles)');
+console.log('  sección                                         libros   % libros   perfiles con alguno');
+for (const s of SECCIONES) {
+  console.log(`    ${s.padEnd(44)} ${String(librosPorSeccion.get(s)).padStart(5)}   ${pct(librosPorSeccion.get(s), librosTotales).padStart(8)}   ${String(perfilesPorSeccion.get(s)).padStart(5)}`);
+}
+const sinSeccion = librosTotales - [...librosPorSeccion.values()].reduce((a, b) => a + b, 0);
+if (sinSeccion) console.log(color.amarillo(`    sin sección conocida: ${sinSeccion} (no se pintan en ningún estante)`));
+
+titulo('Leyendo ahora (único sitio con campo de página y cronómetro)');
+fila('Perfiles con libros', conLibros, conLibros);
+fila('  con alguno en leyendo-ahora', conLeyendo, conLibros);
+fila('  sin ninguno en leyendo-ahora', conLibrosSinLeyendo, conLibros);
+for (const s of SECCIONES.slice(1)) fila(`    de ellos, con alguno en ${s}`, sinLeyendoPorSeccion.get(s), conLibrosSinLeyendo);
+console.log('');
+fila('Con algo en leyendo-ahora', conLeyendo, conLeyendo);
+fila('  con ultimaFechaLectura', conLeyendoYFecha, conLeyendo);
+fila('  sin ultimaFechaLectura', conLeyendo - conLeyendoYFecha, conLeyendo);
 
 titulo('Sesiones de lectura por perfil');
 for (const [t, n] of porSesiones) fila(`  ${t}`, n, nPerfiles);
