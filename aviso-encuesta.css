@@ -1,0 +1,73 @@
+/* AVISO TEMPORAL de la encuesta (ver aviso-encuesta.js para retirarlo).
+ *
+ * Una sola fila: texto, enlace y X; si el texto no cabe, parte él solo.
+ * Tarjeta en el flujo de la página, no fija: no tapa la barra de
+ * navegación ni el banner de cookies, y se va con el scroll.
+ * Solo tokens de la paleta, así que sigue a claro, oscuro y Halloween.
+ * Contrastes (texto normal, AA ≥ 4.5:1) sobre --card-bg-color:
+ *   claro      texto #4E443A 9.19  · enlace #9A3B3B 6.63 · X #7D5C51 5.77
+ *   oscuro     texto #E2E8F0 9.73  · enlace #60A5FA 4.72 · X #C4A99E 5.43
+ *   halloween  texto #3A2731 13.16 · enlace #A3400C 6.05 · X #6B4560 7.54
+ *   hall.osc.  texto #EEE6F2 14.16 · enlace #D4661E 4.70 · X #B9A6C9 7.69
+ * El texto del enlace va sobre el fondo de la tarjeta, nunca blanco sobre
+ * --accent-color-interactive (eso falla AA en oscuro).
+ */
+.aviso-encuesta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 48rem;
+    margin: 0 auto 1.5rem;
+    padding: 0.25rem 0.25rem 0.25rem 1rem;
+    background-color: var(--card-bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-inline-start: 4px solid var(--accent-color-interactive);
+    border-radius: 8px;
+    box-shadow: 0 2px 6px var(--shadow-color);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.aviso-encuesta-texto {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+}
+
+.aviso-encuesta-enlace {
+    color: var(--accent-color-interactive);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    white-space: nowrap;
+    padding: 0.5rem 0.25rem;   /* zona táctil ~44 px de alto con la línea */
+}
+
+.aviso-encuesta-cerrar {
+    flex: none;
+    min-width: 44px;
+    min-height: 44px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    color: var(--accessible-muted-color);
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.aviso-encuesta-cerrar:hover {
+    color: var(--text-color);
+}
+
+.aviso-encuesta-enlace:focus-visible,
+.aviso-encuesta-cerrar:focus-visible {
+    outline: 2px solid var(--accent-color-interactive);
+    outline-offset: 2px;
+}
+
+/* Viendo la biblioteca de una amiga (script.js añade #btn-volver-casa a la
+   cabecera): el aviso es para la dueña de la sesión, no para esa vista. */
+body:has(#btn-volver-casa) .aviso-encuesta {
+    display: none;
+}
