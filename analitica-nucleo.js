@@ -37,6 +37,9 @@ export const EVENTOS = {
     quiz_gate_view: {},
     quiz_complete: { quiz_result: esPerfilQuiz },
     reading_session_start: {},
+    // TEMPORALES: aviso de la encuesta (aviso-encuesta.js). Quitar con él.
+    survey_prompt_view: {},
+    survey_prompt_click: {},
 };
 
 /**

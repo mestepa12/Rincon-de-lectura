@@ -73,6 +73,7 @@ import {
     evaluarCierre, minutosValidos, clasificarFalloGuardado, duracionEnTexto,
 } from './sesion-lectura.js';
 import { enviarEvento } from './analitica.js';
+import { mostrarAvisoEncuesta } from './aviso-encuesta.js'; // TEMPORAL: encuesta
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -167,6 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         runApp(user);
+        mostrarAvisoEncuesta(); // TEMPORAL: encuesta (ver aviso-encuesta.js)
     });
         // --- FUNCIÓN DE MIGRACIÓN (SOLO PARA TRASPASAR DATOS) ---
 /*    async function migrarLibrosAntiguos(user) {
