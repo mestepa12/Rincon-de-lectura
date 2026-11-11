@@ -74,6 +74,7 @@ import {
 } from './sesion-lectura.js';
 import { enviarEvento } from './analitica.js';
 import { mostrarAvisoEncuesta } from './aviso-encuesta.js'; // TEMPORAL: encuesta
+import { iniciarBingo, bingoEnVistaDeAmiga } from './bingo.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -328,6 +329,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // esperar a saber quiénes son.
         let avisarAmigosCargados;
         const amigosCargados = new Promise((resolver) => { avisarAmigosCargados = resolver; });
+
+        // Bingo de lectura (bingo.js). Para el selector de libros solo vale
+        // la biblioteca propia y ya cargada: mientras no, null.
+        iniciarBingo({
+            uid: user.uid,
+            libros: () => (librosCargados && !viewingFriendLibrary ? booksData : null),
+        });
 
         // Deep link de notificación push: /biblioteca.html?chat=<uid>
         // Se consume cuando llega la lista de amigos (se necesita el username).
@@ -2590,6 +2598,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewingFriendLibrary = true;
             librosCargados = false;
             currentFriendName = friendName;
+            bingoEnVistaDeAmiga(true);
 
             document.getElementById('site-title').textContent = `Biblioteca de @${friendName}`;
             document.getElementById('site-title').style.color = 'var(--accent-color-interactive)';
@@ -5203,6 +5212,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 3. Escuchamos los cambios con onSnapshot
         onSnapshot(qMyBooks, (snapshot) => {
             viewingFriendLibrary = false;
+            bingoEnVistaDeAmiga(false);
             booksData = [];
             if (snapshot.empty) bibliotecaVistaVacia = true; // ver medirPrimerLibro
 
