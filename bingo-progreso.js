@@ -149,6 +149,131 @@ export function coincide(libro, texto) {
   return !q || norm(libro.title).includes(q) || norm(libro.author).includes(q);
 }
 
+// ---------------------------------------------------------------------------
+// Tarjeta compartible: textos partidos a mano. html2canvas no entiende
+// line-clamp ni text-overflow en varias líneas, así que cada línea se decide
+// aquí y se pinta como un bloque. `medir(texto)` devuelve el ancho en px con
+// la fuente de la tarjeta (en el navegador, measureText de un canvas).
+// ---------------------------------------------------------------------------
+
+/**
+ * Parte un texto en líneas que caben en `ancho`. Una palabra más larga que
+ * la línea se corta por caracteres.
+ * @param {string} texto
+ * @param {number} ancho
+ * @param {function(string): number} medir
+ * @return {string[]}
+ */
+export function partirEnLineas(texto, ancho, medir) {
+  const anchoDe = typeof ancho === 'function' ? ancho : () => ancho;
+  const lineas = [];
+  let actual = '';
+  for (const palabra of String(texto).trim().split(/\s+/).filter(Boolean)) {
+    const prueba = actual ? `${actual} ${palabra}` : palabra;
+    if (medir(prueba) <= anchoDe(lineas.length)) { actual = prueba; continue; }
+    if (actual) lineas.push(actual);
+    actual = '';
+    let resto = palabra;
+    while (medir(resto) > anchoDe(lineas.length) && resto.length > 1) {
+      let n = resto.length - 1;
+      while (n > 1 && medir(resto.slice(0, n)) > anchoDe(lineas.length)) n--;
+      lineas.push(resto.slice(0, n));
+      resto = resto.slice(n);
+    }
+    actual = resto;
+  }
+  if (actual) lineas.push(actual);
+  return lineas;
+}
+
+/**
+ * Como partirEnLineas, pero con un máximo: si sobra texto, la última línea
+ * acaba en "…" y se acorta hasta que quepa. `ancho` puede ser un número o
+ * una función del índice de línea.
+ */
+export function recortarALineas(texto, ancho, maxLineas, medir) {
+  if (maxLineas <= 0) return [];
+  const anchoDe = typeof ancho === 'function' ? ancho : () => ancho;
+  const lineas = partirEnLineas(texto, anchoDe, medir);
+  if (lineas.length <= maxLineas) return lineas;
+  const fuera = lineas.slice(0, maxLineas);
+  const cabe = (s) => medir(`${s}…`) <= anchoDe(maxLineas - 1);
+  const limpia = (s) => s.replace(/[\s,.;:«(]+$/, '');
+  // Por palabras enteras: "menos de 20…" engañaría (el reto dice 200).
+  let ultima = fuera[maxLineas - 1];
+  const palabras = ultima.split(' ');
+  while (palabras.length > 1 && !cabe(limpia(palabras.join(' ')))) palabras.pop();
+  ultima = limpia(palabras.join(' '));
+  // Solo si ni una palabra cabe, por letras.
+  while (ultima.length > 0 && !cabe(ultima)) ultima = ultima.slice(0, -1);
+  fuera[maxLineas - 1] = `${limpia(ultima)}…`;
+  return fuera;
+}
+
+/**
+ * Título del libro en su hueco: 1 a 3 líneas pegadas abajo, con el sello a
+ * su derecha. Las dos líneas de abajo comparten altura con el sello y son
+ * estrechas; la de arriba (si hace falta) tiene el ancho entero. Se busca el
+ * menor número de líneas en que cabe; si con 3 sobran huecos, la última va
+ * vacía (el título sube y deja el sitio del sello). Si no cabe ni en 3, se
+ * recorta con "…".
+ * @return {string[]} De 1 a 3 líneas, de arriba abajo.
+ */
+export function lineasDeTitulo(titulo, { ancho, estrecho, medir }) {
+  const reparto = (n) => {
+    const lineas = partirEnLineas(titulo, (i) => (i >= n - 2 ? estrecho : ancho), medir);
+    return lineas.length <= n ? [...lineas, ...Array(n - lineas.length).fill('')] : null;
+  };
+  // Sin cortar palabras, si se puede en 3 líneas: "Mujercitas" entera en la
+  // línea ancha antes que "Mujercit / as" en las dos estrechas.
+  const palabras = String(titulo).trim().split(/\s+/).join(' ');
+  const entero = (lineas) => lineas.filter(Boolean).join(' ') === palabras;
+  for (let n = 1; n <= 3; n++) {
+    const r = reparto(n);
+    if (r && entero(r)) return r;
+  }
+  for (let n = 1; n <= 3; n++) {
+    const r = reparto(n);
+    if (r) return r;
+  }
+  return recortarALineas(titulo, (i) => (i >= 1 ? estrecho : ancho), 3, medir);
+}
+
+/**
+ * Líneas de una casilla de la tarjeta. Sin libro, el reto entero (con un
+ * tope). Con libro, manda el título (hasta 3 líneas, ver lineasDeTitulo) y
+ * el reto va en 3 líneas como mucho, con "…". Si con el título no quedara
+ * alto para 3, el reto cede (al menos 1).
+ * @param {{reto: string, titulo?: string}} casilla
+ * @param {{anchoReto: number, anchoTitulo: number, anchoTituloEstrecho: number,
+ *     medirReto: function, medirTitulo: function,
+ *     alto: number, altoLineaReto: number, altoLineaTitulo: number}} m
+ *     alto: alto útil de la celda, en px.
+ * @return {{reto: string[], titulo: string[]}}
+ */
+export function lineasDeCasilla({ reto, titulo }, m) {
+  if (!titulo) return { reto: recortarALineas(reto, m.anchoReto, 7, m.medirReto), titulo: [] };
+  const lineasTitulo = lineasDeTitulo(titulo, {
+    ancho: m.anchoTitulo, estrecho: m.anchoTituloEstrecho, medir: m.medirTitulo,
+  });
+  const caben = Math.floor((m.alto - lineasTitulo.length * m.altoLineaTitulo) / m.altoLineaReto);
+  const huecoReto = Math.max(1, Math.min(3, caben));
+  return { reto: recortarALineas(reto, m.anchoReto, huecoReto, m.medirReto), titulo: lineasTitulo };
+}
+
+/**
+ * Giro del sello de una casilla, entre -22 y 22 grados: parece puesto a mano
+ * y es siempre el mismo para la misma casilla del mismo mes (la imagen no
+ * cambia cada vez que se genera).
+ * @param {string} semilla Por ejemplo "2026-12/c05".
+ * @return {number} Grados.
+ */
+export function giroSello(semilla) {
+  let h = 2166136261;
+  for (const ch of String(semilla)) { h ^= ch.codePointAt(0); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 45) - 22;
+}
+
 /**
  * Qué cartón va en la biblioteca y si hay que avisar de la gracia del
  * anterior.

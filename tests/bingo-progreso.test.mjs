@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {
   mesDe, mesAnterior, nombreMes, estaAbierto, ultimoDiaDeGracia, mirarMesAnterior,
   lineasDe, resumen, hitoNuevo, usosPorLibro, opcionesParaCasilla, coincide, elegirCartones,
+  partirEnLineas, recortarALineas, lineasDeTitulo, lineasDeCasilla, giroSello,
 } from '../bingo-progreso.js';
 import { fechasDelMes } from '../bingo-carton.js';
 
@@ -138,4 +139,84 @@ test('elegirCartones: principal y aviso de gracia', () => {
   // Ni uno ni otro: no hay bloque.
   assert.deepEqual(elegirCartones({ actual: null, anterior: nov, progresoAnterior: null, ahora: dia5 }),
     { principal: null, gracia: null });
+});
+
+// --- Tarjeta: líneas partidas a mano -------------------------------------
+// Medidor de mentira: 10 px por carácter.
+const medir = (s) => s.length * 10;
+
+test('partirEnLineas: por palabras, y corta las que no caben', () => {
+  assert.deepEqual(partirEnLineas('Un misterio para leer bajo la manta', 120, medir),
+    ['Un misterio', 'para leer', 'bajo la', 'manta']);
+  assert.deepEqual(partirEnLineas('Supercalifragilístico', 80, medir), ['Supercal', 'ifragilí', 'stico']);
+  assert.deepEqual(partirEnLineas('   ', 80, medir), []);
+});
+
+test('recortarALineas: elipsis en la última línea, que sigue cabiendo', () => {
+  const r = recortarALineas('Un libro que te regalaron o que te encantaría regalar', 120, 2, medir);
+  assert.equal(r.length, 2);
+  assert.ok(r[1].endsWith('…'));
+  assert.ok(r.every((l) => medir(l) <= 120), JSON.stringify(r));
+  // Corta por palabra entera: nada de "menos de 20…" si el reto dice 200.
+  assert.deepEqual(recortarALineas('Un libro de menos de 200 páginas', 120, 2, medir), ['Un libro de', 'menos de…']);
+  // Una sola palabra que no cabe con la elipsis: por letras.
+  assert.deepEqual(recortarALineas('Supercalifragilístico espialidoso', 80, 1, medir), ['Superca…']);
+  assert.deepEqual(recortarALineas('Corto', 120, 2, medir), ['Corto']);
+  assert.deepEqual(recortarALineas('Lo que sea', 120, 0, medir), []);
+});
+
+test('lineasDeTitulo: abajo, junto al sello, estrecho; arriba, ancho entero', () => {
+  const g = { ancho: 130, estrecho: 70, medir };
+  assert.deepEqual(lineasDeTitulo('Momo', g), ['Momo']);
+  assert.deepEqual(lineasDeTitulo('Dune Mesías', g), ['Dune', 'Mesías']);
+  // Entera en la línea ancha antes que cortada en las dos estrechas.
+  assert.deepEqual(lineasDeTitulo('Mujercitas', g), ['Mujercitas', '', '']);
+  // En 2 líneas estrechas no cabe; en 3, la de arriba es ancha y sobra un
+  // hueco: la última va vacía, al lado del sello.
+  assert.deepEqual(lineasDeTitulo('La sombra del viento', g), ['La sombra del', 'viento', '']);
+  const enorme = lineasDeTitulo('Un título larguísimo que no cabe ni a la de tres', g);
+  assert.equal(enorme.length, 3);
+  assert.ok(enorme[2].endsWith('…'));
+  assert.ok(medir(enorme[0]) <= 130 && medir(enorme[1]) <= 70 && medir(enorme[2]) <= 70, JSON.stringify(enorme));
+});
+
+test('lineasDeCasilla: el título manda; el reto, hasta 3 líneas, y cede si no cabe', () => {
+  const m = {
+    anchoReto: 120, anchoTitulo: 130, anchoTituloEstrecho: 70, medirReto: medir, medirTitulo: medir,
+    alto: 125, altoLineaReto: 16.47, altoLineaTitulo: 16,
+  };
+  const reto = 'Un libro que te regalaron o que te encantaría regalar';
+
+  const corto = lineasDeCasilla({ reto, titulo: 'Momo' }, m);
+  assert.deepEqual(corto.titulo, ['Momo']);
+  assert.equal(corto.reto.length, 3);
+  assert.ok(corto.reto[2].endsWith('…'));
+  assert.ok(corto.reto.every((l) => medir(l) <= 120));
+
+  // Con alto de sobra, el reto sigue en 3 aunque el título ocupe 3.
+  const tres = lineasDeCasilla({ reto, titulo: 'La sombra del viento' }, m);
+  assert.equal(tres.titulo.length, 3);
+  assert.equal(tres.reto.length, 3);
+
+  // Alto para el título y 2 de reto, no 3: el reto cede una.
+  const ajustado = lineasDeCasilla({ reto, titulo: 'La sombra del viento' }, { ...m, alto: 85 });
+  assert.equal(ajustado.titulo.length, 3);
+  assert.equal(ajustado.reto.length, 2);
+
+  // Sin alto para los dos, el reto cede (y nunca baja de 1).
+  const justo = lineasDeCasilla({ reto, titulo: 'La sombra del viento' }, { ...m, alto: 60 });
+  assert.equal(justo.titulo.length, 3);
+  assert.equal(justo.reto.length, 1, 'el reto cede ante el título');
+  assert.ok(justo.reto[0].endsWith('…'));
+
+  const sinLibro = lineasDeCasilla({ reto }, m);
+  assert.deepEqual(sinLibro.titulo, []);
+  assert.equal(sinLibro.reto.join(' '), reto, 'sin libro, el reto entero');
+});
+
+test('giroSello: entre -22 y 22, distinto entre casillas y estable', () => {
+  const giros = Array.from({ length: 16 }, (_, i) => giroSello(`2026-12/c${String(i + 1).padStart(2, '0')}`));
+  assert.ok(giros.every((g) => Number.isInteger(g) && g >= -22 && g <= 22));
+  assert.ok(new Set(giros).size >= 10, 'variados');
+  assert.equal(giroSello('2026-12/c05'), giroSello('2026-12/c05'));
 });

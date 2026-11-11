@@ -25,6 +25,8 @@ import {
 import { db } from './firebase-init.js';
 import { notify } from './notify.js';
 import { enviarEvento } from './analitica.js';
+import { exportarCanvas } from './share-export.js';
+import { montarTarjeta, fuentesListas } from './bingo-tarjeta.js';
 import {
     mesDe, mesAnterior, nombreMes, estaAbierto, ultimoDiaDeGracia, mirarMesAnterior,
     resumen, hitoNuevo, opcionesParaCasilla, coincide, elegirCartones,
@@ -34,6 +36,10 @@ const TITULO_MAX = 300; // el mismo tope que el título de un libro
 
 let uid = null;
 let leerLibros = () => [];
+let capturar = null;          // renderTarjetaAislada, de script.js
+let leerNombre = () => null;  // nombre de usuaria publicable, o null
+// Nombre en la imagen: apagado por defecto y sin recordarse entre visitas.
+let conNombre = false;
 const cartones = new Map();   // mes → cartón o null (no hay / no se ve)
 const progresos = new Map();  // mes → { mes, casillas, lineaEn?, completoEn? }
 let principal = null;
@@ -388,6 +394,9 @@ function pintarCarton() {
     }
     cuerpo.append(grid);
 
+    // La imagen, desde la primera línea (también de meses cerrados).
+    if (r.lineas > 0 && capturar) cuerpo.append(pintarCompartir(carton, progreso, r));
+
     if (editable) {
         const max = carton.maxCasillasPorLibro;
         cuerpo.append(el('p', {
@@ -407,6 +416,48 @@ function pintarCarton() {
     if (!panel.desdeHistorial) {
         // Sin "volver", el foco va a la primera casilla.
         grid.querySelector('button, [role="group"]')?.setAttribute('data-foco', '');
+    }
+}
+
+function pintarCompartir(carton, progreso, r) {
+    const nombre = leerNombre();
+    const boton = el('button', { type: 'button', class: 'bingo-compartir-btn', text: 'Compartir imagen' });
+    boton.addEventListener('click', () => compartir(carton, progreso, r, boton));
+    const casilla = nombre && el('label', { class: 'bingo-nombre' },
+        el('input', {
+            type: 'checkbox', checked: conNombre,
+            onchange: (e) => { conNombre = e.target.checked; },
+        }),
+        el('span', { text: `Poner @${nombre}` }));
+    return el('div', { class: 'bingo-compartir' }, boton, casilla);
+}
+
+async function compartir(carton, progreso, r, boton) {
+    boton.disabled = true;
+    boton.textContent = 'Preparando imagen…';
+    let tarjeta = null;
+    try {
+        await fuentesListas();
+        tarjeta = montarTarjeta(carton, progreso.casillas, conNombre ? leerNombre() : null);
+        await Promise.all([...tarjeta.querySelectorAll('img')].map((img) => img.decode().catch(() => {})));
+        const canvas = await capturar(tarjeta);
+        const [anio] = carton.mes.split('-');
+        const salida = await exportarCanvas(
+            canvas,
+            `bingo_${nombreMes(carton.mes)}_${anio}.png`,
+            'Mi bingo de lectura',
+            `Mi bingo de lectura de ${nombreMes(carton.mes)} en rinconlectura.es`,
+        );
+        enviarEvento('bingo_share', {
+            bingo_month: carton.mes, milestone: r.completo ? 'full' : 'line', share_method: salida,
+        });
+    } catch (error) {
+        console.error('No se pudo generar la imagen del bingo:', error);
+        notify('No se pudo generar la imagen.', 'error');
+    } finally {
+        tarjeta?.remove();
+        boton.disabled = false;
+        boton.textContent = 'Compartir imagen';
     }
 }
 
@@ -539,6 +590,8 @@ async function pintarHistorial() {
 export async function iniciarBingo(opciones) {
     uid = opciones.uid;
     leerLibros = opciones.libros;
+    capturar = opciones.capturar || null;
+    leerNombre = opciones.nombre || (() => null);
     document.getElementById('bingo-btn')?.addEventListener('click', () => abrirPanel());
 
     const ahora = new Date();

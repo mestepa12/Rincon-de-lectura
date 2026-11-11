@@ -32,6 +32,8 @@ const esPerfilQuiz = (v) => typeof v === 'string' && /^[a-z0-9_]{1,20}$/.test(v)
 // títulos de libros ni textos de casilla: no pasan ninguno de los dos.
 const esMesBingo = (v) => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
 const esHitoBingo = (v) => v === 'line' || v === 'full';
+// Lo que devuelve exportarCanvas (share-export.js).
+const esSalidaCompartir = (v) => v === 'compartido' || v === 'descargado' || v === 'pendiente';
 
 export const EVENTOS = {
     sign_up: { method: (v) => v === 'email' || v === 'google', origin_page: esOrigen },
@@ -48,6 +50,7 @@ export const EVENTOS = {
     bingo_square_unmark: { bingo_month: esMesBingo },
     bingo_milestone: { bingo_month: esMesBingo, milestone: esHitoBingo, day_of_month: esEntero },
     bingo_archive_view: {},
+    bingo_share: { bingo_month: esMesBingo, milestone: esHitoBingo, share_method: esSalidaCompartir },
     // TEMPORALES: aviso de la encuesta (aviso-encuesta.js). Quitar con él.
     survey_prompt_view: {},
     survey_prompt_click: {},

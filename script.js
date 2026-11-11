@@ -335,6 +335,9 @@ document.addEventListener('DOMContentLoaded', () => {
         iniciarBingo({
             uid: user.uid,
             libros: () => (librosCargados && !viewingFriendLibrary ? booksData : null),
+            // La tarjeta compartible se captura como las demás.
+            capturar: renderTarjetaAislada,
+            nombre: () => nombrePublicable(lastUserData?.username),
         });
 
         // Deep link de notificación push: /biblioteca.html?chat=<uid>
