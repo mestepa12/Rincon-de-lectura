@@ -22,8 +22,9 @@
 //      queda vacía, el documento del chat. Los mensajes que le escribieron
 //      otras personas NO se tocan: son datos de ellas.
 //   4. Lo suyo: perfil y subcolecciones (documento privado de
-//      notificaciones, sesiones de lectura, su lista de amigos y las
-//      solicitudes que recibió), libros, papelera y comentarios del Club.
+//      notificaciones, sesiones de lectura, progreso del bingo, su lista
+//      de amigos y las solicitudes que recibió), libros, papelera y
+//      comentarios del Club.
 //   5. La reserva de su nombre de usuario, que queda libre.
 //   6. La cuenta de Authentication, al final: si algo falla antes, la cuenta
 //      sigue existiendo y se puede reintentar sin dejar datos huérfanos.
@@ -227,6 +228,7 @@ async function inventario(uid) {
     mensajesSuyos: mensajes,
     privado: await refsDe(perfil.collection('privado').select()),
     sesiones: await refsDe(perfil.collection('sessions').select()),
+    bingo: await refsDe(perfil.collection('bingo').select()),
     susAmigos: await refsDe(perfil.collection('friends').select()),
     solicitudesRecibidas: await refsDe(perfil.collection('friend_requests').select()),
     libros: await refsDe(db.collection('books').where('userId', '==', uid).select()),
@@ -245,6 +247,7 @@ const ETIQUETAS = {
   perfil: 'perfil (users/{uid})',
   privado: 'documentos privados (tokens de avisos)',
   sesiones: 'sesiones de lectura',
+  bingo: 'progreso del bingo de lectura',
   susAmigos: 'su lista de amigos',
   solicitudesRecibidas: 'solicitudes que recibió',
   libros: 'libros',
@@ -335,7 +338,7 @@ async function borrarCuenta(uid, inv, enAuth) {
 
   // 4. Lo suyo.
   await borrar([
-    ...inv.privado, ...inv.sesiones, ...inv.susAmigos, ...inv.solicitudesRecibidas,
+    ...inv.privado, ...inv.sesiones, ...inv.bingo, ...inv.susAmigos, ...inv.solicitudesRecibidas,
     ...inv.libros, ...inv.papelera, ...inv.comentarios, ...inv.perfil,
   ]);
 

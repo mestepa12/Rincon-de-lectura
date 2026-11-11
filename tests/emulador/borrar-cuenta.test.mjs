@@ -1,5 +1,5 @@
 // scripts/borrar-cuenta.mjs contra los emuladores: una cuenta sembrada en
-// los trece sitios donde deja datos, se borra, y se comprueba que no queda
+// los catorce sitios donde deja datos, se borra, y se comprueba que no queda
 // nada suyo y que lo de las demás personas sigue intacto.
 // Se lanza con npm run test:emu.
 import { test, before, after } from 'node:test';
@@ -86,8 +86,13 @@ before(async () => {
   await adminDb.doc(`chats/${chatZoeBea}`).set({ participants: [zoe, bea].sort() });
   await adminDb.doc(`chats/${chatZoeBea}/messages/m1`).set({ from: zoe, to: bea, text: 'suyo', timestamp: ahora });
 
+  // 14. Progreso del bingo: dos meses, con títulos de sus libros dentro
+  await adminDb.doc(`users/${zoe}/bingo/2026-11`).set({ mes: '2026-11', casillas: { c01: { bookId: 'b1', titulo: 'Dune' } } });
+  await adminDb.doc(`users/${zoe}/bingo/2026-12`).set({ mes: '2026-12', casillas: {} });
+
   // Cosas de Ana que no se pueden tocar
   await adminDb.collection('books').add({ userId: ana, title: 'Suyo', section: 'leyendo-ahora' });
+  await adminDb.doc(`users/${ana}/bingo/2026-12`).set({ mes: '2026-12', casillas: { c02: { bookId: 'x', titulo: 'Suyo' } } });
   await adminDb.collection('book_comments').add({ bookSlug: 'dune', uid: ana, username: 'AnaBorrar', text: 'de Ana', page: 5 });
 });
 
@@ -96,7 +101,7 @@ after(async () => {
   await cerrarAdmin();
 });
 
-test('1. sin --aplicar cuenta los trece sitios y no borra nada', async () => {
+test('1. sin --aplicar cuenta los catorce sitios y no borra nada', async () => {
   const r = borrar(['--correo', 'zoe-borrar@prueba.test']);
   assert.equal(r.status, 0, r.salida);
 
@@ -108,6 +113,7 @@ test('1. sin --aplicar cuenta los trece sitios y no borra nada', async () => {
   assert.equal(numero(r.salida, 'perfil (users/{uid})'), 1);
   assert.equal(numero(r.salida, 'documentos privados'), 1);
   assert.equal(numero(r.salida, 'sesiones de lectura'), 1);
+  assert.equal(numero(r.salida, 'progreso del bingo de lectura'), 2);
   assert.equal(numero(r.salida, 'su lista de amigos'), 1);
   assert.equal(numero(r.salida, 'solicitudes que recibió'), 1);
   assert.equal(numero(r.salida, 'libros:'), 2);
@@ -133,6 +139,7 @@ test('3. con --aplicar no queda nada suyo', async () => {
   assert.equal(await existe(`users/${zoe}`), false, 'perfil');
   assert.equal(await existe(`users/${zoe}/privado/notificaciones`), false, 'documento privado');
   assert.equal(await cuantos(`users/${zoe}/sessions`), 0, 'sesiones');
+  assert.equal(await cuantos(`users/${zoe}/bingo`), 0, 'progreso del bingo');
   assert.equal(await cuantos(`users/${zoe}/friends`), 0, 'su lista de amigos');
   assert.equal(await cuantos(`users/${zoe}/friend_requests`), 0, 'solicitudes recibidas');
   assert.equal(await existe('usernames/zoeborrar'), false, 'el nombre queda libre');
@@ -152,6 +159,7 @@ test('5. lo de las demás personas sigue intacto', async () => {
   assert.equal(await existe(`users/${ana}`), true, 'el perfil de Ana');
   assert.equal(await existe('usernames/anaborrar'), true, 'la reserva de Ana');
   assert.equal((await adminDb.collection('books').where('userId', '==', ana).get()).size, 1, 'los libros de Ana');
+  assert.equal(await existe(`users/${ana}/bingo/2026-12`), true, 'el bingo de Ana');
   assert.equal((await adminDb.collection('book_comments').where('uid', '==', ana).get()).size, 1,
     'el comentario de Ana en el mismo libro');
 });
