@@ -311,6 +311,21 @@ service cloud.firestore {
     }
 
     // =========================================================
+    // 4c. BINGO DE LECTURA: EL CARTÓN DEL MES (/bingos/{AAAA-MM})
+    // Contenido editorial, el mismo para todas. Solo lo escribe el Admin
+    // SDK (scripts/publicar-bingo.mjs, desde contenido/bingos/). Se lee a
+    // partir de publicaDesde: el de diciembre puede subirse en noviembre
+    // sin que se vea. Sin list: no se enumeran los meses, ni los futuros.
+    // Un cartón que no existe o que aún no se ha abierto da lo mismo
+    // (permission-denied): para el cliente, los dos son "no hay cartón".
+    // =========================================================
+    match /bingos/{mes} {
+      allow get: if request.time >= resource.data.publicaDesde;
+      allow list: if false;
+      allow write: if false;
+    }
+
+    // =========================================================
     // 5. USUARIOS (+ sesiones y amigos)
     // =========================================================
     match /users/{userId} {
@@ -418,6 +433,39 @@ service cloud.firestore {
                       && request.resource.data.keys().hasOnly(['tokens'])
                       && request.resource.data.tokens is list
                       && request.resource.data.tokens.size() <= 20;
+      }
+
+      // === E. BINGO DE LECTURA (privado, solo la dueña) ===
+      // Un documento por mes con las casillas marcadas: { cXX: libro }.
+      // Fuera del perfil a propósito, porque el perfil lo leen las amigas.
+      // Solo se escribe mientras el cartón de ese mes está abierto
+      // (publicaDesde <= ahora < cierraEn, que ya incluye los días de
+      // gracia): no se crea progreso de un mes sin cartón ni se retoca uno
+      // cerrado. Las claves de casillas tienen que ser ids del cartón. Lo
+      // de dentro de cada casilla no se puede validar aquí (las reglas no
+      // recorren mapas); lo acota el tamaño del mapa y solo afecta al
+      // documento de la propia usuaria. Tampoco el máximo de casillas por
+      // libro: ese lo aplica el cliente.
+      // Borrar, siempre: es suyo, también el de meses cerrados.
+      match /bingo/{mes} {
+        function carton() {
+          return get(/databases/$(database)/documents/bingos/$(mes)).data;
+        }
+
+        allow read, delete: if request.auth != null && request.auth.uid == userId;
+
+        allow create, update: if request.auth != null
+                      && request.auth.uid == userId
+                      && request.resource.data.keys().hasOnly(['mes', 'casillas', 'lineaEn', 'completoEn', 'actualizadoEn'])
+                      && request.resource.data.mes == mes
+                      && request.resource.data.casillas is map
+                      && request.resource.data.casillas.size() <= 25
+                      && request.resource.data.casillas.keys().hasOnly(carton().idsCasillas)
+                      && request.time >= carton().publicaDesde
+                      && request.time < carton().cierraEn
+                      && (!('lineaEn' in request.resource.data) || request.resource.data.lineaEn is timestamp)
+                      && (!('completoEn' in request.resource.data) || request.resource.data.completoEn is timestamp)
+                      && (!('actualizadoEn' in request.resource.data) || request.resource.data.actualizadoEn is timestamp);
       }
     }
   }

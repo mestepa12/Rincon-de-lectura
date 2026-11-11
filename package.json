@@ -17,6 +17,7 @@
     "indices:dev": "node scripts/deploy-dev.mjs --only firestore:indexes",
     "deploy": "node scripts/deploy-prod.mjs",
     "proyecto": "node scripts/proyecto-actual.mjs",
+    "bingo:publicar": "node scripts/publicar-bingo.mjs",
     "canales": "firebase hosting:channel:list --project prod",
     "canal:borrar": "firebase hosting:channel:delete --project prod",
     "android": "npm run build && npx cap sync android && npx cap open android"
