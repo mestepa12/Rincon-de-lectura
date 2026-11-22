@@ -4,24 +4,24 @@
   "tamano": 4,
   "maxCasillasPorLibro": 2,
   "casillas": [
-    { "id": "c01", "texto": "Una portada con nieve, frío o cielo de invierno" },
-    { "id": "c02", "texto": "Un libro de menos de 200 páginas, que diciembre va con prisas" },
+    { "id": "c01", "texto": "Una portada navideña" },
+    { "id": "c02", "texto": "Un libro de menos de 200 páginas" },
     { "id": "c03", "texto": "Un misterio para leer bajo la manta" },
     { "id": "c04", "texto": "Un género que casi nunca lees" },
 
-    { "id": "c05", "texto": "Una autora o un autor que no hubieras leído nunca" },
-    { "id": "c06", "texto": "Una historia que pase en Navidad o en pleno invierno" },
-    { "id": "c07", "texto": "Un libro que ya hubieras leído antes" },
-    { "id": "c08", "texto": "Uno de ritmo trepidante, de los de «solo un capítulo más»" },
+    { "id": "c05", "texto": "Un nuevo autor en tu biblioteca" },
+    { "id": "c06", "texto": "Un protagonista con mascota" },
+    { "id": "c07", "texto": "Un libro que ya hayas leído antes" },
+    { "id": "c08", "texto": "Uno de «solo un capítulo más»" },
 
-    { "id": "c09", "texto": "Una lectura reconfortante, de las que marcarías como Tranquilizador" },
-    { "id": "c10", "texto": "Uno con «noche», «luz», «estrella» o «invierno» en el título" },
-    { "id": "c11", "texto": "Un libro que te regalaron o que te encantaría regalar" },
-    { "id": "c12", "texto": "Uno que recomendarías a una amiga" },
+    { "id": "c09", "texto": "Una lectura reconfortante" },
+    { "id": "c10", "texto": "«Noche», «luz» o «estrella» en el título" },
+    { "id": "c11", "texto": "Un libro que te regalaron" },
+    { "id": "c12", "texto": "Uno que recomendarías a un amigo" },
 
-    { "id": "c13", "texto": "Una portada roja, verde o dorada, a juego con el árbol" },
-    { "id": "c14", "texto": "Otro libro de una autora o un autor que ya esté en tu biblioteca" },
-    { "id": "c15", "texto": "Uno que llevara tiempo esperando en Próximas lecturas" },
-    { "id": "c16", "texto": "Un tocho de más de 400 páginas para las tardes largas" }
+    { "id": "c13", "texto": "Una portada a juego con tu árbol" },
+    { "id": "c14", "texto": "Otro libro de un autor de tu biblioteca" },
+    { "id": "c15", "texto": "Uno de tus Próximas lecturas" },
+    { "id": "c16", "texto": "Un tocho de más de 400 páginas" }
   ]
 }
