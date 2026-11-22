@@ -16,10 +16,14 @@
     --accessible-muted-color: #7D5C51;
     /* Texto e iconos que van ENCIMA de un fondo de acento (botones
        primarios, cabecera de los paneles, icono de aviso). Claro:
-       #fff sobre #9A3B3B = 6.9:1; sobre #A1887F = 3.3:1 (no llega a
-       4.5, pendiente: el acento claro es demasiado claro para blanco). */
+       #fff sobre #9A3B3B = 6.9:1. */
     --on-interactive: #fff;
     --on-accent: #fff;
+    /* Fondo de la cabecera de los paneles y del icono de aviso
+       informativo. Con el accent (#A1887F) el blanco daba 3.3 y su texto
+       (18.4px negrita) no llega a "grande"; #7D5C51 da 5.96. Los temas
+       estacionales lo definen con su propio accent. */
+    --accent-fondo: #7D5C51;
 }
 
 body.dark-mode {
@@ -42,6 +46,7 @@ body.dark-mode {
        #C9A27E). */
     --on-interactive: var(--bg-color);
     --on-accent: #0B0E14;
+    --accent-fondo: #718096;
 }
 
 /* ======== TEMA DE HALLOWEEN (20 oct – 2 nov, ver tema-estacional.js) ========
@@ -64,6 +69,7 @@ body.tema-halloween {
     --card-bg-color: #FFF8F0;
     --border-color: #E3C9AE;
     --accessible-muted-color: #6B4560;
+    --accent-fondo: #8A5A2B;        /* blanco encima: 5.87 */
 }
 body.dark-mode.tema-halloween {
     --bg-color: #120E17;
@@ -73,6 +79,42 @@ body.dark-mode.tema-halloween {
     --card-bg-color: #1F1826;
     --border-color: #45384F;
     --accessible-muted-color: #B9A6C9;
+    --accent-fondo: #C9A27E;        /* #0B0E14 encima: 8.24 */
+}
+
+/* ======== TEMA DE NAVIDAD (1 dic – 6 ene, ver tema-estacional.js) ========
+   Paleta «Abeto y arándano». Contrastes AA medidos, fondo / tarjeta:
+   claro:  texto 12.6 / 14.1, muted 8.4 / 9.5, accent 5.6 / 6.3,
+           interactive 6.8 / 7.6, blanco sobre botón 7.7, sobre paneles 6.4,
+           título #F3F0E6 sobre cabecera 9.3, correo #D7CCC8 6.7
+   oscuro: texto 15.7 / 13.7, muted 9.7 / 8.5, accent 8.7 / 7.6,
+           interactive 6.0 / 5.3, fondo sobre botón 6.0, #0B0E14 sobre
+           paneles 9.35, título blanco sobre cabecera #1A4532 10.8,
+           correo 6.9; cabecera frente al fondo 1.66 (con #0A2A1E, 1.17,
+           apenas se distinguía).
+   La decoración (guirnalda, estrella, nieve, copos) está al final. */
+body.tema-navidad {
+    --bg-color: #F3F0E6;
+    --text-color: #1F2D26;
+    --accent-color: #2E6A4E;
+    --accent-color-interactive: #A3172C;
+    --card-bg-color: #FFFDF7;
+    --border-color: #CBD9CC;
+    --accessible-muted-color: #5B3E33;
+    --accent-fondo: #2E6A4E;        /* blanco encima: 6.39 */
+    --header-bg: #1E4634;
+    --header-btn-border: rgba(255, 255, 255, 0.55);
+}
+body.dark-mode.tema-navidad {
+    --bg-color: #0E1915;
+    --text-color: #EAF1EC;
+    --accent-color: #8CC0A0;
+    --accent-color-interactive: #E8707F;
+    --card-bg-color: #18261F;
+    --border-color: #2F4A3D;
+    --accessible-muted-color: #D9B8A8;
+    --accent-fondo: #8CC0A0;        /* #0B0E14 encima: 9.35 */
+    --header-bg: #1A4532;
 }
 
 /* ======== GLOBAL & RESET ======== */
@@ -98,7 +140,7 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
 
 /* ======== HEADER ======== */
 .site-header {
-    background-color: #4E443A;
+    background-color: var(--header-bg, #4E443A);
     border-bottom: 2px solid var(--accent-color);
     padding: 1rem 2rem;
     display: flex;
@@ -183,7 +225,7 @@ h2 { font-family: var(--font-title); border-block-end: 2px solid var(--accent-co
     .cuenta-en-modal--suelta { padding: 0.7rem 1rem 0.5rem; }
 }
 .menu-btn {
-    background: transparent; border: 2px solid #a1887f; color: white;
+    background: transparent; border: 2px solid var(--header-btn-border, #a1887f); color: white;
     font-size: 1.2rem; line-height: 1; padding: 0.4rem 0.7rem; border-radius: 5px;
     cursor: pointer; flex: none;
     transition: background-color var(--transition-speed), border-color var(--transition-speed);
@@ -258,7 +300,7 @@ body.tema-halloween #site-title::after {
 
 .header-controls { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; min-width: 0; flex-shrink: 1; max-width: 100%; }
 .header-controls button, .header-controls .header-link {
-    background-color: transparent; border: 2px solid #a1887f; color: white; padding: 0.5rem 1rem;
+    background-color: transparent; border: 2px solid var(--header-btn-border, #a1887f); color: white; padding: 0.5rem 1rem;
     border-radius: 5px; cursor: pointer; font-family: var(--font-body); font-weight: 700;
     transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed);
 }
@@ -272,7 +314,7 @@ body.tema-halloween #site-title::after {
 .hmenu > summary {
     list-style: none;
     background-color: transparent;
-    border: 2px solid #a1887f;
+    border: 2px solid var(--header-btn-border, #a1887f);
     color: white;
     padding: 0.5rem 0.55rem;
     border-radius: 5px;
@@ -1327,7 +1369,7 @@ details#manual-data-details summary:hover { background-color: var(--border-color
 /* Cabecera del Sidebar */
 .sidebar-header {
     padding: 1.5rem;
-    background-color: var(--accent-color);
+    background-color: var(--accent-fondo);
     color: var(--on-accent);
     display: flex;
     justify-content: space-between;
@@ -3161,7 +3203,7 @@ button.quiz-repetir { background: none; border: none; padding: 0; cursor: pointe
     font-size: 0.9rem;
     font-weight: 700;
     color: var(--on-accent);
-    background: var(--accent-color);
+    background: var(--accent-fondo);
     font-family: var(--font-body);
 }
 
@@ -4246,7 +4288,7 @@ body.con-barra:has(> #session-pill:not([hidden])) { --reproductor-alto: 4.75rem;
         color: var(--on-interactive);
     }
     .barra-app #add-book-btn:hover { filter: brightness(1.1); }
-    .barra-contador { box-shadow: 0 0 0 2px #4E443A; }
+    .barra-contador { box-shadow: 0 0 0 2px var(--header-bg, #4E443A); }
 }
 /* Título + pestañas + controles en una fila: medido, necesitan ~1.100 px */
 @media (min-width: 1120px) {
@@ -4324,4 +4366,50 @@ body.con-barra:has(> #session-pill:not([hidden])) { --reproductor-alto: 4.75rem;
         animation: none;
         transition: none;
     }
+}
+
+/* ======== TEMA DE NAVIDAD: decoración ========
+   SVG estáticos en data URI (sin peticiones, sin animación), validados
+   en lámina. Colores de adorno sobre la cabecera verde: dorado #E2B653
+   (5.6 claro / 5.7 oscuro), rojo #E8707F (3.6), puntos de nieve en
+   blanco al 25-35 %. */
+
+/* Nieve detrás de todo y guirnalda en el borde inferior: la guirnalda se
+   coloca en el borde de 10px (background-origin: border-box), así no roba
+   alto al contenido ni necesita pseudoelementos. El borde va TRANSPARENTE:
+   los bordes se pintan encima del fondo y uno sólido la tapaba; el verde
+   de debajo lo pone el background-color, que llega hasta el borde. */
+body.tema-navidad .site-header {
+    border-bottom: 10px solid transparent;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='10' viewBox='0 0 48 10'%3E%3Cpath d='M0 3 Q12 7 24 3 T48 3' fill='none' stroke='%233E8A5E' stroke-width='2.4'/%3E%3Cpath d='M4 3.6l-1.6-2.2M8 4.8l-.8-2.6M16 5.2l.8-2.6M20 4l1.6-2.2M28 3.6l-1.6-2.2M32 2.4l-.6 2.6M40 1.6l.6 2.8M44 2.6l1.6 2.2' stroke='%236FAF86' stroke-width='1.2' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='7.2' r='2.5' fill='%23E8707F'/%3E%3Ccircle cx='11.3' cy='6.5' r='.7' fill='%23fff' fill-opacity='.7'/%3E%3Ccircle cx='36' cy='4.8' r='2.5' fill='%23E2B653'/%3E%3Ccircle cx='35.3' cy='4.1' r='.7' fill='%23fff' fill-opacity='.7'/%3E%3C/svg%3E"),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='64' viewBox='0 0 160 64'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='8' cy='10' r='1.4' fill-opacity='.35'/%3E%3Ccircle cx='34' cy='44' r='1' fill-opacity='.25'/%3E%3Ccircle cx='58' cy='20' r='1.8' fill-opacity='.3'/%3E%3Ccircle cx='82' cy='54' r='1.2' fill-opacity='.3'/%3E%3Ccircle cx='104' cy='8' r='1' fill-opacity='.25'/%3E%3Ccircle cx='130' cy='36' r='1.6' fill-opacity='.3'/%3E%3Ccircle cx='150' cy='58' r='1' fill-opacity='.25'/%3E%3Ccircle cx='20' cy='60' r='.9' fill-opacity='.25'/%3E%3C/g%3E%3Cg stroke='%23fff' stroke-opacity='.3' stroke-width='1' stroke-linecap='round'%3E%3Cpath d='M118 14v8M114.5 16l7 4M114.5 20l7-4'/%3E%3Cpath d='M44 30v6M41.4 31.5l5.2 3M41.4 34.5l5.2-3'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat-x, repeat;
+    background-position: left bottom, left top;
+    background-size: 48px 10px, 160px 64px;
+    background-origin: border-box, padding-box;
+}
+
+/* Estrella dorada tras el título, como el murciélago de Halloween */
+body.tema-navidad #site-title::after {
+    content: ""; display: inline-block; width: 0.8em; height: 0.8em;
+    margin-left: 0.3em; vertical-align: 0.02em; pointer-events: none;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath fill='%23E2B653' d='M16 1.5l4.2 9.4 10.3 1-7.7 6.9 2.2 10.1L16 23.7l-9 5.2 2.2-10.1-7.7-6.9 10.3-1z'/%3E%3Cpath fill='%23fff' fill-opacity='.35' d='M16 1.5l4.2 9.4L16 16z'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* Copos tenues en la cabecera de los paneles, apartados de la ✕ */
+body.tema-navidad .sidebar-header {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='72' viewBox='0 0 120 72'%3E%3Cg fill='none' stroke='%23fff' stroke-opacity='.16' stroke-width='2' stroke-linecap='round'%3E%3Cg transform='translate(84 30)'%3E%3Cpath d='M0-22V22M-19-11L19 11M-19 11L19-11M-5-17L0-12 5-17M-5 17L0 12 5 17'/%3E%3C/g%3E%3Cg transform='translate(40 52) scale(.55)'%3E%3Cpath d='M0-22V22M-19-11L19 11M-19 11L19-11M-5-17L0-12 5-17M-5 17L0 12 5 17'/%3E%3C/g%3E%3Cg transform='translate(112 62) scale(.4)'%3E%3Cpath d='M0-22V22M-19-11L19 11M-19 11L19-11'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 64px center;
+    background-size: auto 100%;
+}
+body.dark-mode.tema-navidad .sidebar-header {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='72' viewBox='0 0 120 72'%3E%3Cg fill='none' stroke='%230B0E14' stroke-opacity='.16' stroke-width='2' stroke-linecap='round'%3E%3Cg transform='translate(84 30)'%3E%3Cpath d='M0-22V22M-19-11L19 11M-19 11L19-11M-5-17L0-12 5-17M-5 17L0 12 5 17'/%3E%3C/g%3E%3Cg transform='translate(40 52) scale(.55)'%3E%3Cpath d='M0-22V22M-19-11L19 11M-19 11L19-11M-5-17L0-12 5-17M-5 17L0 12 5 17'/%3E%3C/g%3E%3Cg transform='translate(112 62) scale(.4)'%3E%3Cpath d='M0-22V22M-19-11L19 11M-19 11L19-11'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Tarjetas de libro: borde superior verde (no en la estantería, que
+   pinta lomos) */
+body.tema-navidad .books-container:not(.estanteria) .book {
+    border-top: 3px solid var(--accent-color);
 }
