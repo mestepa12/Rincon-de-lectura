@@ -136,3 +136,89 @@ test('Ciudad de México: el mismo instante sigue siendo día 19 y no toca', () =
     // UTC-6 todo el año: el 20 empieza a las 06:00 UTC y el 3 también
     assert.deepEqual(JSON.parse(salida), [false, false, true, true, false]);
 });
+
+// ===========================================================================
+// Tabla TEMAS y temaActivo (Navidad: 1 dic – 6 ene, cruza de año)
+// ===========================================================================
+
+import { TEMAS, periodoTema, temaActivo, temaDelPeriodo } from '../tema-estacional.js';
+
+const NAVIDAD = TEMAS.find((t) => t.nombre === 'navidad');
+
+test('Navidad: fronteras y cruce de año', () => {
+    assert.equal(periodoTema(NAVIDAD, dia(2026, 11, 30, 23, 59)), null);
+    assert.equal(periodoTema(NAVIDAD, dia(2026, 12, 1, 0, 0)), '2026');
+    assert.equal(periodoTema(NAVIDAD, dia(2026, 12, 31, 23, 59)), '2026');
+    assert.equal(periodoTema(NAVIDAD, dia(2027, 1, 1, 0, 0)), '2026');
+    assert.equal(periodoTema(NAVIDAD, dia(2027, 1, 6, 23, 59)), '2026');
+    assert.equal(periodoTema(NAVIDAD, dia(2027, 1, 7, 0, 0)), null);
+    assert.equal(periodoTema(NAVIDAD, dia(2026, 1, 1, 0, 0)), '2025');
+});
+
+test('Navidad: mismo día de otros meses no cuenta', () => {
+    assert.equal(periodoTema(NAVIDAD, dia(2026, 11, 6)), null);
+    assert.equal(periodoTema(NAVIDAD, dia(2026, 12, 6)), '2026');
+    assert.equal(periodoTema(NAVIDAD, dia(2027, 2, 1)), null);
+    assert.equal(periodoTema(NAVIDAD, dia(2027, 6, 1)), null);
+});
+
+test('temaActivo devuelve el nombre o null', () => {
+    assert.equal(temaActivo(dia(2026, 10, 25)), 'halloween');
+    assert.equal(temaActivo(dia(2026, 12, 2)), 'navidad');
+    assert.equal(temaActivo(dia(2026, 12, 31, 23, 59)), 'navidad');
+    assert.equal(temaActivo(dia(2027, 1, 1, 0, 0)), 'navidad');
+    assert.equal(temaActivo(dia(2027, 1, 7, 0, 0)), null);
+    assert.equal(temaActivo(dia(2026, 11, 20)), null);
+    assert.equal(temaActivo(new Date(NaN)), null);
+    assert.equal(temaActivo(dia(2026, 12, 2), undefined), 'navidad');
+    assert.equal(temaActivo(dia(2026, 12, 2), null), 'navidad');
+});
+
+test('apagado en diciembre sigue apagado en enero y vuelve el año siguiente', () => {
+    const ap = { navidad: '2026' };
+    for (const f of [dia(2026, 12, 1, 0, 0), dia(2026, 12, 31, 23, 59), dia(2027, 1, 1, 0, 0), dia(2027, 1, 6, 23, 59)]) {
+        assert.equal(temaActivo(f, ap), null, f.toString());
+    }
+    assert.equal(temaActivo(dia(2027, 12, 1, 0, 0), ap), 'navidad');
+    assert.equal(temaActivo(dia(2026, 1, 3), { navidad: '2025' }), null);
+    assert.equal(temaActivo(dia(2027, 1, 3), { navidad: '2025' }), 'navidad');
+});
+
+test('apagar un tema no apaga el otro', () => {
+    assert.equal(temaActivo(dia(2026, 12, 15), { halloween: '2026' }), 'navidad');
+    assert.equal(temaActivo(dia(2026, 10, 25), { navidad: '2026' }), 'halloween');
+});
+
+test('la tabla: claves únicas, la de Halloween intacta y sin solapes 2026-2028', () => {
+    const claves = TEMAS.map((t) => t.claveApagado);
+    assert.equal(new Set(claves).size, claves.length);
+    for (const c of claves) assert.match(c, /^tema-/);
+    assert.equal(TEMAS.find((t) => t.nombre === 'halloween').claveApagado, CLAVE_APAGADO_HALLOWEEN);
+    for (let f = new Date(2026, 0, 1); f.getFullYear() < 2029; f = new Date(f.getFullYear(), f.getMonth(), f.getDate() + 1)) {
+        for (const h of [0, 12]) {
+            const d = new Date(f.getFullYear(), f.getMonth(), f.getDate(), h);
+            const n = TEMAS.filter((t) => periodoTema(t, d) !== null).length;
+            assert.ok(n <= 1, `${d.toDateString()}: ${n} temas`);
+        }
+    }
+    assert.equal(temaDelPeriodo(dia(2026, 12, 24)).nombre, 'navidad');
+});
+
+test('Navidad en Madrid: fecha local, no UTC', () => {
+    assert.equal(temaActivo(new Date('2026-11-30T23:30:00Z')), 'navidad');
+    assert.equal(temaActivo(new Date('2027-01-06T23:30:00Z')), null);
+    assert.equal(periodoTema(NAVIDAD, new Date('2026-12-31T23:30:00Z')), '2026');
+});
+
+test('Navidad en Ciudad de México (UTC-6)', () => {
+    const modulo = new URL('../tema-estacional.js', import.meta.url).href;
+    const codigo = `import { temaActivo } from ${JSON.stringify(modulo)};
+        const casos = ['2026-12-01T05:59:00Z', '2026-12-01T06:00:00Z', '2027-01-07T05:59:00Z', '2027-01-07T06:00:00Z'];
+        console.log(JSON.stringify(casos.map((c) => temaActivo(new Date(c)))));`;
+    const salida = execFileSync(process.execPath, ['--input-type=module', '-e', codigo], {
+        env: { ...process.env, TZ: 'America/Mexico_City' },
+        cwd: fileURLToPath(new URL('..', import.meta.url)),
+        encoding: 'utf8',
+    });
+    assert.deepEqual(JSON.parse(salida), [null, 'navidad', 'navidad', null]);
+});
