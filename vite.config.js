@@ -134,6 +134,11 @@ const ctaRegistroDiferido = () => {
 
 export default defineConfig({
   base: '/',
+  // Un solo Vite por puerto: sin strictPort, con el 5173 ocupado arranca en
+  // otro sin avisar, y si uno escucha en IPv4 y otro en IPv6 el navegador
+  // puede cargar la página de uno y abrir el websocket de HMR contra el otro
+  // ("[vite] failed to connect to websocket"). Con esto, el segundo falla.
+  server: { host: 'localhost', strictPort: true },
   plugins: [cleanInternalUrls(), analiticaApagadaEnDev(), consentimiento(), ctaRegistroDiferido()],
   build: {
     rollupOptions: {
